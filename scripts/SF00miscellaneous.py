@@ -38,3 +38,14 @@ def write_pickle(filename, data_out):
     write_file=open(filename, 'wb')
     cPickle.dump(data_out,write_file,protocol=2)
     write_file.close()
+
+def write_json(data, file_name, indent=1):
+    import json
+    try:
+        handle = open(file_name, 'w')
+    except IOError:
+        pass
+    else:
+        json.dump(data, handle, indent=indent)
+        handle.close()
+

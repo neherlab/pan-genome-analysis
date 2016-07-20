@@ -9,8 +9,8 @@ from SF06geneCluster_align_makeTree import cluster_align_makeTree, postprocess_p
 from SF07geneCluster_json import geneCluster_to_json
 from SF08core_SNP_matrix import create_core_SNP_matrix
 from SF09tree_build import aln_to_Newick
-from SF10Json_parser import json_parser
-from SF11create_panGenome import ete_tree_split
+from SF10_gain_loss import process_gain_loss
+from SF11_json_export import json_parser
 #command line example
 #python run-pipeline.py -fn data/Pat3 -sl Pat3-RefSeq.txt -st 1 3 4 5 6 7 8 9 10 > Pat3.log 2>&1
 
@@ -31,7 +31,7 @@ path = params.folder_name
 strain_list= params.strain_list
 ## run all steps
 if params.steps[0]=='all': 
-    params.steps=range(1,11)
+    params.steps=range(1,12)
 # if roary output is preferred, Step 02,... will be skipped.
 #if params.roary_file_path!='none':
 #    params.steps = set(params.steps) - set([2])
@@ -108,12 +108,19 @@ if 9 in params.steps:# step09:
 
 if 10 in params.steps:# step10:
     start = time.time()
-    json_parser(path, species, params.meta_info_file_path)
-    print 'step10-extract json files for tree&treeDataTable visualization,etc:'
+    process_gain_loss(path)
+    print 'step10-infer gain/loss patterns of all genes:'
     print times(start)
 
 if 11 in params.steps:# step11:
     start = time.time()
+    json_parser(path, species, params.meta_info_file_path)
+    print 'step11-extract json files for tree&treeDataTable visualization,etc:'
+    print times(start)
+
+if 12 in params.steps:# step11:
+    from SF12_create_panGenome import ete_tree_split
+    start = time.time()
     ete_tree_split(path, species)
-    print 'step11-create pan-genome:'
+    print 'step12-create pan-genome:'
     print times(start)

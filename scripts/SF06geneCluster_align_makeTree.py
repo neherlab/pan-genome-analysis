@@ -4,7 +4,7 @@ from Bio import Phylo, SeqIO, AlignIO
 from Bio.Seq import Seq; from Bio.SeqRecord import SeqRecord
 from Bio.Align import MultipleSeqAlignment
 from ete2 import Tree
-from SF00miscellaneous import times, read_fasta, load_pickle, write_pickle, write_in_fa
+from SF00miscellaneous import times, read_fasta, load_pickle, write_pickle, write_in_fa, write_json
 sys.path.append('./scripts/')
 
 def make_dir(dname):
@@ -20,16 +20,6 @@ def remove_dir(dname):
     if os.path.isdir(dname):
         import shutil
         shutil.rmtree(dname)
-
-def write_json(data, file_name, indent=1):
-    import json
-    try:
-        handle = open(file_name, 'w')
-    except IOError:
-        pass
-    else:
-        json.dump(data, handle, indent=indent)
-        handle.close()
 
 def tree_to_json(node, extra_attr = []):
     tree_json = {}

@@ -108,7 +108,7 @@ if 9 in params.steps:# step09:
 
 if 10 in params.steps:# step10:
     start = time.time()
-    process_gain_loss(path)
+    process_gain_loss(path, species)
     print 'step10-infer gain/loss patterns of all genes:'
     print times(start)
 

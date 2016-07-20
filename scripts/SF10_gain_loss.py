@@ -42,7 +42,7 @@ def infer_gene_gain_loss(path, rates = [1.0, 1.0]):
     return t
 
 
-def export_gain_loss(tree, path):
+def export_gain_loss(tree, path, species):
     '''
     '''
     # write final tree with internal node names as assigned by treetime
@@ -60,18 +60,10 @@ def export_gain_loss(tree, path):
             gene_gain_loss_dict[node.name]="".join(gain_loss)
 
     # export gene loss dict to json for visualization
-    gene_loss_fname = sep.join([path.rstrip(sep), 'geneCluster', 'genePresence.json'])
+    gene_loss_fname = sep.join([path.rstrip(sep), 'geneCluster', species+'-genePresence.json'])
     write_json(gene_gain_loss_dict, gene_loss_fname, indent=1) 
 
 
-def process_gain_loss(path):
+def process_gain_loss(path, species):
     tree = infer_gene_gain_loss(path)
-    export_gain_loss(tree, path)
-
-if __name__=='__main__':
-    species= 'Papn'
-    path = '/ebio/ag-neher/share/users/wding/mpam/data/'+species+'/'
-    tree = infer_gene_gain_loss(path)
-
-    outpath = '.'
-    export_gain_loss(tree, outpath)
+    export_gain_loss(tree, path, species)

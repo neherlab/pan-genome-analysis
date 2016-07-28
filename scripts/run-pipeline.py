@@ -90,26 +90,26 @@ if 6 in params.steps:# step06:
 
 if 7 in params.steps:# step07:
     start = time.time()
-    geneCluster_to_json(path, species)
-    print 'step07-creates json file for geneDataTable visualization:'
+    create_core_SNP_matrix(path, species)
+    print 'step07-call SNPs from core genes:'
     print times(start)
 
 if 8 in params.steps:# step08:
     start = time.time()
-    create_core_SNP_matrix(path)
-    print 'step08-call SNPs from core genes:'
+    aln_to_Newick(path, params.raxml_max_time, params.threads)
+    print 'step08-run fasttree and raxml for tree construction:'
     print times(start)
 
 if 9 in params.steps:# step09:
     start = time.time()
-    aln_to_Newick(path, params.raxml_max_time, params.threads)
-    print 'step09-run fasttree and raxml for tree construction:'
+    process_gain_loss(path, species)
+    print 'step09-infer gain/loss patterns of all genes:'
     print times(start)
 
 if 10 in params.steps:# step10:
     start = time.time()
-    process_gain_loss(path, species)
-    print 'step10-infer gain/loss patterns of all genes:'
+    geneCluster_to_json(path, species)
+    print 'step10-creates json file for geneDataTable visualization:'
     print times(start)
 
 if 11 in params.steps:# step11:

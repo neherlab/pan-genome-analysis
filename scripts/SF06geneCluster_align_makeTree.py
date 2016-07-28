@@ -638,10 +638,14 @@ def explore_paralogs(path, nstrains, branch_length_cutoff=500, paralog_cutoff=0.
     return paralog_split_list
 
 
-def create_split_cluster_files(parallel, file_path, fname, new_fa_files_list,
+def create_split_cluster_files(file_path, fname, new_fa_files_list,
                                gene_list1, gene_list2, diamond_geneCluster_dt):
     """
-    TODO: add comments, explain function and input
+    delete the old cluster and create two new clusters
+    params:
+        new_fa_files: list to which new file names are appeneded
+        gene_list1/2: lists containing the genes in the new split clusters
+        diamond_geneCluster_dt: cluster dictionary to be updated
     """
     orgin_nwk_name = fname.split('/')[-1]
     clusterID = orgin_nwk_name.replace('.nwk','')
@@ -655,7 +659,7 @@ def create_split_cluster_files(parallel, file_path, fname, new_fa_files_list,
     origin_aa_fa_dt = read_fasta(file_path+origin_cluster_aa_fa)
     sgs_index=0
 
-    for split_gene_list in list(gene_list1), list(gene_list2):
+    for split_gene_list in (list(gene_list1), list(gene_list2)):
         sgs_index+=1
         newClusterId="%s_%s"%(clusterID,sgs_index)
         gene_cluster_nu_filename="%s%s"%(newClusterId,'.nu.fa')
@@ -686,16 +690,25 @@ def update_gene_cluster(path, species, diamond_geneCluster_dt ):
     write_pickle(cluster_path+species+'-orthamcl-allclusters_final.cpk',diamond_geneCluster_dt)
 
 
-def postprocess_paralogs(parallel, path, species, nstrains, branch_length_cutoff=500, paralog_cutoff=0.5, plot=False):
+def postprocess_paralogs(parallel, path, species, nstrains,
+                         branch_length_cutoff=500, paralog_cutoff=0.5, plot=False):
     """
     splitting paralogs, discarding old gene clusters and creating new clusters of split paralogs
-    input:
-        TODO
+    params:
+        parallel: number of threads to use
+        path:     path to data
+        species:  prefix
+        nstrains: total number of strains
+        branch_length_cutoff: multiple of median branch length to split
+                              (contribution in linear classifier, parameters to split_cluster)
+        paralog_cutoff: fraction of nstrains required for splitting
+        plot:      save figure with paralog statistics
     """
 
     ## exploring paralogs, default: False (not explore and plot), otherwise figure with statistics will saved
     if plot==True:
-        explore_paralogs(path, nstrains, branch_length_cutoff=500, paralog_cutoff=0.5, plot=plot)
+        explore_paralogs(path, nstrains, branch_length_cutoff=branch_length_cutoff,
+                         paralog_cutoff=paralog_cutoff, plot=plot)
 
     file_path = path+'geneCluster/'
     cluster_path= path+'protein_fna/diamond_matches/'
@@ -721,7 +734,7 @@ def postprocess_paralogs(parallel, path, species, nstrains, branch_length_cutoff
                 gene_list2 = all_genes.difference(gene_list1)
                 #print all_genes, gene_list1, gene_list2
 
-                create_split_cluster_files( parallel, file_path, fname, new_fa_files_list, gene_list1, gene_list2, diamond_geneCluster_dt)
+                create_split_cluster_files(file_path, fname, new_fa_files_list, gene_list1, gene_list2, diamond_geneCluster_dt)
 
 
     print '---------------', new_fa_files_list
@@ -734,3 +747,17 @@ def postprocess_paralogs(parallel, path, species, nstrains, branch_length_cutoff
 
     ## remove old gene cluster and create new split cluster
     update_gene_cluster(path, species, diamond_geneCluster_dt )
+
+
+def load_sorted_clusters(path, species):
+    '''
+    load gene clusters and sort 1st by abundance and then by clusterID
+    '''
+    geneClusterPath='%s%s'%(path,'protein_fna/diamond_matches/')
+    diamond_geneCluster_dt=load_pickle(geneClusterPath+species+'-orthamcl-allclusters_final.cpk')
+    from operator import itemgetter
+    # sort by decreasing abundance (-v[0], minus to achieve decreasing)
+    # followed by increasing clusterID GC_00001
+    return sorted(diamond_geneCluster_dt.iteritems(),
+                   key=lambda (k,v): (-itemgetter(0)(v),k), reverse=False)
+

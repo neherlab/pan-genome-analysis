@@ -6,11 +6,11 @@ from SF03diamond_input import diamond_input
 from SF04gbk_metainfo import gbk_To_Metainfo
 from SF05diamond_orthamcl import diamond_orthamcl_cluster
 from SF06geneCluster_align_makeTree import cluster_align_makeTree, postprocess_paralogs
-from SF07geneCluster_json import geneCluster_to_json
-from SF08core_SNP_matrix import create_core_SNP_matrix
-from SF09tree_build import aln_to_Newick
-from SF10_gain_loss import process_gain_loss
-from SF11_json_export import json_parser
+from SF07_core_SNP_matrix import create_core_SNP_matrix
+from SF08_core_tree_build import aln_to_Newick
+from SF09_gain_loss import process_gain_loss
+from SF10_geneCluster_export import geneCluster_to_json
+from SF11_tree_metadata_export import json_parser
 #command line example
 #python run-pipeline.py -fn data/Pat3 -sl Pat3-RefSeq.txt -st 1 3 4 5 6 7 8 9 10 > Pat3.log 2>&1
 
@@ -30,7 +30,7 @@ params = parser.parse_args()
 path = params.folder_name
 strain_list= params.strain_list
 ## run all steps
-if params.steps[0]=='all': 
+if params.steps[0]=='all':
     params.steps=range(1,12)
 # if roary output is preferred, Step 02,... will be skipped.
 #if params.roary_file_path!='none':

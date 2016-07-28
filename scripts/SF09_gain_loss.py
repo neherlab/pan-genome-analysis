@@ -4,7 +4,7 @@ from treetime import treeanc as ta
 from treetime.gtr import GTR
 from treetime import io
 from Bio import Phylo, AlignIO
-from SF00miscellaneous import write_json
+from SF00miscellaneous import write_json, write_pickle
 import sys
 
 
@@ -47,7 +47,8 @@ def export_gain_loss(tree, path, species):
     '''
     # write final tree with internal node names as assigned by treetime
     sep='/'
-    tree_fname = sep.join([path.rstrip(sep), 'geneCluster', 'tree_result.newick'])
+    output_path= sep.join([path.rstrip(sep), 'geneCluster'])
+    tree_fname = sep.join([output_path, 'tree_result.newick'])
     Phylo.write(tree.tree, tree_fname, 'newick')
 
     from collections import defaultdict
@@ -59,10 +60,17 @@ def export_gain_loss(tree, path, species):
                         for ancestral,derived in zip(node.up.genepresence, node.genepresence)]
             gene_gain_loss_dict[node.name]="".join(gain_loss)
 
-    # export gene loss dict to json for visualization
-    gene_loss_fname = sep.join([path.rstrip(sep), 'geneCluster', species+'-genePresence.json'])
-    write_json(gene_gain_loss_dict, gene_loss_fname, indent=1) 
+    gain_loss_array = np.array([[i for i in gain_loss_str]
+                                for gain_loss_str in gene_gain_loss_dict.values()], dtype=int)
+    # 1 and 2 are codes for gain/loss events
+    events_array = ((gain_loss_array == 1) | (gain_loss_array == 2)).sum(axis=0)
+    events_dict =  { index:event for index, event in enumerate(events_array) }
+    events_dict_path= sep.join([output_path, 'dt_geneEvents.cpk'])
+    write_pickle(events_dict_path, events_dict)
 
+    # export gene loss dict to json for visualization
+    gene_loss_fname = sep.join([ output_path, species+'-genePresence.json'])
+    write_json(gene_gain_loss_dict, gene_loss_fname, indent=1)
 
 def process_gain_loss(path, species):
     tree = infer_gene_gain_loss(path)

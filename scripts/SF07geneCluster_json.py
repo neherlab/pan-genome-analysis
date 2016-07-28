@@ -55,7 +55,7 @@ def geneCluster_to_json(path, species,present_cf='0'):
     geneClusterPath='%s%s'%(path,'protein_fna/diamond_matches/')
     alnFilePath='%s%s'%(path,'geneCluster/'); output_path=alnFilePath
     gene_diversity_Dt=load_pickle(alnFilePath+'gene_diversity.cpk')
-    find_clusterFaName_Dt=load_pickle(alnFilePath+'find_clusterFaName_final.cpk')
+    #find_clusterFaName_Dt=load_pickle(alnFilePath+'find_clusterFaName_final.cpk')
     write_file_lst_json=open(output_path+species+'-geneCluster.json', 'wb')
 
     ## load strain list and prepare for gene presence/absence
@@ -70,9 +70,9 @@ def geneCluster_to_json(path, species,present_cf='0'):
     corelist=[];
     diamond_geneCluster_dt=load_pickle(geneClusterPath+species+'-orthamcl-allclusters_final.cpk')
     with open(output_path+'core_geneList.txt','wb') as outfile:
-        for kg, vg in diamond_geneCluster_dt.iteritems():
+        for clusterID, vg in diamond_geneCluster_dt.iteritems():
             if vg[0]==totalStrain and vg[2]==totalStrain:
-                coreGeneName=find_clusterFaName_Dt[kg].replace('.fa','.aln')
+                coreGeneName='%s%s'%(clusterID,'.nu.aln')
                 outfile.write(coreGeneName+'\n')
                 corelist.append(coreGeneName)
         write_pickle(output_path+'core_geneList.cpk',corelist)
@@ -100,12 +100,12 @@ def geneCluster_to_json(path, species,present_cf='0'):
         allAnn,majority = consolidate_annotation(gene_list)
 
         ## average length
-        geneLength_list= [ len(igene) for igene in read_fasta(output_path+find_clusterFaName_Dt[clusterID]).values() ]
+        geneLength_list= [ len(igene) for igene in read_fasta(output_path+'%s%s'%(clusterID,'.nu.fa')).values() ]
         geneClusterLength = sum(geneLength_list) / len(geneLength_list)
         #print geneLength_list,geneClusterLength
 
         ## msa
-        geneCluster_aln=find_clusterFaName_Dt[clusterID].replace('.nu.fa','.aa.aln')
+        geneCluster_aln='%s%s'%(clusterID,'.nu.fa')
 
         ## gene presence
         dt_strainGene=create_genePresence(dt_strainGene, totalStrain, set_totalStrain, gene_list)
@@ -136,5 +136,5 @@ def geneCluster_to_json(path, species,present_cf='0'):
             write_in_fa( presence_outfile, istkey, dt_strainGene[istkey] )
 
     write_pickle(output_path+'dt_genePresence.cpk', dt_strainGene)
-    write_pickle(output_path+'dt_geneEvent.cpk', dt_geneID_to_geneName)
+    #write_pickle(output_path+'dt_geneEvent.cpk', dt_geneID_to_geneName)
     write_pickle(output_path+'dt_geneID_diversity.cpk', dt_geneID_diversity)

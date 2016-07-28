@@ -512,8 +512,6 @@ def cluster_align_makeTree( path, species, parallel ):
 
         ## create cluster-genes fasta files
         fasta_path=path+'geneCluster/'; os.system('mkdir '+fasta_path);
-#        find_clusterFaName_Dt=defaultdict(list) ## cluster nu.fa filename for each cluster
-#        find_clusterFaName_reverse_Dt=defaultdict(list) ## use cluster nu.fa filename to find cluster
         ## diamond_geneCluster_dt: {clusterID:[ count_strains,[memb1,...],count_genes }
         for clusterID, gene in diamond_geneCluster_dt.iteritems():
             ## geneCluster file name
@@ -521,8 +519,6 @@ def cluster_align_makeTree( path, species, parallel ):
             gene_cluster_aa_filename="%s%s"%(clusterID,'.aa.fa')
             gene_cluster_nu_write=open( fasta_path+gene_cluster_nu_filename, 'wb')
             gene_cluster_aa_write=open( fasta_path+gene_cluster_aa_filename, 'wb')
-#            find_clusterFaName_Dt[clusterID] = gene_cluster_nu_filename
-#            find_clusterFaName_reverse_Dt[gene_cluster_nu_filename] = clusterID
             ## write nucleotide/amino_acid sequences into geneCluster files
             for gene_memb in gene[1]:
                 ## gene_name format: strain_1|1-20:25
@@ -535,8 +531,6 @@ def cluster_align_makeTree( path, species, parallel ):
                 #print gene_memb, geneAAcidDt[gene_memb]
                 write_in_fa(gene_cluster_aa_write,gene_memb, geneAAcidDt[gene_memb])
             gene_cluster_nu_write.close(); gene_cluster_aa_write.close();
-#        write_pickle(fasta_path+'find_clusterFaName.cpk',find_clusterFaName_Dt)
-#        write_pickle(fasta_path+'find_clusterFaName_reverse.cpk',find_clusterFaName_reverse_Dt)
 
     create_geneCluster_fa()
 
@@ -645,31 +639,27 @@ def explore_paralogs(path, nstrains, branch_length_cutoff=500, paralog_cutoff=0.
 
 
 def create_split_cluster_files(parallel, file_path, fname, new_fa_files_list,
-                               gene_list1, gene_list2, find_clusterFaName_Dt,
-                               find_clusterFaName_reverse_Dt, diamond_geneCluster_dt):
+                               gene_list1, gene_list2, diamond_geneCluster_dt):
     """
     TODO: add comments, explain function and input
     """
     orgin_nwk_name = fname.split('/')[-1]
-    gene_filename_prefix = orgin_nwk_name.replace('.nwk','')
+    clusterID = orgin_nwk_name.replace('.nwk','')
     origin_cluster_nu_fa = orgin_nwk_name.replace('nwk','nu.fa')
     origin_cluster_aa_fa = orgin_nwk_name.replace('nwk','aa.fa')
 
-    ## del the old cluster record
-    ref_gene=find_clusterFaName_reverse_Dt[origin_cluster_nu_fa]
-    del diamond_geneCluster_dt[ref_gene]
-    #? os.system('rm '+gene_filename_prefix)
+    del diamond_geneCluster_dt[clusterID]
 
     ## write new cluster fa files
     origin_nu_fa_dt = read_fasta(file_path+origin_cluster_nu_fa)
     origin_aa_fa_dt = read_fasta(file_path+origin_cluster_aa_fa)
     sgs_index=0
 
-
     for split_gene_list in list(gene_list1), list(gene_list2):
         sgs_index+=1
-        gene_cluster_nu_filename="%s_%s%s"%(gene_filename_prefix,sgs_index,'.nu.fa')
-        gene_cluster_aa_filename="%s_%s%s"%(gene_filename_prefix,sgs_index,'.aa.fa')
+        newClusterId="%s_%s"%(clusterID,sgs_index)
+        gene_cluster_nu_filename="%s%s"%(newClusterId,'.nu.fa')
+        gene_cluster_aa_filename="%s%s"%(newClusterId,'.aa.fa')
         gene_cluster_nu_write=open( file_path+gene_cluster_nu_filename, 'wb')
         gene_cluster_aa_write=open( file_path+gene_cluster_aa_filename, 'wb')
 
@@ -681,20 +671,16 @@ def create_split_cluster_files(parallel, file_path, fname, new_fa_files_list,
             write_in_fa(gene_cluster_aa_write, gene_memb, origin_aa_fa_dt[gene_memb])
         gene_cluster_nu_write.close(); gene_cluster_aa_write.close();
 
-        firstGene = split_gene_list[0]
-        find_clusterFaName_Dt[firstGene] = gene_cluster_nu_filename
-        diamond_geneCluster_dt[firstGene] = [0,[],0]
+        diamond_geneCluster_dt[ newClusterId ] = [0,[],0]
         ## num_stains
-        diamond_geneCluster_dt[ firstGene ][0]=len(dict(Counter([ ig.split('|')[0] for ig in split_gene_list])).keys())
+        diamond_geneCluster_dt[ newClusterId ][0]=len(dict(Counter([ ig.split('|')[0] for ig in split_gene_list])).keys())
         ## num_genes
-        diamond_geneCluster_dt[ firstGene ][2]=len(dict(Counter([ ig for ig in split_gene_list])).keys())
+        diamond_geneCluster_dt[ newClusterId ][2]=len(dict(Counter([ ig for ig in split_gene_list])).keys())
         ## gene members
-        diamond_geneCluster_dt[ firstGene ][1]=[ ig for ig in split_gene_list ]
+        diamond_geneCluster_dt[ newClusterId ][1]=[ ig for ig in split_gene_list ]
 
 
-def update_gene_cluster(path, species, find_clusterFaName_Dt, diamond_geneCluster_dt ):
-    ## update find_clusterFaName_Dt
-    write_pickle(path+'geneCluster/find_clusterFaName_final.cpk',find_clusterFaName_Dt)
+def update_gene_cluster(path, species, diamond_geneCluster_dt ):
     ## update gene cluster pickled file
     cluster_path = path+'protein_fna/diamond_matches/'
     write_pickle(cluster_path+species+'-orthamcl-allclusters_final.cpk',diamond_geneCluster_dt)
@@ -714,8 +700,6 @@ def postprocess_paralogs(parallel, path, species, nstrains, branch_length_cutoff
     file_path = path+'geneCluster/'
     cluster_path= path+'protein_fna/diamond_matches/'
     fname_list = glob.glob(file_path+'*nwk')
-    find_clusterFaName_Dt=load_pickle(file_path+'find_clusterFaName.cpk')
-    find_clusterFaName_reverse_Dt=load_pickle(file_path+'find_clusterFaName_reverse.cpk')
     diamond_geneCluster_dt=load_pickle(cluster_path+species+'-orthamcl-allclusters.cpk')
     new_fa_files_list=[]
 
@@ -737,7 +721,7 @@ def postprocess_paralogs(parallel, path, species, nstrains, branch_length_cutoff
                 gene_list2 = all_genes.difference(gene_list1)
                 #print all_genes, gene_list1, gene_list2
 
-                create_split_cluster_files( parallel, file_path, fname, new_fa_files_list, gene_list1, gene_list2, find_clusterFaName_Dt, find_clusterFaName_reverse_Dt, diamond_geneCluster_dt)
+                create_split_cluster_files( parallel, file_path, fname, new_fa_files_list, gene_list1, gene_list2, diamond_geneCluster_dt)
 
 
     print '---------------', new_fa_files_list
@@ -749,4 +733,4 @@ def postprocess_paralogs(parallel, path, species, nstrains, branch_length_cutoff
         write_pickle(file_path+'gene_diversity.cpk',{ i.rstrip().split('\t')[0]:i.rstrip().split('\t')[1] for i in infile})
 
     ## remove old gene cluster and create new split cluster
-    update_gene_cluster(path, species, find_clusterFaName_Dt, diamond_geneCluster_dt )
+    update_gene_cluster(path, species, diamond_geneCluster_dt )

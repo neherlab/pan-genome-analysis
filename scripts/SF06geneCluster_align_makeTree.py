@@ -457,6 +457,8 @@ def multips(function_in_use, file_path, parallel, fa_files):
 
 def align_and_makeTree(thread, alignFile_path, fa_files_list):
     for gene_cluster_nu_filename in fa_files_list:
+        # extract GC_00002 from path/GC_00002.aln
+        clusterID = gene_cluster_nu_filename.split('/')[-1].split('.')[0]
         start = time.time();
         geneDiversity_file = open(alignFile_path+'gene_diversity.txt', 'a')
         if len( read_fasta(gene_cluster_nu_filename) )==1: # nothing to do for singletons
@@ -467,8 +469,7 @@ def align_and_makeTree(thread, alignFile_path, fa_files_list):
             shutil.copy(gene_cluster_nu_filename.replace('.nu.fa','.aa.fa'),
                         gene_cluster_nu_filename.replace('.nu.fa','.aa.aln'))
 
-            geneID=read_fasta(gene_cluster_nu_filename).keys()[0]
-            geneDiversity_file.write('%s\t%s\n'%(geneID,'0.0'))
+            geneDiversity_file.write('%s\t%s\n'%(clusterID,'0.0'))
 
         else: # align and build tree
             print gene_cluster_nu_filename
@@ -482,11 +483,7 @@ def align_and_makeTree(thread, alignFile_path, fa_files_list):
             myTree.diversity_statistics()
             diversity=myTree.diversity
             gene_diversity_values='{0:.3f}'.format(diversity)
-            ## get 1st geneId
-            # TODO: there got to be a better way!
-            for record in SeqIO.parse(gene_cluster_nu_filename, "fasta"):
-                geneID=record.id; break
-            geneDiversity_file.write('%s\t%s\n'%(geneID,gene_diversity_values))
+            geneDiversity_file.write('%s\t%s\n'%(clusterID,gene_diversity_values))
 
 
 def cluster_align_makeTree( path, species, parallel ):
@@ -515,26 +512,21 @@ def cluster_align_makeTree( path, species, parallel ):
 
         ## create cluster-genes fasta files
         fasta_path=path+'geneCluster/'; os.system('mkdir '+fasta_path);
-        find_clusterFaName_Dt=defaultdict(list) ## cluster nu.fa filename for each ref_gene
-        find_clusterFaName_reverse_Dt=defaultdict(list) ## use cluster nu.fa filename to find ref_gene
-        for gindex, gene in enumerate(diamond_geneCluster_dt.iteritems()):
-            ## data structure: [ ref,[ count_strains,[memb1,...],count_genes ]
-            ## gene_name format: strain_1|1-20:25
-            ##! start_pos in ".fna" has been +1, so -1 for Bio_SeqIO gbk process
-            ref_gene=gene[0];
-            ref_name,full_ann=ref_gene.split('|');
-            contig_index=full_ann.split('-')[0];
-            st, en = full_ann.split('-')[1].split(':')
+#        find_clusterFaName_Dt=defaultdict(list) ## cluster nu.fa filename for each cluster
+#        find_clusterFaName_reverse_Dt=defaultdict(list) ## use cluster nu.fa filename to find cluster
+        ## diamond_geneCluster_dt: {clusterID:[ count_strains,[memb1,...],count_genes }
+        for clusterID, gene in diamond_geneCluster_dt.iteritems():
             ## geneCluster file name
-            #gene_cluster_nu_filename='%s-%s-%s-%s%s'%(ref_name,contig_index,st,en,'.nu.fa');
-            gene_cluster_nu_filename="GC_%08d%s"%(gindex,'.nu.fa')
-            gene_cluster_aa_filename="GC_%08d%s"%(gindex,'.aa.fa')
+            gene_cluster_nu_filename="%s%s"%(clusterID,'.nu.fa')
+            gene_cluster_aa_filename="%s%s"%(clusterID,'.aa.fa')
             gene_cluster_nu_write=open( fasta_path+gene_cluster_nu_filename, 'wb')
             gene_cluster_aa_write=open( fasta_path+gene_cluster_aa_filename, 'wb')
-            find_clusterFaName_Dt[ref_gene] = gene_cluster_nu_filename
-            find_clusterFaName_reverse_Dt[gene_cluster_nu_filename] = ref_gene
+#            find_clusterFaName_Dt[clusterID] = gene_cluster_nu_filename
+#            find_clusterFaName_reverse_Dt[gene_cluster_nu_filename] = clusterID
             ## write nucleotide/amino_acid sequences into geneCluster files
-            for gene_memb in gene[1][1]:
+            for gene_memb in gene[1]:
+                ## gene_name format: strain_1|1-20:25
+                ##! start_pos in ".fna" has been +1, so -1 for Bio_SeqIO gbk process
                 strain_name,full_ann= gene_memb.split('|');
                 contig_index=full_ann.split('-')[0];
                 st, en= full_ann.split('-')[1].split(':'); st= str(int(st)-1)
@@ -543,8 +535,8 @@ def cluster_align_makeTree( path, species, parallel ):
                 #print gene_memb, geneAAcidDt[gene_memb]
                 write_in_fa(gene_cluster_aa_write,gene_memb, geneAAcidDt[gene_memb])
             gene_cluster_nu_write.close(); gene_cluster_aa_write.close();
-        write_pickle(fasta_path+'find_clusterFaName.cpk',find_clusterFaName_Dt)
-        write_pickle(fasta_path+'find_clusterFaName_reverse.cpk',find_clusterFaName_reverse_Dt)
+#        write_pickle(fasta_path+'find_clusterFaName.cpk',find_clusterFaName_Dt)
+#        write_pickle(fasta_path+'find_clusterFaName_reverse.cpk',find_clusterFaName_reverse_Dt)
 
     create_geneCluster_fa()
 
@@ -558,7 +550,8 @@ def cluster_align_makeTree( path, species, parallel ):
     ## write gene_diversity_Dt cpk file
     def write_gene_diversity_cpk():
         with open(fasta_path+'gene_diversity.txt', 'rb') as infile:
-            write_pickle(fasta_path+'gene_diversity.cpk',{ i.rstrip().split('\t')[0]:i.rstrip().split('\t')[1] for i in infile})
+            write_pickle(fasta_path+'gene_diversity.cpk',
+                         { i.rstrip().split('\t')[0]:i.rstrip().split('\t')[1] for i in infile})
 
 
 

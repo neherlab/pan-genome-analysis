@@ -3,13 +3,13 @@ from SF00miscellaneous import load_pickle, write_pickle, read_fasta, write_in_fa
 from operator import itemgetter
 from collections import defaultdict, Counter
 
-def consolidate_annotation(all_gene_name):
+def consolidate_annotation(all_gene_names):
     """
     determine a consensus annotation if annotation of reference sequences
     is conflicting. hypothetical protein annotations are avoided is possible
     """
     # count annotation and sort by decreasing occurence
-    annotations=dict(Counter( [ igi.split('|')[1].split('-',2)[2] for igi in all_gene_name ]) )
+    annotations=dict(Counter( [ igi.split('|')[1].split('-',2)[2] for igi in all_gene_names ]) )
     annotations_sorted=sorted(annotations.iteritems(), key=itemgetter(1),reverse=True)
     if  len(annotations)==0 :
         majority='hypothetical_protein'
@@ -24,26 +24,32 @@ def consolidate_annotation(all_gene_name):
     return allAnn,majority
 
 
-def create_genePresence(dt_strainGene, totalStrain, set_totalStrain, all_gene_name):
+def create_genePresence(dt_strainGene, totalStrain, set_totalStrain, all_gene_names):
     """
-    create dt for gene presence/absence string
-    TODO: needs commenting
+    append to dictionary for gene presence/absence string {strain: '010100010010...',}
+    function is called for every gene cluster
+    params:
+        - totalStrain:      total number of strains
+        - set_totalStrain:  set of all strain names
+        - all_gene_names:    list of gene names (incl strain name) of all genes in cluster
     """
-    set_sharedStrain=set([ igl.split('|')[0] for igl in all_gene_name])
+    # determine set of strains that are represented in gene cluster (first element of gene name)
+    set_sharedStrain=set([ igl.split('|')[0] for igl in all_gene_names])
     for ist in set_sharedStrain:
+        # append '1' to strains that have the gene
         dt_strainGene[ist].append('1')
     if totalStrain!=len(set_sharedStrain):
+        # append '0' to the remaining strains
         for ist0 in set_totalStrain-set_sharedStrain:
             dt_strainGene[ist0].append('0')
+    # return modified dictionary
     return dt_strainGene
 
 
 def geneCluster_to_json(path, species,present_cf='0'):
     """
     create json file for gene cluster table visualzition
-    input:  pickled strain list (strain_list.cpk),
-            pickled gene cluster file (species-orthamcl-allclusters.cpk),
-            pickled gene diversity (gene_diversity.cpk) etc.
+    input:  path to genecluster output
     output: species-geneCluster.json
     """
     geneClusterPath='%s%s'%(path,'protein_fna/diamond_matches/')
@@ -82,58 +88,45 @@ def geneCluster_to_json(path, species,present_cf='0'):
     geneId_Dt_to_locusTag={v:k for k,v in locusTag_to_geneId_Dt.items()}
 
     write_file_lst_json.write('['); begin=0
-    for gid, gene in enumerate(sorted_genelist):
-    # data structure: [ ref,[ count,[ann_1,ann_2,...ann_n] ]
+    ## sorted_genelist: [(clusterID, [ count_strains,[memb1,...],count_genes]),...]
+    for gid, (clusterID, gene) in enumerate(sorted_genelist):
+        strain_count, gene_list, gene_count = gene
         if begin==0:
             begin=1
         else:
             write_file_lst_json.write(',\n')
-        ref_gene=gene[0]
-        ref_strainName,full_ann=ref_gene.split('|')
-        st, en=full_ann.split('-')[1].split(':')
-        st, en=int(st), int(en)
 
         ## annotation majority
-        allAnn,majority = consolidate_annotation(gene[1][1])
+        allAnn,majority = consolidate_annotation(gene_list)
 
         ## average length
-        geneLength_list= [ len(igene) for igene in read_fasta(output_path+find_clusterFaName_Dt[gene[0]]).values() ]
+        geneLength_list= [ len(igene) for igene in read_fasta(output_path+find_clusterFaName_Dt[clusterID]).values() ]
         geneClusterLength = sum(geneLength_list) / len(geneLength_list)
         #print geneLength_list,geneClusterLength
 
         ## msa
-        geneCluster_aln=find_clusterFaName_Dt[gene[0]].replace('.nu.fa','.aa.aln')
+        geneCluster_aln=find_clusterFaName_Dt[clusterID].replace('.nu.fa','.aa.aln')
 
         ## gene presence
-        dt_strainGene=create_genePresence(dt_strainGene, totalStrain, set_totalStrain, gene[1][1])
+        dt_strainGene=create_genePresence(dt_strainGene, totalStrain, set_totalStrain, gene_list)
 
-        ## geneID_to_geneName
-        dt_geneID_to_geneName[gid+1]=geneCluster_aln.replace('.aa.aln','-core-event-tr.json')
-
-        ## dt_geneID_diversity (Franz's plot)
-        # dt_geneID_diversity[gid+1]=gene_diversity_Dt[ref_gene]
-
-        ## duplicate
-        if len(gene[1])==2:
-            geneCount=len(gene[1][1]) # no geneCount record stored
-        else:
-            geneCount=gene[1][2]
-        if geneCount>gene[1][0]:
+        ## check for duplicates
+        if gene_count>strain_count:
             duplicated_state='yes';
-            dup_list=[ ig.split('|')[0] for ig in gene[1][1] ]
-            # "#" to delimit (gene/geneCount)key/value ; "@" to seperate genes
+            dup_list=[ ig.split('|')[0] for ig in gene_list]
+            # "#" to delimit (gene/gene_count)key/value ; "@" to seperate genes
             # Counter({'g1': 2, 'g2': 1})
             dup_detail=''.join(['%s#%s@'%(kd,vd) for kd, vd in dict(Counter(dup_list)).items() if vd>1 ])[:-1]
         else:
             duplicated_state='no';dup_detail=''
 
         ## locus_tag
-        locus_tag_strain=' '.join([ geneId_Dt_to_locusTag[igl] for igl in gene[1][1] ])
+        locus_tag_strain=' '.join([ geneId_Dt_to_locusTag[igl] for igl in gene_list ])
         #locus_tag_strain=' '.join([ '%s_%s'%(igl.split('|')[0],geneId_Dt_to_locusTag[igl]) for igl in gene[1][1] ])
 
         ## write json
         newline='{"geneId":%d,"geneLen":%d,"count": %d,"dupli":"%s","dup_detail": "%s","ann":"%s","msa":"%s","divers":"%s","allAnn":"%s","locus":"%s"}'
-        write_file_lst_json.write(newline%(gid+1, geneClusterLength, gene[1][0], duplicated_state, dup_detail,majority, geneCluster_aln, gene_diversity_Dt[ref_gene],allAnn,locus_tag_strain))
+        write_file_lst_json.write(newline%(gid+1, geneClusterLength, strain_count, duplicated_state, dup_detail,majority, geneCluster_aln, gene_diversity_Dt[clusterID],allAnn,locus_tag_strain))
     write_file_lst_json.write(']')
     write_file_lst_json.close()
 

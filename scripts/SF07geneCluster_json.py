@@ -4,38 +4,50 @@ from operator import itemgetter
 from collections import defaultdict, Counter
 
 def consolidate_annotation(all_gene_name):
-    """ determine annotation majority """
+    """
+    determine a consensus annotation if annotation of reference sequences
+    is conflicting. hypothetical protein annotations are avoided is possible
+    """
+    # count annotation and sort by decreasing occurence
     annotations=dict(Counter( [ igi.split('|')[1].split('-',2)[2] for igi in all_gene_name ]) )
     annotations_sorted=sorted(annotations.iteritems(), key=itemgetter(1),reverse=True)
-    if  len(annotations)==0 : 
+    if  len(annotations)==0 :
         majority='hypothetical_protein'
         allAnn  ='hypothetical_protein'
     else:
+        # take majority, unless majority is hypothetical protein and other annotations exist
         majority = annotations_sorted[0][0]
-        if majority=='hypothetical_protein' and len(annotations)!=1: 
+        if majority=='hypothetical_protein' and len(annotations)!=1:
             majority=annotations_sorted[1][0]
-        # "#" to delimit key/value ; "@" to seperate various annotations
+        # "#" to delimit key/count ; "@" to seperate various annotations
         allAnn=''.join(['%s#%s@'%(i_ann,j_ann) for i_ann,j_ann in annotations_sorted ])[:-1]
     return allAnn,majority
 
+
 def create_genePresence(dt_strainGene, totalStrain, set_totalStrain, all_gene_name):
-    """ create dt for gene presence/absence string """
+    """
+    create dt for gene presence/absence string
+    TODO: needs commenting
+    """
     set_sharedStrain=set([ igl.split('|')[0] for igl in all_gene_name])
-    for ist in set_sharedStrain: 
-        dt_strainGene[ist].append('1') 
+    for ist in set_sharedStrain:
+        dt_strainGene[ist].append('1')
     if totalStrain!=len(set_sharedStrain):
         for ist0 in set_totalStrain-set_sharedStrain:
             dt_strainGene[ist0].append('0')
     return dt_strainGene
 
+
 def geneCluster_to_json(path, species,present_cf='0'):
     """
     create json file for gene cluster table visualzition
-    input: pickled strain list (strain_list.cpk) ,pickled gene cluster file (species-orthamcl-allclusters.cpk), pickled gene diversity (gene_diversity.cpk) etc. 
+    input:  pickled strain list (strain_list.cpk),
+            pickled gene cluster file (species-orthamcl-allclusters.cpk),
+            pickled gene diversity (gene_diversity.cpk) etc.
     output: species-geneCluster.json
     """
     geneClusterPath='%s%s'%(path,'protein_fna/diamond_matches/')
-    alnFilePath='%s%s'%(path,'geneCluster/'); output_path=alnFilePath  
+    alnFilePath='%s%s'%(path,'geneCluster/'); output_path=alnFilePath
     gene_diversity_Dt=load_pickle(alnFilePath+'gene_diversity.cpk')
     find_clusterFaName_Dt=load_pickle(alnFilePath+'find_clusterFaName_final.cpk')
     write_file_lst_json=open(output_path+species+'-geneCluster.json', 'wb')
@@ -62,17 +74,17 @@ def geneCluster_to_json(path, species,present_cf='0'):
     ## sort by strain_counts
     #sorted_genelist=sorted(diamond_geneCluster_dt, key=lambda x: int(x[1][0]), reverse=True)
     from operator import itemgetter
-    sorted_genelist=sorted(diamond_geneCluster_dt.iteritems(), key=lambda (k,v): itemgetter(0)(v), reverse=True) 
+    sorted_genelist=sorted(diamond_geneCluster_dt.iteritems(), key=lambda (k,v): itemgetter(0)(v), reverse=True)
 
-    ## prepare geneId_Dt_to_locusTag   
+    ## prepare geneId_Dt_to_locusTag
     locusTag_to_geneId_Dt=load_pickle(path+'locusTag_to_geneId.cpk')
     geneId_Dt_to_locusTag=defaultdict(list)
     geneId_Dt_to_locusTag={v:k for k,v in locusTag_to_geneId_Dt.items()}
 
     write_file_lst_json.write('['); begin=0
-    for gid, gene in enumerate(sorted_genelist): 
+    for gid, gene in enumerate(sorted_genelist):
     # data structure: [ ref,[ count,[ann_1,ann_2,...ann_n] ]
-        if begin==0: 
+        if begin==0:
             begin=1
         else:
             write_file_lst_json.write(',\n')
@@ -91,22 +103,22 @@ def geneCluster_to_json(path, species,present_cf='0'):
 
         ## msa
         geneCluster_aln=find_clusterFaName_Dt[gene[0]].replace('.nu.fa','.aa.aln')
-        
-        ## gene presence 
+
+        ## gene presence
         dt_strainGene=create_genePresence(dt_strainGene, totalStrain, set_totalStrain, gene[1][1])
 
         ## geneID_to_geneName
         dt_geneID_to_geneName[gid+1]=geneCluster_aln.replace('.aa.aln','-core-event-tr.json')
 
         ## dt_geneID_diversity (Franz's plot)
-        # dt_geneID_diversity[gid+1]=gene_diversity_Dt[ref_gene] 
+        # dt_geneID_diversity[gid+1]=gene_diversity_Dt[ref_gene]
 
         ## duplicate
         if len(gene[1])==2:
             geneCount=len(gene[1][1]) # no geneCount record stored
-        else: 
+        else:
             geneCount=gene[1][2]
-        if geneCount>gene[1][0]: 
+        if geneCount>gene[1][0]:
             duplicated_state='yes';
             dup_list=[ ig.split('|')[0] for ig in gene[1][1] ]
             # "#" to delimit (gene/geneCount)key/value ; "@" to seperate genes
@@ -119,14 +131,14 @@ def geneCluster_to_json(path, species,present_cf='0'):
         locus_tag_strain=' '.join([ geneId_Dt_to_locusTag[igl] for igl in gene[1][1] ])
         #locus_tag_strain=' '.join([ '%s_%s'%(igl.split('|')[0],geneId_Dt_to_locusTag[igl]) for igl in gene[1][1] ])
 
-        ## write json 
+        ## write json
         newline='{"geneId":%d,"geneLen":%d,"count": %d,"dupli":"%s","dup_detail": "%s","ann":"%s","msa":"%s","divers":"%s","allAnn":"%s","locus":"%s"}'
-        write_file_lst_json.write(newline%(gid+1, geneClusterLength, gene[1][0], duplicated_state,dup_detail,majority, geneCluster_aln, gene_diversity_Dt[ref_gene],allAnn,locus_tag_strain))
+        write_file_lst_json.write(newline%(gid+1, geneClusterLength, gene[1][0], duplicated_state, dup_detail,majority, geneCluster_aln, gene_diversity_Dt[ref_gene],allAnn,locus_tag_strain))
     write_file_lst_json.write(']')
     write_file_lst_json.close()
 
     with open(output_path+'genePresence.aln','wb') as presence_outfile:
-        for istkey in dt_strainGene: 
+        for istkey in dt_strainGene:
             dt_strainGene[istkey]=''.join(dt_strainGene[istkey] )
             write_in_fa( presence_outfile, istkey, dt_strainGene[istkey] )
 

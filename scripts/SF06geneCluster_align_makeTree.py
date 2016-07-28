@@ -134,7 +134,7 @@ def pad_nucleotide_sequences(aln_aa, seq_nuc):
 
     return aln_nuc
 
-def polytomies_midpointRooting(infileName, outfileName): 
+def polytomies_midpointRooting(infileName, outfileName):
     # use ete2 to solve polytomies and midpoint rooting
     newickString=open(infileName, 'rb').readline().rstrip()
     tree = Tree(newickString,format=1);
@@ -155,6 +155,9 @@ def polytomies_midpointRooting(infileName, outfileName):
         outfile.write(tree.write(format=1))
 
 class mpm_tree(object):
+    '''
+    class that aligns a set of sequences and infers a tree
+    '''
 
     def __init__(self, alignment_fname, **kwarks):
         self.fname_prefix=alignment_fname.split('geneCluster/')[1].split('.nu')[0]
@@ -167,7 +170,8 @@ class mpm_tree(object):
         self.nuc=True
 
     def codon_align(self, alignment_tool="mafft", prune=True):
-        ''' takes a nucleotide alignment, translates it, aligns the amino acids, pads the gaps
+        '''
+        takes a nucleotide alignment, translates it, aligns the amino acids, pads the gaps
         note that this suppresses any compensated frameshift mutations
 
         Parameters:
@@ -210,7 +214,11 @@ class mpm_tree(object):
         os.chdir('..')
         remove_dir(self.run_dir)
 
+
     def align(self):
+        '''
+        align sequencences in self.seqs using mafft
+        '''
         make_dir(self.run_dir)
         os.chdir(self.run_dir)
 
@@ -222,7 +230,12 @@ class mpm_tree(object):
         os.chdir('..')
         remove_dir(self.run_dir)
 
+
     def build(self, root='midpoint', raxml=True, raxml_time_limit=0.5):
+        '''
+        build a phylogenetic tree using fasttree and raxML (optional)
+        based on nextflu tree building pipeline
+        '''
         from treetime import io
         from treetime import utils
         import subprocess
@@ -283,19 +296,15 @@ class mpm_tree(object):
         else:
             #shutil.copy('initial_tree.newick', out_fname)
             polytomies_midpointRooting('initial_tree.newick',out_fname)
-            
+
+        # load the resulting tree as a treetime instance
         from treetime.gtr import GTR
         self.gtr = GTR.standard()
         self.tt = io.treetime_from_newick(self.gtr, out_fname)
-        self.tree = self.tt.tree
-
-        ## default use ete2 (polytomies_midpointRooting) 
-        if 0 and root=='midpoint':
-            try: self.tt.tree.root_at_midpoint()
-            except: print 'can not do midpoint rooting'
-
         io.set_seqs_to_leaves(self.tt, self.aln)
 
+        # provide short cut to tree and revert names that conflicted with newick format
+        self.tree = self.tt.tree
         restore_strain_name(name_translation, self.aln)
         restore_strain_name(name_translation, self.tree.get_terminals())
 
@@ -303,7 +312,12 @@ class mpm_tree(object):
         remove_dir(self.run_dir)
         self.is_timetree=False
 
+
     def ancestral(self, translate_tree = False):
+        '''
+        infer ancestral nucleotide sequences using maximum likelihood
+        and translate the resulting sequences (+ terminals) to amino acids
+        '''
         self.tt.set_additional_tree_params()
         try:
             self.tt.reconstruct_anc(method='ml')
@@ -315,20 +329,24 @@ class mpm_tree(object):
                 node.aa_sequence = np.fromstring(str(self.translate_seq("".join(node.sequence))), dtype='S1')
 
     def refine(self):
-        #from treetime.utils import opt_branch_len
-        #self.tree.ladderize()
+        '''
+        determine mutations on each branch and attach as string to the branches
+        '''
         for node in self.tree.find_clades():
             if node.name.startswith('NODE_')==False:
                 node.ann=node.name
-                #node.name=node.name.split('|')[0] #.split('-')[0]
-            #node.opt_branch_length = opt_branch_len(node)
+
             if node.up is not None:
                 node.muts = ",".join(["".join(map(str, x)) for x in node.mutations if '-' not in x])
                 node.aa_muts = ",".join([anc+str(pos+1)+der for pos, (anc, der)
                                     in enumerate(zip(node.up.aa_sequence, node.aa_sequence))
                                     if anc!=der and '-' not in anc and '-' not in der])
 
+
     def translate_seq(self, seq):
+        '''
+        custom translation sequence that handles gaps
+        '''
         if type(seq)!=str:
             str_seq = str(seq.seq)
         else:
@@ -341,16 +359,21 @@ class mpm_tree(object):
             print("Trouble translating",seq)
         return tmp_seq
 
+
     def translate(self):
+        '''
+        translate the nucleotide alignment to an amino acid alignment
+        '''
         aa_seqs = []
         for seq in self.aln:
             aa_seqs.append(SeqRecord(seq=self.translate_seq(seq), id=seq.id,
                                      name=seq.name, description=seq.description))
         self.aa_aln = MultipleSeqAlignment(aa_seqs)
 
+
     def diversity_statistics(self):
+        ''' calculate alignment entropy of nucleotide alignments '''
         TINY = 1e-10
-        ''' calculate alignment entropy of nucleotide and optionally protein alignments '''
         if not hasattr(self, "aln"):
             print("calculate alignment first")
             return
@@ -359,6 +382,7 @@ class mpm_tree(object):
         self.entropy = np.mean(-(tmp_af*np.log(tmp_af+TINY)).sum(axis=0))
         self.diversity = np.mean(1.0-(tmp_af**2).sum(axis=0))
 
+
     def mutations_to_branch(self):
         self.mut_to_branch = defaultdict(list)
         for node in self.tree.find_clades():
@@ -366,11 +390,12 @@ class mpm_tree(object):
                 for mut in node.mutations:
                     self.mut_to_branch[mut].append(node)
 
+
     def export(self, path = '', extra_attr = ['aa_muts','ann','branch_length','name','longName']):
         ## write tree
         Phylo.write(self.tree, path+self.fname_prefix+'.nwk', 'newick')
 
-        
+
         ## processing node name
         for node in self.tree.get_terminals():
             node.name = node.ann.split('|')[0]
@@ -389,7 +414,7 @@ class mpm_tree(object):
 
         AlignIO.write(self.aa_aln, path+self.fname_prefix+'.aa.aln', 'fasta')
         AlignIO.write(self.aln, path+self.fname_prefix+'.nu.aln', 'fasta')
-        
+
 
         ## write seq json
         elems = {}
@@ -408,6 +433,11 @@ class mpm_tree(object):
 
         self.sequences_fname=path+self.fname_prefix+'.seq.json'
         write_json(elems, self.sequences_fname, indent=None)
+
+
+################################################################################
+### functions to run the tree building and alignment routines
+################################################################################
 
 def multips(function_in_use, file_path, parallel, fa_files):
     """ running multiple threads """
@@ -429,17 +459,18 @@ def align_and_makeTree(thread, alignFile_path, fa_files_list):
     for gene_cluster_nu_filename in fa_files_list:
         start = time.time();
         geneDiversity_file = open(alignFile_path+'gene_diversity.txt', 'a')
-        if len( read_fasta(gene_cluster_nu_filename) )==1:
+        if len( read_fasta(gene_cluster_nu_filename) )==1: # nothing to do for singletons
             ## nu.aln
-            shutil.copy(gene_cluster_nu_filename, gene_cluster_nu_filename.replace('.nu.fa','.nu.aln'))
+            shutil.copy(gene_cluster_nu_filename,
+                        gene_cluster_nu_filename.replace('.nu.fa','.nu.aln'))
             ## aa.aln
-            shutil.copy(gene_cluster_nu_filename.replace('.nu.fa','.aa.fa'), gene_cluster_nu_filename.replace('.nu.fa','.aa.aln'))
+            shutil.copy(gene_cluster_nu_filename.replace('.nu.fa','.aa.fa'),
+                        gene_cluster_nu_filename.replace('.nu.fa','.aa.aln'))
 
             geneID=read_fasta(gene_cluster_nu_filename).keys()[0]
             geneDiversity_file.write('%s\t%s\n'%(geneID,'0.0'))
 
-        #elif os.path.isfile( gene_cluster_nu_filename.replace('.nu.fa','.newick2') )==False:#print gene_cluster_nu_filename.replace('.nu.fa','.newick')
-        else:
+        else: # align and build tree
             print gene_cluster_nu_filename
             myTree = mpm_tree(gene_cluster_nu_filename)
             myTree.codon_align()
@@ -452,14 +483,16 @@ def align_and_makeTree(thread, alignFile_path, fa_files_list):
             diversity=myTree.diversity
             gene_diversity_values='{0:.3f}'.format(diversity)
             ## get 1st geneId
+            # TODO: there got to be a better way!
             for record in SeqIO.parse(gene_cluster_nu_filename, "fasta"):
                 geneID=record.id; break
             geneDiversity_file.write('%s\t%s\n'%(geneID,gene_diversity_values))
 
+
 def cluster_align_makeTree( path, species, parallel ):
-    """ create gene clusters as nucleotide/ amino_acid fasta files
-        and
-        build individual gene trees based on nu.fa files
+    """
+    create gene clusters as nucleotide/ amino_acid fasta files
+    and build individual gene trees based on nu.fa files
     """
     def create_geneCluster_fa():
         """ dict storing amino_acid Id/Seq from '.fna' files
@@ -527,12 +560,22 @@ def cluster_align_makeTree( path, species, parallel ):
         with open(fasta_path+'gene_diversity.txt', 'rb') as infile:
             write_pickle(fasta_path+'gene_diversity.cpk',{ i.rstrip().split('\t')[0]:i.rstrip().split('\t')[1] for i in infile})
 
+
+
+################################################################################
+#### cluster post processing and paralog splitting
+################################################################################
+
 def split_cluster(tree, max_branch_length=0.5, max_paralogs=30):
     '''
-    linear regression to determine which clusters to split 
+    linear regression to determine which clusters to split
+    return tree/false depending on whether the cluster should be split or not
     '''
+    # determine the optimal split
     best_split = find_best_split(tree)
+    # evaluate linear discriminator
     return best_split.branch_length/max_branch_length + float(len(best_split.para_nodes))/max_paralogs > 1.0
+
 
 def find_best_split(tree):
     '''
@@ -561,9 +604,10 @@ def find_best_split(tree):
                 best_split = [child, len(child.para_nodes), child.branch_length]
     return best_split[0]
 
-def explore_paralogs(path, nstrains, branch_length_cutoff=500, paralog_cutoff=0.30):
+
+def explore_paralogs(path, nstrains, branch_length_cutoff=500, paralog_cutoff=0.30, plot=False):
     '''
-    gather paralog statistics for all trees
+    gather paralog statistics for all trees and plot if desired
     parameters:
     branch_length_cutoff -- cutoff used to determined whether or not to split cluster
                             measured in units of median branch length in the tree (at least 0.01).
@@ -586,7 +630,8 @@ def explore_paralogs(path, nstrains, branch_length_cutoff=500, paralog_cutoff=0.
                                      max_branch_length = branch_length_cutoff*median_branch_length,
                                      max_paralogs = paralog_cutoff*nstrains)
             if do_split:
-                print('will split:', fname, tree.count_terminals(), len(best_split.para_nodes), best_split.branch_length)
+                print('will split:', fname, tree.count_terminals(),
+                      len(best_split.para_nodes), best_split.branch_length)
                 paralog_split_list.append( fname, best_split )
 
     def plot_paralogs():
@@ -601,26 +646,32 @@ def explore_paralogs(path, nstrains, branch_length_cutoff=500, paralog_cutoff=0.
         plt.xlabel('branch length')
         plt.savefig(data_path+'explore_paralogs.pdf')
 
+    if plot: plot_paralogs()
+
     return paralog_split_list
 
-def create_split_cluster_files( parallel, file_path, fname, new_fa_files_list, gene_list1, gene_list2, find_clusterFaName_Dt, find_clusterFaName_reverse_Dt, diamond_geneCluster_dt):
+
+def create_split_cluster_files(parallel, file_path, fname, new_fa_files_list,
+                               gene_list1, gene_list2, find_clusterFaName_Dt,
+                               find_clusterFaName_reverse_Dt, diamond_geneCluster_dt):
     """
+    TODO: add comments, explain function and input
     """
     orgin_nwk_name = fname.split('/')[-1]
     gene_filename_prefix = orgin_nwk_name.replace('.nwk','')
     origin_cluster_nu_fa = orgin_nwk_name.replace('nwk','nu.fa')
     origin_cluster_aa_fa = orgin_nwk_name.replace('nwk','aa.fa')
 
-    ## del the old cluster record 
+    ## del the old cluster record
     ref_gene=find_clusterFaName_reverse_Dt[origin_cluster_nu_fa]
     del diamond_geneCluster_dt[ref_gene]
     #? os.system('rm '+gene_filename_prefix)
-    
+
     ## write new cluster fa files
     origin_nu_fa_dt = read_fasta(file_path+origin_cluster_nu_fa)
     origin_aa_fa_dt = read_fasta(file_path+origin_cluster_aa_fa)
     sgs_index=0
-    
+
 
     for split_gene_list in list(gene_list1), list(gene_list2):
         sgs_index+=1
@@ -639,13 +690,14 @@ def create_split_cluster_files( parallel, file_path, fname, new_fa_files_list, g
 
         firstGene = split_gene_list[0]
         find_clusterFaName_Dt[firstGene] = gene_cluster_nu_filename
-        diamond_geneCluster_dt[firstGene] = [0,[],0] 
+        diamond_geneCluster_dt[firstGene] = [0,[],0]
         ## num_stains
         diamond_geneCluster_dt[ firstGene ][0]=len(dict(Counter([ ig.split('|')[0] for ig in split_gene_list])).keys())
         ## num_genes
         diamond_geneCluster_dt[ firstGene ][2]=len(dict(Counter([ ig for ig in split_gene_list])).keys())
         ## gene members
         diamond_geneCluster_dt[ firstGene ][1]=[ ig for ig in split_gene_list ]
+
 
 def update_gene_cluster(path, species, find_clusterFaName_Dt, diamond_geneCluster_dt ):
     ## update find_clusterFaName_Dt
@@ -654,14 +706,17 @@ def update_gene_cluster(path, species, find_clusterFaName_Dt, diamond_geneCluste
     cluster_path = path+'protein_fna/diamond_matches/'
     write_pickle(cluster_path+species+'-orthamcl-allclusters_final.cpk',diamond_geneCluster_dt)
 
+
 def postprocess_paralogs(parallel, path, species, nstrains, branch_length_cutoff=500, paralog_cutoff=0.5, plot=False):
     """
-        splitting paralogs, discarding old gene clusters and creating new clusters of split paraplogs
+    splitting paralogs, discarding old gene clusters and creating new clusters of split paralogs
+    input:
+        TODO
     """
 
-    ## exploring paralogs, default: False (not exploare and plot)
+    ## exploring paralogs, default: False (not explore and plot), otherwise figure with statistics will saved
     if plot==True:
-        explore_paralogs(path, nstrains, branch_length_cutoff=500, paralog_cutoff=0.5)
+        explore_paralogs(path, nstrains, branch_length_cutoff=500, paralog_cutoff=0.5, plot=plot)
 
     file_path = path+'geneCluster/'
     cluster_path= path+'protein_fna/diamond_matches/'
@@ -675,6 +730,7 @@ def postprocess_paralogs(parallel, path, species, nstrains, branch_length_cutoff
         tree = Phylo.read(fname, 'newick')
         best_split = find_best_split(tree)
 
+        # determine median branch length used as scale for the paralog splitting criterion.
         median_branch_length = np.max(0.01, np.median([n.branch_length for n in tree.find_clades()]))
         if best_split is not None:
             do_split = split_cluster(tree,
@@ -687,9 +743,9 @@ def postprocess_paralogs(parallel, path, species, nstrains, branch_length_cutoff
                 gene_list1 = set([n.name for n in best_split.get_terminals()])
                 gene_list2 = all_genes.difference(gene_list1)
                 #print all_genes, gene_list1, gene_list2
-                
-                
+
                 create_split_cluster_files( parallel, file_path, fname, new_fa_files_list, gene_list1, gene_list2, find_clusterFaName_Dt, find_clusterFaName_reverse_Dt, diamond_geneCluster_dt)
+
 
     print '---------------', new_fa_files_list
     ## make new aln and tree

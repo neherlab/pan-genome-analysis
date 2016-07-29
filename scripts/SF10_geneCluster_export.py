@@ -66,7 +66,7 @@ def geneCluster_to_json(path, species):
         #print geneLength_list,geneClusterLength
 
         ## msa
-        geneCluster_aln='%s%s'%(clusterID,'.nu.fa')
+        geneCluster_aln='%s%s'%(clusterID,'.aa.aln')
 
         ## check for duplicates
         if gene_count>strain_count:

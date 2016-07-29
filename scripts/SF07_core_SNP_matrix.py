@@ -15,6 +15,7 @@ def create_core_SNP_matrix(path, species):
 
     ## create core gene list
     corelist=[];
+    totalStrain= len(load_pickle(path+'strain_list.cpk'))
     sorted_geneList = load_sorted_clusters(path, species)
     with open(output_path+'core_geneList.txt','wb') as outfile:
         for clusterID, vg in sorted_geneList:
@@ -24,11 +25,7 @@ def create_core_SNP_matrix(path, species):
                 corelist.append(coreGeneName)
         write_pickle(output_path+'core_geneList.cpk',corelist)
 
-
     refSeqList=load_pickle(path+'strain_list.cpk');refSeqList.sort()
-
-
-    totalStrain= len(load_pickle(path+'strain_list.cpk'))
 
     snp_fre_lst=[]; snp_wh_matrix_flag=0
     snp_pos_dt=defaultdict(list); snp_whole_matrix=np.array([])

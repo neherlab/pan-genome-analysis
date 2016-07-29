@@ -40,13 +40,13 @@ def gbk_translation(each_gb_path, gb_file, output_filename, locusTag_to_geneId_D
                 geneFastaDict[strainName+'-'+str(contig_index)+'-'+str(lpos_start)+'-'+str(lpos_end)] = feature.extract(genome.seq)
             elif feature.type=='CDS':
                 if 'product' in feature.qualifiers and 'translation' in feature.qualifiers :
-                    # if 'gene' in feature.qualifiers :
-                    #     geneName='%s-'%(feature.qualifiers['gene'][0]).replace(' ','_')
-                    # else: geneName=''
+                    if 'gene' in feature.qualifiers :
+                        geneName='%s_'%(feature.qualifiers['gene'][0]).replace(' ','_')
+                    else: geneName=''
                     product=feature.qualifiers['product'][0];
                     trans_seq=feature.qualifiers['translation'][0];
-                    geneId='%s|%d-%d:%d-%s'%(gb_file.split('.gbk')[0], contig_index, lpos_start+1, lpos_end, '_'.join(product.split(' ')) )
-                    #geneId='%s|%d-%d:%d-%s%s'%(gb_file.split('.gbk')[0], contig_index, lpos_start+1, lpos_end, geneName, '_'.join(product.split(' ')) )
+                    #geneId='%s|%d-%d:%d-%s'%(gb_file.split('.gbk')[0], contig_index, lpos_start+1, lpos_end, '_'.join(product.split(' ')) )
+                    geneId='%s|%d-%d:%d-%s%s'%(gb_file.split('.gbk')[0], contig_index, lpos_start+1, lpos_end, geneName, '_'.join(product.split(' ')) )
                     write_in_fa(filename_write, geneId, trans_seq)
                     ##if 'locus_tag' in feature.qualifiers :
                     locus_tag=feature.qualifiers['locus_tag'][0];

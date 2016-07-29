@@ -1,0 +1,122 @@
+Step-by-Step tutorial:
+Pat4 is abbreviated species name used as folder name and species identifier.
+
+Step01: check strain list 
+Load strains present in provided NCBI RefSeq accession list for fetching GenBank files.
+If using own GenBank files, step02 can be skipped and corresponding GenBank files should be placed in the same folder where strain list is located.
+Input:
+In folder ./data/Pat4/:
+Pat4-RefSeq.txt (accession list for download RefSeq strains)
+Output:
+In folder ./data/Pat4/:
+strain_list.cpk (cPickled file for the strain list )
+
+Step02: download RefSeq GenBank (*.gbk) file
+Fetch NCBI RefSeq GenBank (*.gbk) file from strain list
+Input:
+strain_list.cpk
+Output:
+In folder ./data/Pat4/:
+*.gbk files
+
+Step03: extract gene sequences from GenBank (*.gbk) file
+Extract gene sequences in GenBank (*.gbk) file for preparing nucleotide sequence (*.fastaCpk) for gene cluster and amino acid sequences for Diamond input (*.fna)
+Input:
+In folder ./data/Pat4/:
+*.gbk file
+Output:
+In folder ./data/Pat4/:
+*.fastaCpk file (nucleotide sequences)
+In folder ./data/Pat4/protein_fna:
+*.fna file (amino acid sequences for DIAMOND input)
+
+Step04: extract metadata from GenBank (*.gbk) file (Alternative: use manually curated metadata table)
+Extracting meta-information ( E.g.: country,collection_date, host, strain) or provide a simple tab-separated values (TSV) table.
+strain  location ...
+NC_01 Germany  ...
+NC_02 Switzerland  ...
+Input:
+In folder ./data/Pat4/:
+*.gbk file
+Output:
+In folder ./data/Pat4/:
+metainfo_curated.txt and meta-dict-Pat4.js (metadata for visualization)
+
+Step05: compute gene clusters
+Conduct all-against-all protein sequences comparison by Diamond and cluster genes using Orthagogue and MCL
+Input:
+In folder ./data/Pat4/protein_fna/:
+*.fna file
+Output:
+In folder ./data/Pat4/protein_fna/diamond_matches/:
+Pat4-orthamcl-allclusters.cpk (dictionary for gene clusters)
+diamond_geneCluster_dt: {clusterID:[ count_strains,[memb1,...],count_genes }
+
+Step06: build alignments, gene trees from gene clusters and split paralogs
+Load nucleotide sequences in gene clusters, construct nucleotide and amino acid alignment, build a gene tree based on nucleotide alignment, split paralogs and export the gene tree in json file for visualization
+Input:
+In folder ./data/Pat4/protein_fna/diamond_matches/:
+Pat4-orthamcl-allclusters.cpk file
+Output:
+In folder ./data/Pat4/protein_fna/diamond_matches/:
+Pat4-orthamcl-allclusters_final.cpk ( final gene clusters)
+In folder ./data/Pat4/geneCluster/:
+GC****.nu.fa (nucleotide fasta)
+GC****.nu.aln (nucleotide alignment)
+GC****.aa.fa (amino acid fasta)
+GC****.aa.aln (amino acid alignment)
+GC****.tree.json (gene tree in json file)
+
+Step07: construct core gene SNP matrix
+Call SNPs in strictly core genes (without no gene duplication) and build SNP matrix for strain tree
+Input:
+In folder ./data/Pat4/protein_fna/diamond_matches/:
+Pat4-orthamcl-allclusters_final.cpk file
+Output:
+In folder ./data/Pat4/geneCluster/:
+SNP_whole_matrix.aln (SNP matrix as pseudo alignment)
+#snp_pos.cpk (snp positions)
+
+Step08:  build the strain tree using core gene SNPs
+Use fasttree to build core genome phylogeny and further refine it by RAxML
+Input:
+In folder ./data/Pat4/geneCluster/:
+SNP_whole_matrix.aln
+Output:
+In folder ./data/Pat4/geneCluster/:
+tree_result.newick
+
+Step09: infer gene gain and loss event
+Use ancestral reconstruction algorithm (treetime) to conduct gain and loss events inference
+Input:
+In folder ./data/Pat4/geneCluster/:
+Pat4-orthamcl-allclusters_final.cpk file
+Output:
+In folder ./data/Pat4/geneCluster/:
+Pat4-genePresence.json (gene gain/loss event)
+dt_geneEvents.cpk (number of gene gain/loss events)
+tree_result.newick (final strain tree with inner nodes)
+
+Step10: export gene cluster json file
+Export json file for gene cluster datatable visualization
+Input:
+In folder ./data/Pat4/geneCluster/:
+Pat4-orthamcl-allclusters_final.cpk file (gene cluster dictionary)
+gene_diversity.cpk (diversity for each gene cluster)
+locusTag_to_geneId.cpk (locus_tag for each gene)
+dt_geneEvents.cpk (gain/loss event count)
+Output:
+In folder ./data/Pat4/geneCluster/
+Pat4-geneCluster.json (gene cluster json for datatable visualization)
+
+Step11: export tree and metadata json file
+Export json files for tree and metadata visualization
+Input:
+In folder ./data/Pat4/:
+metainfo_curated.txt (metadata table)
+In folder ./data/Pat4/geneCluster/:
+tree_result.newick (strain tree)
+Output:
+In folder ./data/Pat4/geneCluster/
+Pat4-tree-tnt-version.json (strain tree visualization)
+Pat4-tnt-nodeAttri-dataTable.json (strain metadata table visualization)

@@ -9,7 +9,7 @@ import sys
 
 
 def infer_gene_gain_loss(path, rates = [1.0, 1.0]):
-    # initialize GTR model with default parameters
+    # initialize GTR model with given parameters
     mu = np.sum(rates)
     gene_pi = np.array(rates)/mu
     gain_loss_model = GTR.custom(pi = gene_pi, mu=mu,
@@ -32,9 +32,15 @@ def infer_gene_gain_loss(path, rates = [1.0, 1.0]):
         if leaf.name is None:
             leaf.name = str(leaf.confidence)
     # load alignment and associate with tree leafs
-    io.set_seqs_to_leaves(t, AlignIO.read(fasta, 'fasta'))
+    failedleaves = io.set_seqs_to_leaves(t, AlignIO.read(fasta, 'fasta'))
+    if failedleaves > 0:
+        print(' '.join(["Warning",str(failedleaves),"leaves have failed"]))
+    
+    print(t.tree.get_terminals()[10].sequence[9375:9390])
 
     t.reconstruct_anc(method='ml')
+    
+    print(t.tree.get_terminals()[10].sequence[9375:9390])
 
     for n in t.tree.find_clades():
         n.genepresence = n.sequence
@@ -67,11 +73,58 @@ def export_gain_loss(tree, path):
 def process_gain_loss(path):
     tree = infer_gene_gain_loss(path)
     export_gain_loss(tree, path)
+    
+    
+def create_visible_pattern_dictionary(tree):
+    """
+    create a sequence in all leaves such that each presence absence pattern occurs only once
+    """
+    #create a pattern dictionary  
+    #patterndict = {pattern_tuple: [first position in pseudoalignment with pattern, number of genes with this pattern]}
+    #clusterdict = {first position with pattern: number of genes with pattern}
+    #initialize dictionaries
+    tree.tree.patterndict = {}
+    numstrains = len(tree.tree.get_terminals())
+    corepattern = ('1',)*numstrains
+    nullpattern = ('0',)*numstrains
+    tree.tree.clusterdict = {}
+    #create dictionaries
+    numgenes = tree.tree.get_terminals()[0].genepresence.shape[0]
+    for genenumber in range(numgenes):
+        pattern=()
+        for leaf in tree.tree.get_terminals():
+            pattern = pattern + (leaf.genepresence[genenumber],)
+        if pattern == nullpattern:
+            print("Warning: There seems to be a nullpattern in the data! Check your presence absence pseudoalignment at pos", genenumber+1)
+        if pattern in tree.tree.patterndict:
+            tree.tree.patterndict[pattern][1] = tree.tree.patterndict[pattern][1]+1
+            tree.tree.clusterdict[tree.tree.patterndict[pattern][0]] = tree.tree.patterndict[pattern][1]
+        else:
+            tree.tree.patterndict[pattern] = [genenumber,1]
+            tree.tree.clusterdict[tree.tree.patterndict[pattern][0]] = tree.tree.patterndict[pattern][1]
+               
+    #thin sequence to unique pattern
+    for node in tree.tree.find_clades():
+        if hasattr(node, 'sequence'):
+            if len(node.sequence) != numgenes:
+                print ("Warning: Nonmatching number of genes in sequence")
+            node.patternseq = node.sequence[sorted(tree.tree.clusterdict.keys())]
+            # add the all zero pattern at the end of all pattern
+            node.patternseq = np.append(node.patternseq,['0',])
+
+    # add an artificial pattern of all zero
+    tree.tree.patterndict[nullpattern] = [numgenes,0]
+    tree.tree.clusterdict[tree.tree.patterndict[nullpattern][0]] = tree.tree.patterndict[nullpattern][1]
+    tree.tree.pattern_abundance = [tree.tree.clusterdict[key] for key in sorted(tree.tree.clusterdict.keys())]
+    #save the index of the first core pattern (in most cases this should be zero)
+    tree.tree.corepattern_index = sorted(tree.tree.clusterdict.keys()).index(tree.tree.patterndict[corepattern][0])
 
 if __name__=='__main__':
     species= 'Papn'
-    path = '/ebio/ag-neher/share/users/wding/mpam/data/'+species+'/'
+    #path = '/ebio/ag-neher/share/users/wding/mpam/data/'+species+'/'
+    path = '/home/franz/tmp/'
     tree = infer_gene_gain_loss(path)
 
-    outpath = '.'
+    #outpath = '.'
+    outpath = '/home/franz/tmp/'
     export_gain_loss(tree, outpath)

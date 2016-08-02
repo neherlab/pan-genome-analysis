@@ -27,24 +27,30 @@ def ortha_mcl_run(species,output_path):
     os.system('mcl '+output_path+'all.abc --abc -o '+output_path+species+'-orthamcl-cluster.output > '+output_path+'mcl-'+species+'.log 2>&1')
 
 def orthagogue_singletons(path,species,origin_cluster_file,all_fna_file):
-    """ add singeltons from original MCL output """
+    """ add singletons from original MCL output """
     from operator import or_
     all_fna_file="%s%s"%(path,all_fna_file)
     origin_cluster_file="%s%s"%(path,origin_cluster_file)
     all_cluster_file="%s%s%s"%(path,species,'-orthamcal-allclusters.csv')
 
-    orthagogue_set_dt=defaultdict(list)
+    # TODO: following not used?
+    # orthagogue_set_dt=defaultdict(list)
+    # loop over cluster_file, each line is one cluster tab delimited geneIDs (strain-locusTag)
+    # generate union of all genes in all clusters excluding singletons
     with open(origin_cluster_file, 'rb') as infile:
         orthagogue_set=reduce(or_, [ set(iline.rstrip().split('\t')) for iline in infile ])
 
+    # read all geneIDs from all genes from all strains, determine singletons as set difference
     all_fna_set=set( read_fasta(all_fna_file).keys() );
     singletons=all_fna_set-orthagogue_set
     print len(all_fna_set), len(orthagogue_set), len(singletons)
 
+    # append singleton clusters to a copy of the original file
     os.system('cp '+origin_cluster_file+' '+all_cluster_file);
     with open(all_cluster_file, 'a') as outputfile:
         for isi in singletons:
             outputfile.write(isi+'\n')
+
 
 def parse_geneCluster(path,species,inputfile):
     """ store clusters as dictionary in cpk file """
@@ -70,6 +76,18 @@ def parse_geneCluster(path,species,inputfile):
             write_fn_lst.write('%s%s\n'%(kd, vd));
 
 def diamond_orthamcl_cluster(path,species, threads, blast_file_path='none', cluster_file_path='none'):
+    '''
+    TODO expand and structure
+    make all-against-all comparison using diamond
+    OR use all-to-all blast comparison
+    THEN generate gene clusters followed by orthoMCL/orthagogue
+    OR use the output of roary
+    params:
+        path:       path to directory including data and output
+        species:    prefix for output files
+        threads:    number of parallel threads used to run diamond
+        blast_file_path:
+    '''
     input_path=path+'protein_fna/';
     output_path=input_path+'diamond_matches/';
     ## using standard pipeline (cluster_file_path=='none')

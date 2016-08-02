@@ -25,6 +25,7 @@ def gbk_translation(each_gb_path, gb_file, output_filename, locusTag_to_geneId_D
         for feature in contig.features:
             loc=str(feature.location) # [543:1905](+): (1)0-base; (2)-: complement;
             # TODO: make consistent gene IDs
+            # TODO: make gene prob dict
 
             if feature.type=='gene' and 'order' not in loc and 'pseudo' not in feature.qualifiers:
                 rawLocation= str(feature.location);

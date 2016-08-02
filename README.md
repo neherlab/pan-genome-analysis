@@ -38,13 +38,20 @@ The genomes are split into individual genes and all genes from all strains are c
 
     mandatory parameters: -fn folder_name / -sl strain_list / [-st steps [steps ...]]
     NOTICE: strain_list format should be species_name+'-RefSeq', e.g.: Saureus-RefSeq.txt
-    Example: python ./scripts/run-pipeline.py  -fn /ebio/ag-neher/share/users/wding/mpam/data/Pat3 -sl Pat3-RefSeq.txt -st 11 -t 64 > Pat3-11.log 2>&1
+    Example: python ./scripts/run-pipeline.py  -fn /ebio/ag-neher/share/users/wding/mpam/data/TestSet -sl TestSet-RefSeq.txt -st 1 2 3 4 5 6 7 8 9 10 11 -t 64 > TestSet.log 2>&1
 ```
-##**Step-by-Step tutorial:**<br />
-TestSet is abbreviated species name used as folder name and species identifier.<br />
 
-**Step01: check strain list**<br />
-Load strains present in provided NCBI RefSeq accession list for fetching GenBank files.<br />
+##**Step-by-Step tutorial:**<br />
+In `data/TestSet`, you will find a small set of four *Pseudomonas aeruginosa* genomes that is used in this tutorial. Your own data should also reside in such a folder within `data/` -- we will refer to this folder as *run directory* below. The name of the run directory is used as a species name in down-stream analysis.
+To run `pan-genome-analysis` pipeline, you need to execute a series of steps that can be started using the `run.sh` script
+To run ...
+```
+python ./scripts/run-pipeline -fn data/TestSet -sl TestSet-RefSeq.txt 1 2
+```
+<br />
+
+**Step01: specify the set of strains**<br />
+The pipeline can either down load sequences from GenBank or run on genomes you provide. You need to provide a file within the run directory that contains a list of NCBI RefSeq accession numbers for fetching GenBank files or the names of the files (without file ending) provided.<br />
 If using own GenBank files, step02 can be skipped and corresponding GenBank files should be placed in the same folder where strain list is located.<br />
 - Input:<br />
 In folder `./data/TestSet/:`<br />
@@ -54,8 +61,9 @@ In folder `./data/TestSet/:`<br />
 strain_list.cpk (cPickled file for the strain list )<br />
 
 **Step02: download RefSeq GenBank (*.gbk) file**<br />
-Fetch NCBI RefSeq GenBank (\*.gbk) file from strain list<br />
-Input:<br />
+If using own GenBank files, step02 can be skipped. Otherwise, run 
+to fetch NCBI RefSeq GenBank (\*.gbk) file from strain list<br />
+- Input:<br />
 In folder `./data/TestSet/:`<br />
 strain_list.cpk<br />
 - Output:<br />

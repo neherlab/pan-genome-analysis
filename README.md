@@ -7,7 +7,7 @@ The genomes are split into individual genes and all genes from all strains are c
 
 1. Dependencies:
 
-  1.1 Required software:
+  1. Required software:
     * DIAMOND (fast protein alignment tool)
       - Install: (source: https://github.com/bbuchfink/diamond)
       - wget http://github.com/bbuchfink/diamond/releases/download/v0.7.12/diamond-linux64.tar.gz
@@ -23,13 +23,13 @@ The genomes are split into individual genes and all genes from all strains are c
     * [raxml](https://github.com/stamatak/standard-RAxML)
       - sudo apt-get install raxml
 
-  1.2 Required python packages:
+  2. Required python packages:
      - pip install numpy scipy biopython ete2
      - [treetime](http://github.com/neherlab/treetime)
 
 2. How to run:
   - sh run.sh
-```    
+  ```    
     Description:
     This calls run-pipeline.py to run each step using scripts located in folder ./scripts/
     run-pipeline.py [-h] -fn folder_name -sl strain_list
@@ -39,19 +39,34 @@ The genomes are split into individual genes and all genes from all strains are c
     mandatory parameters: -fn folder_name / -sl strain_list / [-st steps [steps ...]]
     NOTICE: strain_list format should be species_name+'-RefSeq', e.g.: Saureus-RefSeq.txt
     Example: python ./scripts/run-pipeline.py  -fn /ebio/ag-neher/share/users/wding/mpam/data/TestSet -sl TestSet-RefSeq.txt -st 1 2 3 4 5 6 7 8 9 10 11 -t 64 > TestSet.log 2>&1
-```
+  ```
+  The result will be a number of files that contain the all the information necessary for visualizing the pan-genome in the browser using [pan-genome-visuzalization](https://github.com/neherlab/pan-genome-visualization).
+  ```
+  ./data
+      YourSpecies               # folder specific to the your pan genome
+        - YourSpecies-RefSeq.txt    # INPUT: GenBank accession numbers
+        - inputGenomes              # INPUT: genomes in genbank format
+          - strain1.gbk
+          - strain2.gbk
+          ...
+        - GeneClusters            # Folder contain orthologous clusters
+          - GC_000001.json
+      - 
+  ```
+  In which step of the analysis different files and directories are produced is described in more detail below.
 
 ##**Step-by-Step tutorial:**<br />
-In `data/TestSet`, you will find a small set of four *Pseudomonas aeruginosa* genomes that is used in this tutorial. Your own data should also reside in such a folder within `data/` -- we will refer to this folder as *run directory* below. The name of the run directory is used as a species name in down-stream analysis.
+In `data/TestSet`, you will find a small set of four *Pseudomonas aeruginosa* genomes that is used in this tutorial. Your own data should also reside in such a folder within `data/` -- we will refer to this folder as *run directory* below. The name of the run directory is used as a species name in down-stream analysis.  
 To run `pan-genome-analysis` pipeline, you need to execute a series of steps that can be started using the `run.sh` script
 To run ...
 ```
-python ./scripts/run-pipeline -fn data/TestSet -sl TestSet-RefSeq.txt 1 2
+python ./scripts/run-pipeline -fn data/TestSet -sl TestSet-RefSeq.txt -st 1 2
 ```
+where the `-st 1 2` specifies the analysis steps you want to run. All steps can be run in order by omitting the `-st` option.
 <br />
 
 **Step01: specify the set of strains**<br />
-The pipeline can either down load sequences from GenBank or run on genomes you provide. You need to provide a file within the run directory that contains a list of NCBI RefSeq accession numbers for fetching GenBank files or the names of the files (without file ending) provided.<br />
+The pipeline can either download sequences from GenBank or run on genomes you provide. You need to provide a file within the run directory that contains a list of NCBI RefSeq accession numbers for fetching GenBank files or the names of the files (without file ending) provided.<br />
 If using own GenBank files, step02 can be skipped and corresponding GenBank files should be placed in the same folder where strain list is located.<br />
 - Input:<br />
 In folder `./data/TestSet/:`<br />
@@ -71,14 +86,14 @@ In folder `./data/TestSet/:`<br />
 \*.gbk files<br />
 
 **Step03: extract gene sequences from GenBank (*.gbk) file**<br />
-Extract gene sequences in GenBank (\*.gbk) file for preparing nucleotide sequence (\*.fastaCpk) for gene cluster and amino acid sequences for Diamond input (\*.fna)<br />
+Extract gene sequences in GenBank (\*.gbk) file for preparing nucleotide sequence (\*_genes_dict.cpk) for gene cluster and amino acid sequences for Diamond input (\*.faa)<br />
 - Input:<br />
 In folder `./data/TestSet/:`<br />
 \*.gbk file<br />
 - Output:<br />
 In folder `./data/TestSet/:`<br />
 \*.fastaCpk file (nucleotide sequences)<br />
-In folder `./data/TestSet/protein_fna:`<br />
+In folder `./data/TestSet/protein_faa:`<br />
 \*.fna file (amino acid sequences for DIAMOND input)<br />
 
 **Step04: extract metadata from GenBank (\*.gbk) file (Alternative: use manually curated metadata table)**<br />
@@ -99,8 +114,8 @@ metainfo_curated.txt and meta-dict-TestSet.js (metadata for visualization)<br />
 **Step05: compute gene clusters**<br />
 Conduct all-against-all protein sequences comparison by Diamond and cluster genes using Orthagogue and MCL<br />
 - Input:<br />
-In folder `./data/TestSet/protein_fna/:`<br />
-\*.fna file<br />
+In folder `./data/TestSet/protein_faa/:`<br />
+\*.faa file<br />
 - Output:<br />
 In folder `./data/TestSet/protein_fna/diamond_matches/:`<br />
 TestSet-orthamcl-allclusters.cpk (dictionary for gene clusters)<br />

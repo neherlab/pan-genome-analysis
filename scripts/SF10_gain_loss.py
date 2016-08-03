@@ -36,10 +36,12 @@ def infer_gene_gain_loss(path, rates = [1.0, 1.0]):
     if failedleaves > 0:
         print(' '.join(["Warning",str(failedleaves),"leaves have failed"]))
     
+    print(t.tree.get_terminals()[10])
     print(t.tree.get_terminals()[10].sequence[9375:9390])
 
     t.reconstruct_anc(method='ml')
     
+    print(t.tree.get_terminals()[10])
     print(t.tree.get_terminals()[10].sequence[9375:9390])
 
     for n in t.tree.find_clades():
@@ -118,6 +120,41 @@ def create_visible_pattern_dictionary(tree):
     tree.tree.pattern_abundance = [tree.tree.clusterdict[key] for key in sorted(tree.tree.clusterdict.keys())]
     #save the index of the first core pattern (in most cases this should be zero)
     tree.tree.corepattern_index = sorted(tree.tree.clusterdict.keys()).index(tree.tree.patterndict[corepattern][0])
+
+def index2pattern(index,numstrains):
+    pattern = [0] * numstrains
+    for ind in index:
+        pattern[ind] = 1
+    return tuple(pattern)    
+    
+def create_ignoring_pattern_dictionary(tree,p = 0):
+    """
+    create a dictionary of pattern that correspond to extended core genes and extended unique genes
+    these pattern will be ignored in the inference of gene gain/loss rates
+    """
+    #create a pattern dictionary  
+    #patterndict = {pattern_tuple: [first position in pseudoalignment with pattern, number of genes with this pattern]}
+    #initialize dictionaries
+    import itertools
+    tree.tree.unpatterndict = {}
+    numstrains = len(tree.tree.get_terminals())
+    if p == 0:
+        p = numstrains/10
+    corepattern = ('1',)*numstrains
+    nullpattern = ('0',)*numstrains
+    
+    #all sets of indices for p or less of numstrains individuals
+    myindices = iter(())
+    for i in range(p):
+        myindices = itertools.chain(myindices, itertools.combinations(range(numstrains),i+1))
+        
+    for indices in myindices:
+        tree.tree.unpatterndict[index2pattern(indices,numstrains)] = [0]
+
+
+#def extract_ignoring_pattern_dictionary(tree):
+    #i will need sum([int(i) for i in pattern]) here
+    
 
 if __name__=='__main__':
     species= 'Papn'

@@ -82,8 +82,8 @@ def create_visible_pattern_dictionary(tree):
     create a sequence in all leaves such that each presence absence pattern occurs only once
     """
     #create a pattern dictionary  
-    #patterndict = {pattern_tuple: [first position in pseudoalignment with pattern, number of genes with this pattern]}
-    #clusterdict = {first position with pattern: number of genes with pattern}
+    #patterndict = {pattern_tuple: [first position in pseudoalignment with pattern, number of genes with this pattern,indicator to include this pattern in the estimation]}
+    #clusterdict = {first position with pattern: [number of genes with pattern,indicator to include gene in gtr inference]}
     #initialize dictionaries
     tree.tree.patterndict = {}
     numstrains = len(tree.tree.get_terminals())
@@ -100,10 +100,10 @@ def create_visible_pattern_dictionary(tree):
             print("Warning: There seems to be a nullpattern in the data! Check your presence absence pseudoalignment at pos", genenumber+1)
         if pattern in tree.tree.patterndict:
             tree.tree.patterndict[pattern][1] = tree.tree.patterndict[pattern][1]+1
-            tree.tree.clusterdict[tree.tree.patterndict[pattern][0]] = tree.tree.patterndict[pattern][1]
+            tree.tree.clusterdict[tree.tree.patterndict[pattern][0]] = [tree.tree.patterndict[pattern][1],1]
         else:
-            tree.tree.patterndict[pattern] = [genenumber,1]
-            tree.tree.clusterdict[tree.tree.patterndict[pattern][0]] = tree.tree.patterndict[pattern][1]
+            tree.tree.patterndict[pattern] = [genenumber,1,1]
+            tree.tree.clusterdict[tree.tree.patterndict[pattern][0]] = [tree.tree.patterndict[pattern][1],1]
                
     #thin sequence to unique pattern
     for node in tree.tree.find_clades():
@@ -115,9 +115,11 @@ def create_visible_pattern_dictionary(tree):
             node.patternseq = np.append(node.patternseq,['0',])
 
     # add an artificial pattern of all zero
-    tree.tree.patterndict[nullpattern] = [numgenes,0]
-    tree.tree.clusterdict[tree.tree.patterndict[nullpattern][0]] = tree.tree.patterndict[nullpattern][1]
-    tree.tree.pattern_abundance = [tree.tree.clusterdict[key] for key in sorted(tree.tree.clusterdict.keys())]
+    tree.tree.patterndict[nullpattern] = [numgenes,0,0]
+    tree.tree.clusterdict[tree.tree.patterndict[nullpattern][0]] = [tree.tree.patterndict[nullpattern][1],0]
+    #create lists for abundance of pattern and inclusion_flag
+    tree.tree.pattern_abundance = [tree.tree.clusterdict[key][0] for key in sorted(tree.tree.clusterdict.keys())]
+    tree.tree.pattern_include = [tree.tree.clusterdict[key][1] for key in sorted(tree.tree.clusterdict.keys())]
     #save the index of the first core pattern (in most cases this should be zero)
     tree.tree.corepattern_index = sorted(tree.tree.clusterdict.keys()).index(tree.tree.patterndict[corepattern][0])
 
@@ -126,6 +128,13 @@ def index2pattern(index,numstrains):
     for ind in index:
         pattern[ind] = 1
     return tuple(pattern)    
+
+
+def index2pattern_reverse(index,numstrains):
+    pattern = [1] * numstrains
+    for ind in index:
+        pattern[ind] = 0
+    return tuple(pattern)  
     
 def create_ignoring_pattern_dictionary(tree,p = 0):
     """
@@ -133,13 +142,13 @@ def create_ignoring_pattern_dictionary(tree,p = 0):
     these pattern will be ignored in the inference of gene gain/loss rates
     """
     #create a pattern dictionary  
-    #patterndict = {pattern_tuple: [first position in pseudoalignment with pattern, number of genes with this pattern]}
+    #unpatterndict = {pattern_tuple: [first position in pseudoalignment with pattern, number of genes with this pattern]}
     #initialize dictionaries
     import itertools
     tree.tree.unpatterndict = {}
     numstrains = len(tree.tree.get_terminals())
     if p == 0:
-        p = numstrains/10
+        p = int(numstrains/10)
     corepattern = ('1',)*numstrains
     nullpattern = ('0',)*numstrains
     
@@ -149,11 +158,24 @@ def create_ignoring_pattern_dictionary(tree,p = 0):
         myindices = itertools.chain(myindices, itertools.combinations(range(numstrains),i+1))
         
     for indices in myindices:
-        tree.tree.unpatterndict[index2pattern(indices,numstrains)] = [0]
+        tree.tree.unpatterndict[index2pattern(indices,numstrains)] = [-1,0,0]
+        tree.tree.unpatterndict[index2pattern_reverse(indices,numstrains)] = [-1,0,0]
 
 
-#def extract_ignoring_pattern_dictionary(tree):
-    #i will need sum([int(i) for i in pattern]) here
+def set_visible_pattern_to_ignore(tree,p = 0):
+    
+    numstrains = len(tree.tree.get_terminals())
+    if p == 0:
+        p = int(numstrains/10)
+    for pattern in tree.tree.patterndict.keys():
+        freq = sum([int(i) for i in pattern])
+        if freq <= p or freq >= numstrains - p:
+            tree.tree.patterndict[pattern][2] = 0
+            tree.tree.clusterdict[tree.tree.patterndict[pattern][0]][1] = 0
+    
+    tree.tree.pattern_include = [tree.tree.clusterdict[key][1] for key in sorted(tree.tree.clusterdict.keys())]
+            
+
     
 
 if __name__=='__main__':

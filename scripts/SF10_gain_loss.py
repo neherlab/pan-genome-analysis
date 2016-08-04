@@ -178,16 +178,23 @@ def set_visible_pattern_to_ignore(tree,p = 0):
     tree.tree.pattern_include = [tree.tree.clusterdict[key][1] for key in sorted(tree.tree.clusterdict.keys())]
 
 
+def _check_seq_and_patternseq(tree):
+    for leaf in tree.tree.get_terminals():
+        if all(leaf.sequence != leaf.patternseq):
+            print('WARNING: wrong pattern in ',leaf.name)
+        else:
+            print(leaf.name, ' is ok')
+
 def compute_lh(tree,verbose=0):
     """
-    compute the likelihood for each gene presence pattern in the sequence
+    compute the likelihood for each gene presence pattern in the sequence given the gtr parameters
     """
 
     min_branch_length = 1e-10
     L = tree.tree.get_terminals()[0].sequence.shape[0]
     n_states = tree.gtr.alphabet.shape[0]
     if verbose > 2:
-        print ("Walking up the tree, computing likelihoods...")
+        print ("Walking up the tree, computing likelihoods for the pattern in the leaves...")
     for leaf in tree.tree.get_terminals():
         # in any case, set the profile
         leaf.profile = seq_utils.seq2prof(leaf.sequence, tree.gtr.profile_map)
@@ -195,7 +202,8 @@ def compute_lh(tree,verbose=0):
     for node in tree.tree.get_nonterminals(order='postorder'): #leaves -> root
         # regardless of what was before, set the profile to ones
         node.lh_prefactor = np.zeros(L)
-        node.profile = np.ones((L, n_states)) # we will multiply it
+        #TODO hier kommt einhalb rein
+        node.profile = np.ones((L, n_states))*1.0/n_states # this has to sum to one
         for ch in node.clades:
             ch.seq_msg_to_parent = tree.gtr.propagate_profile(ch.profile,
                 max(ch.branch_length, min_branch_length),
@@ -207,7 +215,11 @@ def compute_lh(tree,verbose=0):
 
         node.profile = (node.profile.T/pre).T # normalize so that the sum is 1
         node.lh_prefactor += np.log(pre) # and store log-prefactor
+        
     tree.tree.root.pattern_profile_lh = (np.log(tree.tree.root.profile).transpose() + tree.tree.root.lh_prefactor).transpose()
+    
+
+        
 
 def change_gtr_parameters_forgainloss(tree,pi_present,mu):
     genepi = np.array([1.0-pi_present,pi_present])
@@ -236,10 +248,9 @@ def compute_totallh(tree,params,adjustcore = True,verbose = 0):
     # this gives the log likelihoods for each pattern
     compute_lh(tree)
     tree.tree.root.pattern_lh =  np.log(np.sum(np.exp(tree.tree.root.pattern_profile_lh)*np.diag(tree.gtr.Pi),axis=1))
-    # have to use nansum instead of sum since some pattern have nan likelihoods (maybe due to zero branch_length?)
-    tree.tree.root.total_llh =  np.nansum(tree.tree.root.pattern_lh * np.array(tree.tree.pattern_abundance) * np.array(tree.tree.pattern_include))
+    tree.tree.root.total_llh =  np.sum(tree.tree.root.pattern_lh * np.array(tree.tree.pattern_abundance) * np.array(tree.tree.pattern_include))
     #adjust for pattern that should not be included
-    ll_forsumofignored = np.nansum(np.exp( tree.tree.root.pattern_lh) * np.subtract(1,tree.tree.pattern_include))
+    ll_forsumofignored = np.sum(np.exp( tree.tree.root.pattern_lh) * np.subtract(1,tree.tree.pattern_include))
     if verbose > 2:
         print("adjusting nullpattern")
     tree.tree.root.total_llh = tree.tree.root.total_llh - ( np.log(1.- ll_forsumofignored) * np.sum(np.array(tree.tree.pattern_abundance) * np.array(tree.tree.pattern_include)) )
@@ -265,14 +276,15 @@ def plot_ll(filename,tree,mu =1.0):
     graph = [compute_totallh(tree,[x,mu]) for x in xaxis]
     plt.plot(xaxis, graph)
     plt.savefig(filename)
+    plt.close()
     
-    
-def plot_ll_mu(filename,tree,pi_present =0.5):
+def plot_ll_mu(filename,tree,pi_present =0.5,mu_max = 10):
     import matplotlib.pyplot as plt    
-    xaxis = np.linspace(0.01, 250, num=500)
+    xaxis = np.linspace(0.01, mu_max, num=500)
     graph = [compute_totallh(tree,[pi_present,x]) for x in xaxis]
     plt.plot(xaxis, graph)
     plt.savefig(filename)
+    plt.close()
 
 if __name__=='__main__':
     species= 'Papn'
@@ -283,3 +295,6 @@ if __name__=='__main__':
     #outpath = '.'
     outpath = '/home/franz/tmp/'
     export_gain_loss(tree, outpath)
+    
+    create_visible_pattern_dictionary(tree)
+    set_seq_to_patternseq(tree)

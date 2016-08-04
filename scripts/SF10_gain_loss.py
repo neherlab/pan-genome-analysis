@@ -183,6 +183,7 @@ def compute_lh(tree,verbose=0):
     compute the likelihood for each gene presence pattern in the sequence
     """
 
+    min_branch_length = 1e-10
     L = tree.tree.get_terminals()[0].sequence.shape[0]
     n_states = tree.gtr.alphabet.shape[0]
     if verbose > 2:
@@ -197,7 +198,7 @@ def compute_lh(tree,verbose=0):
         node.profile = np.ones((L, n_states)) # we will multiply it
         for ch in node.clades:
             ch.seq_msg_to_parent = tree.gtr.propagate_profile(ch.profile,
-                ch.branch_length,
+                max(ch.branch_length, min_branch_length),
                 rotated=False, # use unrotated
                 return_log=False) # raw prob to transfer prob up
             node.profile *= ch.seq_msg_to_parent

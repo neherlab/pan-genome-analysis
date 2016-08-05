@@ -421,7 +421,7 @@ def plot_ll_mu(filename,tree,pi_present =0.5,mu_max = 10):
     plt.savefig(filename)
     plt.close()
 
-if __name__=='__main__':
+#if __name__=='__main__':
     #species= 'Pat4'
     #path = '/ebio/ag-neher/share/users/wding/mpam/data/'+species+'/'
     #path = '/home/franz/tmp/'

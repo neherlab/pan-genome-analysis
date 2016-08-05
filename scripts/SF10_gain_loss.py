@@ -7,6 +7,7 @@ from Bio import Phylo, AlignIO
 from SF00miscellaneous import write_json
 import sys
 from treetime import seq_utils
+from scipy.optimize import minimize
 
 
 def infer_gene_gain_loss(path, rates = [1.0, 1.0]):
@@ -54,8 +55,8 @@ def infer_gene_gain_loss(path, rates = [1.0, 1.0]):
 
 def export_gain_loss(tree, path):
     '''
+     write final tree with internal node names as assigned by treetime
     '''
-    # write final tree with internal node names as assigned by treetime
     sep='/'
     tree_fname = sep.join([path.rstrip(sep), 'geneCluster', 'tree_result.newick'])
     Phylo.write(tree.tree, tree_fname, 'newick')
@@ -107,7 +108,7 @@ def create_visible_pattern_dictionary(tree):
             tree.tree.patterndict[pattern] = [genenumber,1,1]
             tree.tree.clusterdict[tree.tree.patterndict[pattern][0]] = [tree.tree.patterndict[pattern][1],1]
                
-    #thin sequence to unique pattern
+    #thin sequence to unique pattern and save result to node.patternseq
     for node in tree.tree.find_clades():
         if hasattr(node, 'sequence'):
             if len(node.sequence) != numgenes:
@@ -116,16 +117,19 @@ def create_visible_pattern_dictionary(tree):
             # add the all zero pattern at the end of all pattern
             node.patternseq = np.append(node.patternseq,['0',])
 
-    # add an artificial pattern of all zero
+    # add an artificial pattern of all zero (nullpattern)
     tree.tree.patterndict[nullpattern] = [numgenes,0,0]
     tree.tree.clusterdict[tree.tree.patterndict[nullpattern][0]] = [tree.tree.patterndict[nullpattern][1],0]
-    #create lists for abundance of pattern and inclusion_flag
+    #create lists for abundance of pattern and inclusion_flag, resp..
     tree.tree.pattern_abundance = [tree.tree.clusterdict[key][0] for key in sorted(tree.tree.clusterdict.keys())]
     tree.tree.pattern_include = [tree.tree.clusterdict[key][1] for key in sorted(tree.tree.clusterdict.keys())]
-    #save the index of the first core pattern (in most cases this should be zero)
+    #save the index of the first core pattern
     tree.tree.corepattern_index = sorted(tree.tree.clusterdict.keys()).index(tree.tree.patterndict[corepattern][0])
 
 def index2pattern(index,numstrains):
+    """
+    transforms a set of indices to the pattern where only these are 1, all others are 0
+    """
     pattern = [0] * numstrains
     for ind in index:
         pattern[ind] = 1
@@ -133,6 +137,9 @@ def index2pattern(index,numstrains):
 
 
 def index2pattern_reverse(index,numstrains):
+    """
+    transforms a set of indices to the pattern where only these are 0, all others are 1
+    """
     pattern = [1] * numstrains
     for ind in index:
         pattern[ind] = 0
@@ -164,10 +171,12 @@ def create_ignoring_pattern_dictionary(tree,p = 0):
         tree.tree.unpatterndict[index2pattern_reverse(indices,numstrains)] = [-1,0,0]
 
 
-def set_visible_pattern_to_ignore(tree,p = 0):
-    
+def set_visible_pattern_to_ignore(tree,p = -1):
+    """
+    sets all pattern with at most p strains or at least numstrains-p strains to ignore
+    """
     numstrains = len(tree.tree.get_terminals())
-    if p == 0:
+    if p == -1:
         p = int(numstrains/10)
     for pattern in tree.tree.patterndict.keys():
         freq = sum([int(i) for i in pattern])
@@ -202,8 +211,8 @@ def compute_lh(tree,verbose=0):
     for node in tree.tree.get_nonterminals(order='postorder'): #leaves -> root
         # regardless of what was before, set the profile to ones
         node.lh_prefactor = np.zeros(L)
-        #TODO hier kommt einhalb rein
-        node.profile = np.ones((L, n_states))*1.0/n_states # this has to sum to one
+        #TODO if treetime is fixed change this back to simply one
+        node.profile = np.ones((L, n_states))*1.0/n_states # this has to be ones in each entry -> we will multiply it
         for ch in node.clades:
             ch.seq_msg_to_parent = tree.gtr.propagate_profile(ch.profile,
                 max(ch.branch_length, min_branch_length),
@@ -237,7 +246,8 @@ def change_gtr_parameters_forgainloss(tree,pi_present,mu):
             
 def compute_totallh(tree,params,adjustcore = True,verbose = 0):
     """
-    compute the total likelihood for all gene presence pattern in the sequence
+    compute the total likelihood for all genes with presence pattern set to include
+    conditioned on not observing pattern set to not include (e.g. the nullpattern)
     be careful: this function changes the gtr model 
     """
     # change the relation of genegain and geneloss rate and the speed
@@ -248,11 +258,12 @@ def compute_totallh(tree,params,adjustcore = True,verbose = 0):
     # this gives the log likelihoods for each pattern
     compute_lh(tree)
     tree.tree.root.pattern_lh =  np.log(np.sum(np.exp(tree.tree.root.pattern_profile_lh)*np.diag(tree.gtr.Pi),axis=1))
+    #compute the likelihood of all genes with included pattern
     tree.tree.root.total_llh =  np.sum(tree.tree.root.pattern_lh * np.array(tree.tree.pattern_abundance) * np.array(tree.tree.pattern_include))
     #adjust for pattern that should not be included
     ll_forsumofignored = np.sum(np.exp( tree.tree.root.pattern_lh) * np.subtract(1,tree.tree.pattern_include))
     if verbose > 2:
-        print("adjusting nullpattern")
+        print("adjusting for all pattern that have been set to pattern_include == 0")
     tree.tree.root.total_llh = tree.tree.root.total_llh - ( np.log(1.- ll_forsumofignored) * np.sum(np.array(tree.tree.pattern_abundance) * np.array(tree.tree.pattern_include)) )
     return tree.tree.root.total_llh * -1.
 
@@ -293,8 +304,27 @@ if __name__=='__main__':
     tree = infer_gene_gain_loss(path)
 
     #outpath = '.'
-    outpath = '/home/franz/tmp/'
-    export_gain_loss(tree, outpath)
+    outpath = '/home/franz/tmp/out/'
+    
     
     create_visible_pattern_dictionary(tree)
     set_seq_to_patternseq(tree)
+    set_visible_pattern_to_ignore(tree)
+    
+    def myminimizer(c):
+        return compute_totallh(tree,c)
+    
+    res = minimize(myminimizer,[0.5,1.],method='L-BFGS-B',bounds = [(0.0001,0.999),(0.01,1000.)])
+    
+    if res.success == True:
+        print('successfully estimated the gtr parameters. Reconstructing ancestral states...')
+        change_gtr_parameters_forgainloss(tree,res.x[0],res.x[1])
+        tree.reconstruct_anc(method='ml')
+        export_gain_loss(tree, outpath)
+    else:
+        print('Warning: failed to estimated the gtr parameters by ML.')
+        
+        
+
+    
+    

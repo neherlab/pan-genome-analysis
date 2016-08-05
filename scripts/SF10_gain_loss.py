@@ -346,12 +346,12 @@ def plot_ll_mu(filename,tree,pi_present =0.5,mu_max = 10):
 
 if __name__=='__main__':
     species= 'Papn'
-    #path = '/ebio/ag-neher/share/users/wding/mpam/data/'+species+'/'
-    path = '/home/franz/tmp/'
+    path = '/ebio/ag-neher/share/users/wding/mpam/data/'+species+'/'
+    #path = '/home/franz/tmp/'
     tree = infer_gene_gain_loss(path)
 
-    #outpath = '.'
-    outpath = '/home/franz/tmp/out/'
+    outpath = '.'
+    #outpath = '/home/franz/tmp/out/'
     
     
     create_visible_pattern_dictionary(tree)

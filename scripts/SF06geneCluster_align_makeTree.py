@@ -3,7 +3,6 @@ from itertools import izip; from collections import defaultdict, Counter
 from Bio import Phylo, SeqIO, AlignIO
 from Bio.Seq import Seq; from Bio.SeqRecord import SeqRecord
 from Bio.Align import MultipleSeqAlignment
-from ete2 import Tree
 from SF00miscellaneous import times, read_fasta, load_pickle, write_pickle, write_in_fa, write_json
 sys.path.append('./scripts/')
 
@@ -136,6 +135,7 @@ def pad_nucleotide_sequences(aln_aa, seq_nuc):
 
 def polytomies_midpointRooting(infileName, outfileName):
     # use ete2 to solve polytomies and midpoint rooting
+    from ete2 import Tree
     newickString=open(infileName, 'rb').readline().rstrip()
     tree = Tree(newickString,format=1);
     tree.resolve_polytomy(recursive=True)

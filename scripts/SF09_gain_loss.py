@@ -4,6 +4,7 @@ from collections import defaultdict
 from treetime import treeanc as ta
 from treetime.gtr import GTR
 from treetime import io
+from treetime import seq_utils
 from Bio import Phylo, AlignIO
 from SF00miscellaneous import write_json, load_pickle, write_pickle, write_in_fa
 from SF06geneCluster_align_makeTree import load_sorted_clusters
@@ -405,12 +406,12 @@ def plot_ll_mu(filename,tree,pi_present =0.5,mu_max = 10):
 
 if __name__=='__main__':
     species= 'Papn'
-    path = '/ebio/ag-neher/share/users/wding/mpam/data/'+species+'/'
-    #path = '/home/franz/tmp/'
-    tree = infer_gene_gain_loss(path, species)
+    #path = '/ebio/ag-neher/share/users/wding/mpam/data/'+species+'/'
+    path = '/home/franz/tmp/'
+    tree = infer_gene_gain_loss(path)
 
-    outpath = '.'
-    #outpath = '/home/franz/tmp/out/'
+    #outpath = '.'
+    outpath = '/home/franz/tmp/out/'
     
     
     create_visible_pattern_dictionary(tree)
@@ -420,6 +421,7 @@ if __name__=='__main__':
     def myminimizer(c):
         return compute_totallh(tree,c)
     
+    from scipy.optimize import minimize
     res = minimize(myminimizer,[0.5,1.],method='L-BFGS-B',bounds = [(0.0001,0.999),(0.01,1000.)])
     
     if res.success == True:

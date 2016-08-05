@@ -28,24 +28,22 @@ def infer_gene_gain_loss(path, rates = [1.0, 1.0]):
     nwk =  sep.join([path.rstrip(sep), 'geneCluster', 'tree_result.newick'])
 
     # instantiate treetime with custom GTR
-    t = io.treetime_from_newick(gain_loss_model, nwk)
+    t = ta.TreeAnc(nwk, gtr =gain_loss_model, aln=fasta) # io.treetime_from_newick(gain_loss_model, nwk)
     # fix leaves names since Bio.Phylo interprets numeric leaf names as confidence
     for leaf in t.tree.get_terminals():
         if leaf.name is None:
             leaf.name = str(leaf.confidence)
     # load alignment and associate with tree leafs
-    failedleaves = io.set_seqs_to_leaves(t, AlignIO.read(fasta, 'fasta'))
-    if failedleaves > 0:
-        print(' '.join(["Warning",str(failedleaves),"leaves have failed"]))
+    # failedleaves = io.set_seqs_to_leaves(t, AlignIO.read(fasta, 'fasta'))
+    # if failedleaves > 0:
+    #    print(' '.join(["Warning",str(failedleaves),"leaves have failed"]))
     
-    print(t.tree.get_terminals()[10])
-    print(t.tree.get_terminals()[10].sequence[9375:9390])
-
-    t.tree.one_mutation = 1.0
+    #print(t.tree.get_terminals()[10])
+    #print(t.tree.get_terminals()[10].sequence[9375:9390])
+    #t.tree.one_mutation = 1.0
     t.reconstruct_anc(method='ml')
-    
-    print(t.tree.get_terminals()[10])
-    print(t.tree.get_terminals()[10].sequence[9375:9390])
+    #print(t.tree.get_terminals()[10])
+    #print(t.tree.get_terminals()[10].sequence[9375:9390])
 
     for n in t.tree.find_clades():
         n.genepresence = n.sequence
@@ -169,22 +167,73 @@ def create_ignoring_pattern_dictionary(tree,p = 0):
     for indices in myindices:
         tree.tree.unpatterndict[index2pattern(indices,numstrains)] = [-1,0,0]
         tree.tree.unpatterndict[index2pattern_reverse(indices,numstrains)] = [-1,0,0]
+        
+        
+def create_distance_matrix(tree):
+    numstrains = len(tree.tree.get_terminals())
+    tree.tree.distance_matrix = np.zeros([numstrains,numstrains])
+    i = 0
+    for leaf1 in tree.tree.get_terminals():
+        j = 0
+        for leaf2 in tree.tree.get_terminals():
+            tree.tree.distance_matrix[i,j] = tree.tree.distance(leaf1,leaf2)
+            j += 1
+        i += 1
 
+def merge_strains(distances,indices,mindist = 0.0):
+    remain = set(indices)
+    final = set()
+    tempdelset = set()
+    while len(remain) >0:
+        i = remain.pop()
+        final.add(i)
+        for j in remain:
+            if distances[i,j] <= mindist:
+                tempdelset.add(j)
+        remain.difference_update(tempdelset)
+        tempdelset.clear
+    return len(final)
 
-def set_visible_pattern_to_ignore(tree,p = -1):
+def set_visible_pattern_to_ignore(tree,p = -1,mergeequalstrains = False,lowfreq = True, highfreq = True):
     """
     sets all pattern with at most p strains or at least numstrains-p strains to ignore
     """
     numstrains = len(tree.tree.get_terminals())
+    if mergeequalstrains:
+        if not hasattr(tree.tree,'distance_matrix'):
+            create_distance_matrix(tree)
+        numstrains = merge_strains(tree.tree.distance_matrix,np.array(range(numstrains)) )
     if p == -1:
         p = int(numstrains/10)
     for pattern in tree.tree.patterndict.keys():
-        freq = sum([int(i) for i in pattern])
-        if freq <= p or freq >= numstrains - p:
-            tree.tree.patterndict[pattern][2] = 0
-            tree.tree.clusterdict[tree.tree.patterndict[pattern][0]][1] = 0
+        #freq = sum([int(i) for i in pattern])
+        freq = pattern.count('1')
+        if lowfreq:
+            if mergeequalstrains:
+                # indices of individuals in the pattern
+                strainindices = np.where(np.array(pattern) == '1')[0]
+                #no_observedstrains = len(strainindices)
+                lowfreq = merge_strains(tree.tree.distance_matrix,strainindices)
+            else:
+                lowfreq = freq
+            if lowfreq <= p:
+                tree.tree.patterndict[pattern][2] = 0
+                tree.tree.clusterdict[tree.tree.patterndict[pattern][0]][1] = 0
+        if highfreq:
+            if mergeequalstrains:
+                # indices of individuals in the pattern
+                strainindices = np.where(np.array(pattern) == '0')[0]
+                #no_observedstrains = len(strainindices)
+                highfreq = merge_strains(tree.tree.distance_matrix,strainindices)
+            else:
+                highfreq = numstrains -freq
+            if highfreq <= p:
+                tree.tree.patterndict[pattern][2] = 0
+                tree.tree.clusterdict[tree.tree.patterndict[pattern][0]][1] = 0
     
     tree.tree.pattern_include = [tree.tree.clusterdict[key][1] for key in sorted(tree.tree.clusterdict.keys())]
+    if sum(tree.tree.pattern_include) == 0:
+        print('WARNING all pattern have been excluded, estimation of parameters is thus impossible')
 
 
 def _check_seq_and_patternseq(tree):
@@ -211,12 +260,10 @@ def compute_lh(tree,verbose=0):
     for node in tree.tree.get_nonterminals(order='postorder'): #leaves -> root
         # regardless of what was before, set the profile to ones
         node.lh_prefactor = np.zeros(L)
-        #TODO if treetime is fixed change this back to simply one
-        node.profile = np.ones((L, n_states))*1.0/n_states # this has to be ones in each entry -> we will multiply it
+        node.profile = np.ones((L, n_states)) # this has to be ones in each entry -> we will multiply it
         for ch in node.clades:
             ch.seq_msg_to_parent = tree.gtr.propagate_profile(ch.profile,
                 max(ch.branch_length, min_branch_length),
-                rotated=False, # use unrotated
                 return_log=False) # raw prob to transfer prob up
             node.profile *= ch.seq_msg_to_parent
             node.lh_prefactor += ch.lh_prefactor
@@ -309,7 +356,7 @@ if __name__=='__main__':
     
     create_visible_pattern_dictionary(tree)
     set_seq_to_patternseq(tree)
-    set_visible_pattern_to_ignore(tree)
+    set_visible_pattern_to_ignore(tree,p=-1,mergeequalstrains=True)
     
     def myminimizer(c):
         return compute_totallh(tree,c)

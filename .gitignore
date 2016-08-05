@@ -1,3 +1,7 @@
+run.sh
+data/*
+*log
+*sh.*
 *pyc
 *json
 *gzip

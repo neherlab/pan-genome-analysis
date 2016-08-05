@@ -152,7 +152,7 @@ def process_gain_loss(path, species):
         export_gain_loss(tree,path,species)
     else:
         print('Warning: failed to estimated the gtr parameters by ML.')
-    export_gain_loss(tree, path)
+    
     
     
 def create_visible_pattern_dictionary(tree):
@@ -422,32 +422,36 @@ def plot_ll_mu(filename,tree,pi_present =0.5,mu_max = 10):
     plt.close()
 
 if __name__=='__main__':
-    species= 'Papn'
+    #species= 'Pat4'
     #path = '/ebio/ag-neher/share/users/wding/mpam/data/'+species+'/'
-    path = '/home/franz/tmp/'
-    tree = infer_gene_gain_loss(path)
+    #path = '/home/franz/tmp/'
+    
+    #process_gain_loss(path,species)
+    
+      
+    #tree = infer_gene_gain_loss(path)
 
-    #outpath = '.'
-    outpath = '/home/franz/tmp/out/'
+    ##outpath = '.'
+    #outpath = '/home/franz/tmp/out/'
     
     
-    create_visible_pattern_dictionary(tree)
-    set_seq_to_patternseq(tree)
-    set_visible_pattern_to_ignore(tree,p=-1,mergeequalstrains=True)
+    #create_visible_pattern_dictionary(tree)
+    #set_seq_to_patternseq(tree)
+    #set_visible_pattern_to_ignore(tree,p=-1,mergeequalstrains=True)
     
-    def myminimizer(c):
-        return compute_totallh(tree,c)
+    #def myminimizer(c):
+        #return compute_totallh(tree,c)
     
-    from scipy.optimize import minimize
-    res = minimize(myminimizer,[0.5,1.],method='L-BFGS-B',bounds = [(0.0001,0.999),(0.01,1000.)])
+    #from scipy.optimize import minimize
+    #res = minimize(myminimizer,[0.5,1.],method='L-BFGS-B',bounds = [(0.0001,0.999),(0.01,1000.)])
     
-    if res.success == True:
-        print('successfully estimated the gtr parameters. Reconstructing ancestral states...')
-        change_gtr_parameters_forgainloss(tree,res.x[0],res.x[1])
-        tree.reconstruct_anc(method='ml')
-        export_gain_loss(tree, outpath, species)
-    else:
-        print('Warning: failed to estimated the gtr parameters by ML.')
+    #if res.success == True:
+        #print('successfully estimated the gtr parameters. Reconstructing ancestral states...')
+        #change_gtr_parameters_forgainloss(tree,res.x[0],res.x[1])
+        #tree.reconstruct_anc(method='ml')
+        #export_gain_loss(tree, outpath, species)
+    #else:
+        #print('Warning: failed to estimated the gtr parameters by ML.')
         
         
 

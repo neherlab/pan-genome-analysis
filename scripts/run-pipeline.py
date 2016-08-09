@@ -53,8 +53,6 @@ if 1 in params.steps: #step 01:
 ## load strain_list.cpk file and give the total number of strains
 if os.path.isfile(path+'strain_list.cpk'):
     strain_lst= load_pickle(path+'strain_list.cpk')
-else:
-    load_strains()
 nstrains =len([ istrain for istrain in strain_lst ])
 
 if 2 in params.steps:# step02:

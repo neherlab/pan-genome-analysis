@@ -4,13 +4,19 @@ from SF06geneCluster_align_makeTree import load_sorted_clusters
 from operator import itemgetter
 from collections import defaultdict, Counter
 
-def consolidate_annotation(all_gene_names):
+def consolidate_annotation(path,all_gene_names):
     """
     determine a consensus annotation if annotation of reference sequences
     is conflicting. hypothetical protein annotations are avoided is possible
     """
     # count annotation and sort by decreasing occurence
-    annotations=dict(Counter( [ igi.split('|')[1].split('-',2)[2] for igi in all_gene_names ]) )
+    
+    # load geneID_to_description_dict
+    geneID_to_description_dict=load_pickle(path+'geneID_to_description.cpk')
+    #geneSeqID based on geneID-conitg-geneName:Annotation
+    annotations=dict(Counter( [ geneID_to_description_dict[igi]['geneName_annotation'] for igi in all_gene_names ]) )
+    ## create split cluster generating new ID conflict
+
     annotations_sorted=sorted(annotations.iteritems(), key=itemgetter(1),reverse=True)
     if  len(annotations)==0 :
         majority='hypothetical_protein'
@@ -39,9 +45,9 @@ def geneCluster_to_json(path, species):
     sorted_genelist= load_sorted_clusters(path, species)
 
     ## prepare geneId_Dt_to_locusTag
-    locusTag_to_geneId_Dt=load_pickle(path+'locusTag_to_geneId.cpk')
-    geneId_Dt_to_locusTag=defaultdict(list)
-    geneId_Dt_to_locusTag={v:k for k,v in locusTag_to_geneId_Dt.items()}
+    
+    #geneId_Dt_to_locusTag=defaultdict(list)
+    #geneId_Dt_to_locusTag={v:k for k,v in locusTag_to_geneId_Dt.items()}
 
     ## load gain/loss event count dictionary
     dt_geneEvents= load_pickle(output_path+'dt_geneEvents.cpk')
@@ -56,17 +62,17 @@ def geneCluster_to_json(path, species):
             write_file_lst_json.write(',\n')
 
         ## annotation majority
-        allAnn,majority = consolidate_annotation(gene_list)
+        allAnn,majority = consolidate_annotation(path, gene_list)
         ## extract gain/loss event count
         gene_event= dt_geneEvents[gid]
 
         ## average length
-        geneLength_list= [ len(igene) for igene in read_fasta(output_path+'%s%s'%(clusterID,'.nu.fa')).values() ]
+        geneLength_list= [ len(igene) for igene in read_fasta(output_path+'%s%s'%(clusterID,'.fna')).values() ]
         geneClusterLength = sum(geneLength_list) / len(geneLength_list)
         #print geneLength_list,geneClusterLength
 
         ## msa
-        geneCluster_aln='%s%s'%(clusterID,'.aa.aln')
+        geneCluster_aln='%s%s'%(clusterID,'_aa.aln')
 
         ## check for duplicates
         if gene_count>strain_count:
@@ -79,7 +85,7 @@ def geneCluster_to_json(path, species):
             duplicated_state='no';dup_detail=''
 
         ## locus_tag
-        locus_tag_strain=' '.join([ geneId_Dt_to_locusTag[igl] for igl in gene_list ])
+        locus_tag_strain=' '.join([ igl for igl in gene_list ])
         #locus_tag_strain=' '.join([ '%s_%s'%(igl.split('|')[0],geneId_Dt_to_locusTag[igl]) for igl in gene[1][1] ])
 
         ## write json

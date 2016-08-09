@@ -20,7 +20,7 @@ def create_core_SNP_matrix(path, species):
     with open(output_path+'core_geneList.txt','wb') as outfile:
         for clusterID, vg in sorted_geneList:
             if vg[0]==totalStrain and vg[2]==totalStrain:
-                coreGeneName='%s%s'%(clusterID,'.nu.aln')
+                coreGeneName='%s%s'%(clusterID,'_na.aln')
                 outfile.write(coreGeneName+'\n')
                 corelist.append(coreGeneName)
         write_pickle(output_path+'core_geneList.cpk',corelist)

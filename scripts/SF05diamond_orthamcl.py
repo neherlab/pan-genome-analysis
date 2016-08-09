@@ -5,13 +5,13 @@ def diamond_run(query_path, output_path, dmd_ref_file, dmd_query_file_prefix, th
     """ runn diamond using sensitive alignment mode """
     os.system('pwd')
     diam='./tools/diamond';
-    print '# Run for %s.fna'%dmd_query_file_prefix
+    print '# Run for %s.faa'%dmd_query_file_prefix
     start = time.time();
     os.system(diam+' makedb --in '+output_path+dmd_ref_file+' -d '+output_path+'nr');
     print 'build index:', times(start)
 
     start = time.time();
-    os.system(diam+' blastp --sensitive -p '+str(threads)+' -k 600 -d '+output_path+'nr -q '+query_path+dmd_query_file_prefix+'.fna'+' -a '+output_path+dmd_query_file_prefix+'_matches -t ./');
+    os.system(diam+' blastp --sensitive -p '+str(threads)+' -k 600 -d '+output_path+'nr -q '+query_path+dmd_query_file_prefix+'.faa'+' -a '+output_path+dmd_query_file_prefix+'_matches -t ./');
     print 'matchin:', times(start)
 
     start = time.time();
@@ -26,24 +26,22 @@ def ortha_mcl_run(species,output_path):
     os.system('mv '+output_path+species+'-ortha/all.abc '+output_path)
     os.system('mcl '+output_path+'all.abc --abc -o '+output_path+species+'-orthamcl-cluster.output > '+output_path+'mcl-'+species+'.log 2>&1')
 
-def orthagogue_singletons(path,species,origin_cluster_file,all_fna_file):
+def orthagogue_singletons(path,species,origin_cluster_file,all_faa_file):
     """ add singletons from original MCL output """
     from operator import or_
-    all_fna_file="%s%s"%(path,all_fna_file)
+    all_faa_file="%s%s"%(path,all_faa_file)
     origin_cluster_file="%s%s"%(path,origin_cluster_file)
     all_cluster_file="%s%s%s"%(path,species,'-orthamcal-allclusters.csv')
 
-    # TODO: following not used?
-    # orthagogue_set_dt=defaultdict(list)
     # loop over cluster_file, each line is one cluster tab delimited geneIDs (strain-locusTag)
     # generate union of all genes in all clusters excluding singletons
     with open(origin_cluster_file, 'rb') as infile:
         orthagogue_set=reduce(or_, [ set(iline.rstrip().split('\t')) for iline in infile ])
 
     # read all geneIDs from all genes from all strains, determine singletons as set difference
-    all_fna_set=set( read_fasta(all_fna_file).keys() );
-    singletons=all_fna_set-orthagogue_set
-    print len(all_fna_set), len(orthagogue_set), len(singletons)
+    all_faa_set=set( read_fasta(all_faa_file).keys() );
+    singletons=all_faa_set-orthagogue_set
+    print len(all_faa_set), len(orthagogue_set), len(singletons)
 
     # append singleton clusters to a copy of the original file
     os.system('cp '+origin_cluster_file+' '+all_cluster_file);
@@ -88,15 +86,15 @@ def diamond_orthamcl_cluster(path,species, threads, blast_file_path='none', clus
         threads:    number of parallel threads used to run diamond
         blast_file_path:
     '''
-    input_path=path+'protein_fna/';
+    input_path=path+'protein_faa/';
     output_path=input_path+'diamond_matches/';
     ## using standard pipeline (cluster_file_path=='none')
     if cluster_file_path=='none':
         if blast_file_path=='none':
-            dmd_ref_file=species+'_enrich.faa'; dmd_query_file=species+'.fna'
+            dmd_ref_file=species+'_reference.faa'; dmd_query_file=species+'.faa'
             ## prepare dmd_query_file
             os.system('mkdir '+output_path)
-            os.system('cat '+input_path+'*fna > '+output_path+dmd_query_file)
+            os.system('cat '+input_path+'*faa > '+output_path+dmd_query_file)
             ## dmd_query_file is dmd_ref_file
             os.system('cp '+output_path+dmd_query_file+' '+output_path+dmd_ref_file)
             diamond_run(output_path, output_path, dmd_ref_file, species, threads)
@@ -106,21 +104,20 @@ def diamond_orthamcl_cluster(path,species, threads, blast_file_path='none', clus
             orthagogue_singletons(output_path,species,origin_cluster_file,dmd_query_file)
             all_cluster_file=species+'-orthamcal-allclusters.csv';
             parse_geneCluster(output_path,species,all_cluster_file)
-        else: ## using blast score
+        else: ## using user-given cluster file based on blast
             os.system('mkdir %s'%output_path)
             os.system('ln -sf %s %sclustered_proteins'%(blast_file_path, output_path))
             from operator import itemgetter
-            locusTag_to_geneId_Dt=load_pickle(path+'locusTag_to_geneId.cpk')
             ## create gene cluster from blast output
             with open(blast_file_path, 'rb') as infile:
                 geneCluster_dt=defaultdict(list)
                 for gid, iline in enumerate(infile):
                     column=iline.rstrip().split('\t')
                     clusterID="GC_%08d"%gid
-                    gene_list=[ locusTag_to_geneId_Dt[ico] for ico in column ]
+                    gene_list=[ ico for ico in column ]
                     geneCluster_dt[clusterID]=[0,[],0]
                     num_stains=len( dict(Counter([ ivg.split('|')[0] for ivg in gene_list ])) )
-                    num_gene=len(dict(Counter([ ivg for ivg in column])));
+                    num_gene=len(dict(Counter([ ivg for ivg in column])))
                     geneCluster_dt[ clusterID ][0]=num_stains
                     geneCluster_dt[ clusterID ][2]=num_gene
                     geneCluster_dt[ clusterID ][1]=gene_list
@@ -133,10 +130,9 @@ def diamond_orthamcl_cluster(path,species, threads, blast_file_path='none', clus
     else: ## using cluster files from roary
         os.system('mkdir %s'%output_path)
         os.system('ln -sf %s %sclustered_proteins'%(cluster_file_path, output_path))
-        locusTag_to_geneId_Dt=load_pickle(path+'locusTag_to_geneId.cpk')
         with open(cluster_file_path, 'rb') as cluster_external_file:
             with open(output_path+species+'-orthamcl-allclusters.csv', 'wb') as cluster_final_file:
                 for cluster_line in cluster_external_file:
-                     cluster_final_file.write( '%s\n'%'\t'.join([ locusTag_to_geneId_Dt[gene_tag] for gene_tag in cluster_line.rstrip().split(': ')[1].split('\t')]) )
+                     cluster_final_file.write( '%s\n'%'\t'.join([ gene_tag for gene_tag in cluster_line.rstrip().split(': ')[1].split('\t')]) )
         all_cluster_file=species+'-orthamcl-allclusters.csv';
         parse_geneCluster(output_path,species,all_cluster_file)

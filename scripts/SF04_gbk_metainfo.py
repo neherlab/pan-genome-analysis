@@ -8,15 +8,16 @@ def gbk_To_Metainfo(path):
     """
     import os, sys
     from Bio import SeqIO
-    from SF00miscellaneous import load_pickle
+    from SF00_miscellaneous import load_pickle
+    each_gbk_path='%s%s'%(path,'input_GenBank/')
     strainList=load_pickle(path+ 'strain_list.cpk')
-    writeseq= open(path+'metainfo.txt', 'wb')
+    writeseq= open(path+'metainfo.tsv', 'wb')
     # write the headers:
     # default: accName, strainName, antiBiotics, dateInfo, country, host
     writeseq.write( "%s\n"%('\t'.join(['accName' , 'collection_date', 'country', 'host'])) )
     # check each genBank file to get meta-type
     for eachstrain in strainList:
-        for index, record in enumerate(SeqIO.parse(open(path+ eachstrain+'.gbk'), "genbank")):
+        for index, record in enumerate(SeqIO.parse(open(each_gbk_path+ eachstrain+'.gbk'), "genbank")):
             for i,feature in enumerate(record.features):
                 if feature.type=='source':
                     host,datacolct,country ='', '', ''
@@ -58,5 +59,4 @@ def gbk_To_Metainfo(path):
             #writeseq.write( "%s\n"%('\t'.join([eachstrain, antibio, datacolct, country, host])) )
             writeseq.write( "%s\n"%('\t'.join([eachstrain, datacolct, country, host])) )
     writeseq.close()
-    # TODO change to .tsv -- also in later scripts
-    os.system('cp '+path+'metainfo.txt'+' '+path+'metainfo_curated.txt')
+    os.system('mv %smetainfo.tsv %smetainfo_curated.tsv'%(path,path))

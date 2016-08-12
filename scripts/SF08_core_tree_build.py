@@ -1,4 +1,4 @@
-import os;from SF00miscellaneous import times
+import os;from SF00_miscellaneous import times
 from ete2 import Tree
 
 def resolve_polytomies(infileName, outfileName):

@@ -5,8 +5,8 @@ from treetime import treeanc as ta
 from treetime.gtr import GTR
 from treetime import io
 from Bio import Phylo, AlignIO
-from SF00miscellaneous import write_json, load_pickle, write_pickle, write_in_fa
-from SF06geneCluster_align_makeTree import load_sorted_clusters
+from SF00_miscellaneous import write_json, load_pickle, write_pickle, write_in_fa
+from SF06_geneCluster_align_makeTree import load_sorted_clusters
 
 
 def create_genePresence(dt_strainGene, totalStrain, set_totalStrain, all_gene_names):
@@ -31,7 +31,7 @@ def create_genePresence(dt_strainGene, totalStrain, set_totalStrain, all_gene_na
     return dt_strainGene
 
 
-def make_genepresence_alignment(path,species):
+def make_genepresence_alignment(path):
     '''
     loop over all gene clusters and append 0/1 to strain specific
     string used as pseudo alignment of gene presence absence
@@ -45,7 +45,7 @@ def make_genepresence_alignment(path,species):
     totalStrain=len(set_totalStrain)
     dt_strainGene= defaultdict(list)
 
-    sorted_genelist = load_sorted_clusters(path, species)
+    sorted_genelist = load_sorted_clusters(path)
     ## sorted_genelist: [(clusterID, [ count_strains,[memb1,...],count_genes]),...]
     for gid, (clusterID, gene) in enumerate(sorted_genelist):
         gene_list = gene[1]
@@ -95,12 +95,12 @@ def infer_gene_gain_loss(path, rates = [1.0, 1.0]):
     return t
 
 
-def export_gain_loss(tree, path, species):
+def export_gain_loss(tree, path):
     '''
     '''
     # write final tree with internal node names as assigned by treetime
     sep='/'
-    output_path= sep.join([path.rstrip(sep), 'geneCluster'])
+    output_path= sep.join([path.rstrip(sep), 'geneCluster/'])
     tree_fname = sep.join([output_path, 'tree_result.newick'])
     Phylo.write(tree.tree, tree_fname, 'newick')
 
@@ -122,12 +122,12 @@ def export_gain_loss(tree, path, species):
     write_pickle(events_dict_path, events_dict)
 
     # export gene loss dict to json for visualization
-    gene_loss_fname = sep.join([ output_path, species+'-genePresence.json'])
+    gene_loss_fname = sep.join([ output_path+'geneGainLossEvent.json'])
     write_json(gene_gain_loss_dict, gene_loss_fname, indent=1)
 
 
-def process_gain_loss(path, species):
-    make_genepresence_alignment(path, species)
+def process_gain_loss(path):
+    make_genepresence_alignment(path)
     tree = infer_gene_gain_loss(path)
-    export_gain_loss(tree, path, species)
+    export_gain_loss(tree, path)
 

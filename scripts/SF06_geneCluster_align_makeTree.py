@@ -4,7 +4,7 @@ from Bio import Phylo, SeqIO, AlignIO
 from Bio.Seq import Seq; from Bio.SeqRecord import SeqRecord
 from Bio.Align import MultipleSeqAlignment
 from ete2 import Tree
-from SF00miscellaneous import times, read_fasta, load_pickle, write_pickle, write_in_fa, write_json
+from SF00_miscellaneous import times, read_fasta, load_pickle, write_pickle, write_in_fa, write_json
 sys.path.append('./scripts/')
 
 def make_dir(dname):
@@ -402,7 +402,7 @@ class mpm_tree(object):
             node.longName = node.ann.split('-')[0]
 
         ## write tree json
-        timetree_fname = path+self.fname_prefix+'.tree.json'
+        timetree_fname = path+self.fname_prefix+'_tree.json'
         tree_json = tree_to_json(self.tree.root, extra_attr=extra_attr)
         write_json(tree_json, timetree_fname, indent=None)
 
@@ -431,7 +431,7 @@ class mpm_tree(object):
         elems['root'] = {}
         elems['root']['nuc'] = self.tree.root.sequence.tostring()
 
-        self.sequences_fname=path+self.fname_prefix+'.seq.json'
+        self.sequences_fname=path+self.fname_prefix+'_seq.json'
         write_json(elems, self.sequences_fname, indent=None)
 
 
@@ -463,11 +463,19 @@ def align_and_makeTree(thread, alignFile_path, fa_files_list):
         geneDiversity_file = open(alignFile_path+'gene_diversity.txt', 'a')
         if len( read_fasta(gene_cluster_nu_filename) )==1: # nothing to do for singletons
             ## na.aln
-            shutil.copy(gene_cluster_nu_filename,
-                        gene_cluster_nu_filename.replace('.fna','_na.aln'))
+            gene_cluster_nu_aln_filename= gene_cluster_nu_filename.replace('.fna','_na.aln')
+            ## geneSeqID separator '|' is replaced by '-' for msa viewer compatibility
+            with open(gene_cluster_nu_aln_filename,'wb') as write_file:
+                for SeqID, Sequence in read_fasta(gene_cluster_nu_filename).iteritems():
+                    write_in_fa(write_file, SeqID.replace('|','-'), Sequence)
+
             ## aa.aln
-            shutil.copy(gene_cluster_nu_filename.replace('.fna','.faa'),
-                        gene_cluster_nu_filename.replace('.fna','_aa.aln'))
+            gene_cluster_aa_filename= gene_cluster_nu_filename.replace('.fna','.faa')
+            gene_cluster_aa_aln_filename= gene_cluster_nu_filename.replace('.fna','_aa.aln')
+            ## geneSeqID separator '|' is replaced by '-' for msa viewer compatibility
+            with open(gene_cluster_aa_aln_filename,'wb') as write_file:
+                for SeqID, Sequence in read_fasta(gene_cluster_aa_filename).iteritems():
+                    write_in_fa(write_file, SeqID.replace('|','-'), Sequence)
 
             geneDiversity_file.write('%s\t%s\n'%(clusterID,'0.0'))
 
@@ -486,7 +494,7 @@ def align_and_makeTree(thread, alignFile_path, fa_files_list):
             geneDiversity_file.write('%s\t%s\n'%(clusterID,gene_diversity_values))
 
 
-def cluster_align_makeTree( path, species, parallel ):
+def cluster_align_makeTree( path, parallel ):
     """
     create gene clusters as nucleotide/ amino_acid fasta files
     and build individual gene trees based on fna files
@@ -496,11 +504,11 @@ def cluster_align_makeTree( path, species, parallel ):
             input: '.faa', '_gene_nuc_dict.cpk', '-orthamcl-allclusters.cpk'
             output:
         """
-        ## make sure there are no GC*.* files at the beginning.
-        existing_gene_clusters= glob.glob(path+'geneCluster/GC*.*')
-        if len(existing_gene_clusters)!=0:
-            for gene_cluster in existing_gene_clusters:
-                os.system('rm %s'%gene_cluster)
+        ## make sure the geneCluster folder is empty
+        if os.path.isdir(path+'geneCluster/')==True:
+            print 'remove previous folder: ',path+'geneCluster/'
+            os.system('rm -rf %s'%(path+'geneCluster/'))
+
         faa_path=path+'protein_faa/'
         ## dict storing all genes' translation
         gene_aa_dict=defaultdict(list)
@@ -509,12 +517,13 @@ def cluster_align_makeTree( path, species, parallel ):
 
         ## dict storing nucleotide Id/Seq from '_gene_nuc_dict.cpk' files
         istrain_cpk={}; strain_list= load_pickle(path+'strain_list.cpk');
+        nucleotide_dict_path= '%s%s'%(path,'nucleotide_fna/')
         for istrain in strain_list:
-            istrain_cpk[istrain]=load_pickle(path+istrain+'_gene_nuc_dict.cpk')
+            istrain_cpk[istrain]=load_pickle(nucleotide_dict_path+istrain+'_gene_nuc_dict.cpk')
 
         ## load gene cluster cpk file
         geneCluster_path=faa_path+'diamond_matches/'
-        diamond_geneCluster_dt=load_pickle(geneCluster_path+species+'-orthamcl-allclusters.cpk')
+        diamond_geneCluster_dt=load_pickle(geneCluster_path+'orthamcl-allclusters.cpk')
 
         ## load geneID_to_geneSeqID geneSeqID cpk file
         geneID_to_geneSeqID_dict=load_pickle(path+'geneID_to_geneSeqID.cpk')
@@ -644,7 +653,7 @@ def explore_paralogs(path, nstrains, branch_length_cutoff=500, paralog_cutoff=0.
     return paralog_split_list
 
 
-def create_split_cluster_files(file_path, fname, new_fa_files_list,
+def create_split_cluster_files(file_path, fname,
                                gene_list1, gene_list2, diamond_geneCluster_dt):
     """
     delete the old cluster and create two new clusters
@@ -658,7 +667,13 @@ def create_split_cluster_files(file_path, fname, new_fa_files_list,
     origin_cluster_nu_fa = orgin_nwk_name.replace('nwk','fna')
     origin_cluster_aa_fa = orgin_nwk_name.replace('nwk','faa')
 
-    del diamond_geneCluster_dt[clusterID]
+    split_fa_files_set=set()
+    #print 'xxxx', clusterID
+    try:
+        print('deleting:',orgin_nwk_name,gene_list1,gene_list2, clusterID)
+        del diamond_geneCluster_dt[clusterID]
+    except:
+        print("can't delete",orgin_nwk_name,gene_list1,gene_list2, clusterID)
 
     ## write new cluster fa files
     origin_nu_fa_dt = read_fasta(file_path+origin_cluster_nu_fa)
@@ -674,7 +689,7 @@ def create_split_cluster_files(file_path, fname, new_fa_files_list,
         gene_cluster_nu_write=open( file_path+gene_cluster_nu_filename, 'wb')
         gene_cluster_aa_write=open( file_path+gene_cluster_aa_filename, 'wb')
 
-        new_fa_files_list.append(file_path+gene_cluster_nu_filename)
+        split_fa_files_set |=  set([file_path+gene_cluster_nu_filename])
 
         ## write new split cluster files
         for gene_memb in split_gene_list:
@@ -689,22 +704,55 @@ def create_split_cluster_files(file_path, fname, new_fa_files_list,
         diamond_geneCluster_dt[ newClusterId ][2]=len(dict(Counter([ ig for ig in split_gene_list])).keys())
         ## gene members
         diamond_geneCluster_dt[ newClusterId ][1]=[ ig.split('-')[0] for ig in split_gene_list ]
+    return split_fa_files_set
 
-
-def update_gene_cluster(path, species, diamond_geneCluster_dt ):
+def update_gene_cluster(path, diamond_geneCluster_dt ):
     ## update gene cluster pickled file
     cluster_path = path+'protein_faa/diamond_matches/'
-    write_pickle(cluster_path+species+'-orthamcl-allclusters_final.cpk',diamond_geneCluster_dt)
+    write_pickle(cluster_path+'orthamcl-allclusters_final.cpk',diamond_geneCluster_dt)
 
-
-def postprocess_paralogs(parallel, path, species, nstrains,
+def postprocess_paralogs_iterative(parallel, path, nstrains,
                          branch_length_cutoff=500, paralog_cutoff=0.5, plot=False):
+    
+    cluster_path= path+'protein_faa/diamond_matches/'
+    diamond_geneCluster_dt=load_pickle(cluster_path+'orthamcl-allclusters.cpk')
+
+    split_result= postprocess_paralogs( parallel, path, nstrains,
+                                            diamond_geneCluster_dt,
+                                            set(), 
+                                            branch_length_cutoff=branch_length_cutoff,
+                                            paralog_cutoff=paralog_cutoff,
+                                            plot=plot)
+    n_split_clusters, new_fa_files_set = split_result
+    iteration=0
+    while(n_split_clusters):
+        print('---- split a total of ',n_split_clusters, 'in iteration', iteration)
+        split_result= postprocess_paralogs( parallel, path, nstrains,
+                                                diamond_geneCluster_dt,
+                                                new_fa_files_set,
+                                                branch_length_cutoff=branch_length_cutoff,
+                                                paralog_cutoff=paralog_cutoff,
+                                                plot=plot)
+        n_split_clusters, new_fa_files_set = split_result
+        iteration+=1
+
+    ## write gene_diversity_Dt cpk file
+    output_path = path+'geneCluster/'
+    with open(output_path+'gene_diversity.txt', 'rb') as infile:
+        write_pickle(output_path+'gene_diversity.cpk',{ i.rstrip().split('\t')[0]:i.rstrip().split('\t')[1] for i in infile})
+
+    ## remove old gene cluster and create new split cluster
+    update_gene_cluster(path, diamond_geneCluster_dt )
+
+
+def postprocess_paralogs(parallel, path, nstrains, diamond_geneCluster_dt,
+                        new_fa_files_set, branch_length_cutoff=500, paralog_cutoff=0.5,
+                        plot=False):
     """
     splitting paralogs, discarding old gene clusters and creating new clusters of split paralogs
     params:
         parallel: number of threads to use
         path:     path to data
-        species:  prefix
         nstrains: total number of strains
         branch_length_cutoff: multiple of median branch length to split
                               (contribution in linear classifier, parameters to split_cluster)
@@ -718,10 +766,15 @@ def postprocess_paralogs(parallel, path, species, nstrains,
                          paralog_cutoff=paralog_cutoff, plot=plot)
 
     file_path = path+'geneCluster/'
-    cluster_path= path+'protein_faa/diamond_matches/'
-    fname_list = glob.glob(file_path+'*nwk')
-    diamond_geneCluster_dt=load_pickle(cluster_path+species+'-orthamcl-allclusters.cpk')
-    new_fa_files_list=[]
+
+    if len(new_fa_files_set)==0:
+        fname_list = glob.glob(file_path+'*nwk')
+    else:
+        fname_list = [ new_fa.replace('.fna','.nwk') for new_fa in new_fa_files_set ]
+        print fname_list
+    
+    new_fa_files_set= set()
+    n_split_clusters = 0
 
     for fname in fname_list:
         tree = Phylo.read(fname, 'newick')
@@ -741,27 +794,23 @@ def postprocess_paralogs(parallel, path, species, nstrains,
                 gene_list2 = all_genes.difference(gene_list1)
                 #print all_genes, gene_list1, gene_list2
 
-                create_split_cluster_files(file_path, fname, new_fa_files_list, gene_list1, gene_list2, diamond_geneCluster_dt)
+                new_fa_files = create_split_cluster_files(file_path, fname, gene_list1, gene_list2, diamond_geneCluster_dt)
+                new_fa_files_set |= new_fa_files
+                n_split_clusters+=1
 
-
-    print '---------------', new_fa_files_list
+    print 'new_split_fasta_files', time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()), new_fa_files_set
     ## make new aln and tree
-    multips(align_and_makeTree, file_path, parallel, new_fa_files_list)
+    multips(align_and_makeTree, file_path, parallel, list(new_fa_files_set))
 
-    ## write gene_diversity_dict cpk file
-    with open(file_path+'gene_diversity.txt', 'rb') as infile:
-        write_pickle(file_path+'gene_diversity.cpk',{ i.rstrip().split('\t')[0]:i.rstrip().split('\t')[1] for i in infile})
-
-    ## remove old gene cluster and create new split cluster
-    update_gene_cluster(path, species, diamond_geneCluster_dt )
+    return n_split_clusters, new_fa_files_set
 
 
-def load_sorted_clusters(path, species):
+def load_sorted_clusters(path):
     '''
     load gene clusters and sort 1st by abundance and then by clusterID
     '''
     geneClusterPath='%s%s'%(path,'protein_faa/diamond_matches/')
-    diamond_geneCluster_dt=load_pickle(geneClusterPath+species+'-orthamcl-allclusters_final.cpk')
+    diamond_geneCluster_dt=load_pickle(geneClusterPath+'orthamcl-allclusters_final.cpk')
     from operator import itemgetter
     # sort by decreasing abundance (-v[0], minus to achieve decreasing)
     # followed by increasing clusterID GC_00001

@@ -1,8 +1,8 @@
 import os, sys, csv, json
-from SF00miscellaneous import load_pickle
+from SF00_miscellaneous import load_pickle
 def id_separation(species, path, infile):
     """ extract meta-info from meta-info file 
-        input:  metainfo_curated.txt
+        input:  metainfo_curated.tsv
         return: id_dict as dictionary storing meta-info 
     """
     from collections import Counter
@@ -79,8 +79,8 @@ def create_json_addLabel( species, node, flag, path, metaFile):
             json0["genePresence"]=dt_strainGene[accName_each]
     return json0
 
-def json_tnt_parser(species):
-    read_json=open(species+'-tree-tnt-version_noBranch.json', 'rb')
+def json_tnt_parser():
+    read_json=open('coreGenomeTree-noBranch.json', 'rb')
     jsonString='';
     for ir in read_json: 
         jsonString=ir.split('\n')[0]
@@ -95,20 +95,18 @@ def json_tnt_parser(species):
         dt_tnt_nodeAttri[acc_key]=i_json
     jsonString_out2=json.dumps(dt_tnt_nodeAttri)
 
-    with open(species+'-tnt-nodeAttri-dataTable.json', 'wb') as write_json:
+    with open('strainMetainfo.json', 'wb') as write_json:
         write_json.write(jsonString_out1)
-    with open(species+'-tnt-nodeAttri.json', 'wb') as write_json1:
-        write_json1.write(jsonString_out2)
 
 def json_parser( path, species, meta_info_file_path ):
     """ create json file for web-visualiaztion
-        input: tree_result.newick, *metainfo_curated.txt
+        input: tree_result.newick, *metainfo_curated.tsv
         output: json files for gene cluster table and core gene SNP tree
     """
     from ete2 import Tree;
-    metaFile= path+'metainfo_curated.txt'
+    metaFile= path+'metainfo_curated.tsv'
     if meta_info_file_path =='none':
-        metaFile= path+'metainfo_curated.txt'
+        metaFile= path+'metainfo_curated.tsv'
     else: ## create a link of user meta_info_file
         os.system('pwd')
         os.system('cp %s %s'%(meta_info_file_path, metaFile))
@@ -119,11 +117,13 @@ def json_parser( path, species, meta_info_file_path ):
     jsonString=json.dumps(create_json_addLabel(species, tree, 0, path, metaFile))
     jsonString1=json.dumps(create_json_addLabel(species, tree, 1, path, metaFile))
     os.chdir(outpath_path)
-    with open(species+'-tree-tnt-version.json', 'wb') as write_json:
+    with open('coreGenomeTree.json', 'wb') as write_json:
         write_json.write(jsonString)
-    with open(species+'-tree-tnt-version_noBranch.json', 'wb') as write_json1:
+    with open('coreGenomeTree-noBranch.json', 'wb') as write_json1:
         write_json1.write(jsonString1)
 
     ## create tnt-nodeAttri-dataTable.json and tnt-nodeAttri.json for tree tables
-    json_tnt_parser(species)
+    json_tnt_parser()
 
+    ## move all *.cpk file to ./data/YourSpecies/ folder
+    os.system('mv *.cpk ..')

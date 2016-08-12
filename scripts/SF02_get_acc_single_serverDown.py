@@ -2,7 +2,7 @@ def accessionID_single(path, strain_lst, email=None):
     """ download NCBI refseq GenBank file from strain list """
     import os, sys
     from Bio import Entrez
-    from SF00miscellaneous import write_pickle
+    from SF00_miscellaneous import write_pickle
 
     if email is None:
         Entrez.email = "yourname@mail.com"

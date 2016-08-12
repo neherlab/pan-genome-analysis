@@ -50,10 +50,18 @@ The genomes are split into individual genes and all genes from all strains are c
           - strain2.gbk
           ...
         - GeneClusters            # Folder contain orthologous clusters
-          - GC_000001.json
+          - geneCluster.json
+          - geneGainLossEvent.json
+          - strainMetainfo.json
+          - coreGenomeTree.json
+          - GC_000001*_na.aln
+          - GC_000001*_aa.aln
+          - GC_000001*.nwk
+          - GC_000001*_tree.json
       - 
   ```
   In which step of the analysis different files and directories are produced is described in more detail below.
+
 
 ##**Step-by-Step tutorial:**<br />
 In `data/TestSet`, you will find a small set of four *Pseudomonas aeruginosa* genomes that is used in this tutorial. Your own data should also reside in such a folder within `data/` -- we will refer to this folder as *run directory* below. The name of the run directory is used as a species name in down-stream analysis.  
@@ -92,9 +100,9 @@ In folder `./data/TestSet/:`<br />
 \*.gbk file<br />
 - Output:<br />
 In folder `./data/TestSet/:`<br />
-\*.fastaCpk file (nucleotide sequences)<br />
+\*_genes_dict.cpk file (nucleotide sequences)<br />
 In folder `./data/TestSet/protein_faa:`<br />
-\*.fna file (amino acid sequences for DIAMOND input)<br />
+\*.faa file (amino acid sequences for DIAMOND input)<br />
 
 **Step04: extract metadata from GenBank (\*.gbk) file (Alternative: use manually curated metadata table)**<br />
 Extracting meta-information ( E.g.: country,collection_date, host, strain) or provide a simple tab-separated values (TSV) table.<br />
@@ -109,7 +117,7 @@ In folder `./data/TestSet/:`<br />
 \*.gbk file<br />
 - Output:<br />
 In folder `./data/TestSet/:`<br />
-metainfo_curated.txt and meta-dict-TestSet.js (metadata for visualization)<br />
+metainfo_curated.tsv and meta-dict-TestSet.js (metadata for visualization)<br />
 
 **Step05: compute gene clusters**<br />
 Conduct all-against-all protein sequences comparison by Diamond and cluster genes using Orthagogue and MCL<br />
@@ -117,30 +125,30 @@ Conduct all-against-all protein sequences comparison by Diamond and cluster gene
 In folder `./data/TestSet/protein_faa/:`<br />
 \*.faa file<br />
 - Output:<br />
-In folder `./data/TestSet/protein_fna/diamond_matches/:`<br />
+In folder `./data/TestSet/protein_faa/diamond_matches/:`<br />
 TestSet-orthamcl-allclusters.cpk (dictionary for gene clusters)<br />
 diamond_geneCluster_dt: {clusterID:[ count_strains,[memb1,...],count_genes }<br />
 
 **Step06: build alignments, gene trees from gene clusters and split paralogs**<br />
 Load nucleotide sequences in gene clusters, construct nucleotide and amino acid alignment, build a gene tree based on nucleotide alignment, split paralogs and export the gene tree in json file for visualization<br />
 - Input:<br />
-In folder `./data/TestSet/protein_fna/diamond_matches/:`<br />
-TestSet-orthamcl-allclusters.cpk file<br />
+In folder `./data/TestSet/protein_faa/diamond_matches/:`<br />
+orthamcl-allclusters.cpk file<br />
 - Output:<br />
-In folder `./data/TestSet/protein_fna/diamond_matches/:`<br />
-TestSet-orthamcl-allclusters_final.cpk ( final gene clusters)<br />
+In folder `./data/TestSet/protein_faa/diamond_matches/:`<br />
+orthamcl-allclusters_final.cpk ( final gene clusters)<br />
 In folder `./data/TestSet/geneCluster/:`<br />
-GC\*.nu.fa (nucleotide fasta)<br />
-GC\*.nu.aln (nucleotide alignment)<br />
-GC\*.aa.fa (amino acid fasta)<br />
-GC\*.aa.aln (amino acid alignment)<br />
-GC\*.tree.json (gene tree in json file)<br />
+GC\*.fna (nucleotide fasta)<br />
+GC\*_na.aln (nucleotide alignment)<br />
+GC\*.faa (amino acid fasta)<br />
+GC\*_aa.aln (amino acid alignment)<br />
+GC\*_tree.json (gene tree in json file)<br />
 
 **Step07: construct core gene SNP matrix**<br />
 Call SNPs in strictly core genes (without no gene duplication) and build SNP matrix for strain tree<br />
 - Input:<br />
-In folder `./data/TestSet/protein_fna/diamond_matches/:`<br />
-TestSet-orthamcl-allclusters_final.cpk file<br />
+In folder `./data/TestSet/protein_faa/diamond_matches/:`<br />
+orthamcl-allclusters_final.cpk file<br />
 - Output:<br />
 In folder `./data/TestSet/geneCluster/:`<br />
 SNP_whole_matrix.aln (SNP matrix as pseudo alignment)<br />
@@ -159,10 +167,10 @@ tree_result.newick<br />
 Use ancestral reconstruction algorithm (treetime) to conduct gain and loss events inference<br />
 - Input:<br />
 In folder `./data/TestSet/geneCluster/:`<br />
-TestSet-orthamcl-allclusters_final.cpk file<br />
+orthamcl-allclusters_final.cpk file<br />
 - Output:<br />
 In folder `./data/TestSet/geneCluster/:`<br />
-TestSet-genePresence.json (gene gain/loss event)<br />
+geneGainLossEvent.json (gene gain/loss event)<br />
 dt_geneEvents.cpk (number of gene gain/loss events)<br />
 tree_result.newick (final strain tree with inner nodes)<br />
 
@@ -170,22 +178,21 @@ tree_result.newick (final strain tree with inner nodes)<br />
 Export json file for gene cluster datatable visualization<br />
 - Input:<br />
 In folder `./data/TestSet/geneCluster/:`<br />
-TestSet-orthamcl-allclusters_final.cpk file (gene cluster dictionary)<br />
+orthamcl-allclusters_final.cpk file (gene cluster dictionary)<br />
 gene_diversity.cpk (diversity for each gene cluster)<br />
-locusTag_to_geneId.cpk (locus_tag for each gene)<br />
 dt_geneEvents.cpk (gain/loss event count)<br />
 - Output:<br />
 In folder `./data/TestSet/geneCluster/`<br />
-TestSet-geneCluster.json (gene cluster json for datatable visualization)<br />
+geneCluster.json (gene cluster json for datatable visualization)<br />
 
 **Step11: export tree and metadata json file**<br />
 Export json files for tree and metadata visualization<br />
 - Input:<br />
 In folder `./data/TestSet/:`<br />
-metainfo_curated.txt (metadata table)<br />
+metainfo_curated.tsv (metadata table)<br />
 In folder `./data/TestSet/geneCluster/:`<br />
 tree_result.newick (strain tree)<br />
 - Output:<br />
 In folder `./data/TestSet/geneCluster/`<br />
-TestSet-tree-tnt-version.json (strain tree visualization)<br />
-TestSet-tnt-nodeAttri-dataTable.json (strain metadata table visualization)
+coreGenomeTree.json (strain tree visualization)<br />
+strainMetainfo.json (strain metadata table visualization)

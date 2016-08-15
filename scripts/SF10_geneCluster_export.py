@@ -1,4 +1,4 @@
-import sys, glob, time
+import os, sys, glob, time
 from SF00_miscellaneous import load_pickle, write_pickle, read_fasta, write_in_fa ,times
 from SF06_geneCluster_align_makeTree import load_sorted_clusters
 from operator import itemgetter
@@ -41,7 +41,7 @@ def consolidate_geneName(path,all_gene_names):
 
     geneNames_sorted=sorted(geneNames.iteritems(), key=itemgetter(1),reverse=True)
     majority = geneNames_sorted[0][0]
-    if majority=='' and len(geneNames)!=1:
+    if majority=='None' and len(geneNames)!=1:
         majority=geneNames_sorted[1][0]
     # "#" to delimit key/count ; "@" to seperate various geneNames
     all_geneName=''.join(['%s#%s@'%(i_ann,j_ann) if i_ann!='' else 'None#%s@'%j_ann  for i_ann,j_ann in geneNames_sorted ])[:-1]
@@ -54,9 +54,11 @@ def geneCluster_to_json(path):
     input:  path to genecluster output
     output: geneCluster.json
     """
-    output_path='%s%s'%(path,'geneCluster/');
+    output_path='%s%s'%(path,'geneCluster/')
+    visualzition_path='%s%s'%(path,'vis/')
+    os.system('mkdir %s; mkdir %sgeneCluster/'%(visualzition_path,visualzition_path))
+    write_file_lst_json=open(visualzition_path+'geneCluster.json', 'wb')
     gene_diversity_Dt=load_pickle(output_path+'gene_diversity.cpk')
-    write_file_lst_json=open(output_path+'geneCluster.json', 'wb')
 
     ## sorted clusters
     sorted_genelist= load_sorted_clusters(path)

@@ -14,13 +14,15 @@ def gbk_To_Metainfo(path):
     writeseq= open(path+'metainfo.tsv', 'wb')
     # write the headers:
     # default: accName, strainName, antiBiotics, dateInfo, country, host
-    writeseq.write( "%s\n"%('\t'.join(['accName' , 'collection_date', 'country', 'host'])) )
+    writeseq.write( "%s\n"%('\t'.join(['accName' , 'strainName', 'collection_date', 'country', 'host'])) )
     # check each genBank file to get meta-type
     for eachstrain in strainList:
         for index, record in enumerate(SeqIO.parse(open(each_gbk_path+ eachstrain+'.gbk'), "genbank")):
             for i,feature in enumerate(record.features):
                 if feature.type=='source':
-                    host,datacolct,country ='', '', ''
+                    host,datacolct,country, strainName ='', '', '', ''
+                    if 'strain' in feature.qualifiers:
+                        strainName= feature.qualifiers['strain'][0]
                     if 'host' in feature.qualifiers:
                         host= feature.qualifiers['host'][0]
                     if 'collection_date' in feature.qualifiers:
@@ -57,6 +59,6 @@ def gbk_To_Metainfo(path):
                     # antibio='unknown'
                     break
             #writeseq.write( "%s\n"%('\t'.join([eachstrain, antibio, datacolct, country, host])) )
-            writeseq.write( "%s\n"%('\t'.join([eachstrain, datacolct, country, host])) )
+            writeseq.write( "%s\n"%('\t'.join([eachstrain, strainName, datacolct, country, host])) )
     writeseq.close()
     os.system('mv %smetainfo.tsv %smetainfo_curated.tsv'%(path,path))

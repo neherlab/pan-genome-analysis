@@ -117,7 +117,7 @@ if 11 in params.steps:# step11:
     print 'step11-extract json files for tree&treeDataTable visualization,etc:'
     print times(start)
 
-if 12 in params.steps:# step11:
+if 12 in params.steps:# step12:
     from SF12_create_panGenome import ete_tree_split
     start = time.time()
     ete_tree_split(path, species)

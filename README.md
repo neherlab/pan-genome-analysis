@@ -1,8 +1,8 @@
-# Microbial pan-genome analysis toolkit (MPA)
+# Microbial pan-genome analysis and exploration toolkit (panX)
 Author: Wei Ding and Richard Neher
 
 Overview:
-MPAM is based on an automated pan-genome identification pipeline that determines clusters of orthologous genes. The pipeline starts with a set of annotated sequences (e.g. NCBI RefSeq) of a bacterial species.
+panX is based on an automated pan-genome identification pipeline that determines clusters of orthologous genes. The pipeline starts with a set of annotated sequences (e.g. NCBI RefSeq) of a bacterial species.
 The genomes are split into individual genes and all genes from all strains are compared to each other via the fast protein alignment tool [DIAMOND](http://www.nature.com/nmeth/journal/v12/n1/full/nmeth.3176.html) and then clustered into orthologous groups using [orthAgogue](https://code.google.com/archive/p/orthagogue/) and MCL. After the construction of gene clusters, genes within clusters are aligned and the corresponding phylogenetic tree is computed, with mutations mapped into each tree and various summary statistics calculated.
 
 1. Dependencies:
@@ -38,7 +38,7 @@ The genomes are split into individual genes and all genes from all strains are c
 
     mandatory parameters: -fn folder_name / -sl strain_list / [-st steps [steps ...]]
     NOTICE: strain_list format should be species_name+'-RefSeq', e.g.: Saureus-RefSeq.txt
-    Example: python ./scripts/run-pipeline.py  -fn /ebio/ag-neher/share/users/wding/mpam/data/TestSet -sl TestSet-RefSeq.txt -st 1 2 3 4 5 6 7 8 9 10 11 -t 64 > TestSet.log 2>&1
+    Example: python ./scripts/run-pipeline.py  -fn ./data/TestSet -sl TestSet-RefSeq.txt -st 1 2 3 4 5 6 7 8 9 10 11 -t 64 > TestSet.log 2>&1
   ```
   The result will be a number of files that contain the all the information necessary for visualizing the pan-genome in the browser using [pan-genome-visuzalization](https://github.com/neherlab/pan-genome-visualization).
   ```
@@ -49,16 +49,21 @@ The genomes are split into individual genes and all genes from all strains are c
           - strain1.gbk
           - strain2.gbk
           ...
-        - GeneClusters            # Folder contain orthologous clusters
+        - vis
           - geneCluster.json
           - geneGainLossEvent.json
           - strainMetainfo.json
           - coreGenomeTree.json
-          - GC_000001*_na.aln
-          - GC_000001*_aa.aln
-          - GC_000001*.nwk
-          - GC_000001*_tree.json
-      - 
+          - GeneClusters/       # Folder contain orthologous clusters 
+            - GC_000001*_na.aln
+            - GC_000001*_aa.aln
+            - GC_000001*_tree.json
+            ...
+        - panGenome
+          - GC_000001*.fna
+          - GC_000001*.faa
+          - pan-genome.fasta
+          ...
   ```
   In which step of the analysis different files and directories are produced is described in more detail below.
 
@@ -126,7 +131,7 @@ In folder `./data/TestSet/protein_faa/:`<br />
 \*.faa file<br />
 - Output:<br />
 In folder `./data/TestSet/protein_faa/diamond_matches/:`<br />
-TestSet-orthamcl-allclusters.cpk (dictionary for gene clusters)<br />
+orthamcl-allclusters.cpk (dictionary for gene clusters)<br />
 diamond_geneCluster_dt: {clusterID:[ count_strains,[memb1,...],count_genes }<br />
 
 **Step06: build alignments, gene trees from gene clusters and split paralogs**<br />
@@ -177,8 +182,9 @@ tree_result.newick (final strain tree with inner nodes)<br />
 **Step10: export gene cluster json file**<br />
 Export json file for gene cluster datatable visualization<br />
 - Input:<br />
-In folder `./data/TestSet/geneCluster/:`<br />
+In folder `./data/TestSet/protein_faa/diamond_matches/:`<br />
 orthamcl-allclusters_final.cpk file (gene cluster dictionary)<br />
+In folder `./data/TestSet/geneCluster/:`<br />
 gene_diversity.cpk (diversity for each gene cluster)<br />
 dt_geneEvents.cpk (gain/loss event count)<br />
 - Output:<br />

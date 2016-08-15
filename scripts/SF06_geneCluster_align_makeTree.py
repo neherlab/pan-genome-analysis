@@ -556,13 +556,6 @@ def cluster_align_makeTree( path, parallel ):
     fa_files=glob.glob(fasta_path+"*.fna")
     multips(align_and_makeTree, fasta_path, parallel, fa_files)
 
-    ## write gene_diversity_dict cpk file
-    def write_gene_diversity_cpk():
-        with open(fasta_path+'gene_diversity.txt', 'rb') as infile:
-            write_pickle(fasta_path+'gene_diversity.cpk',
-                         { i.rstrip().split('\t')[0]:i.rstrip().split('\t')[1] for i in infile})
-
-
 
 ################################################################################
 #### cluster post processing and paralog splitting

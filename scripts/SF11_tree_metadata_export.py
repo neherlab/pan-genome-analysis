@@ -111,12 +111,13 @@ def json_parser( path, species, meta_info_file_path ):
         os.system('pwd')
         os.system('cp %s %s'%(meta_info_file_path, metaFile))
 
-    outpath_path=path+'geneCluster/'
-    tree = Tree(outpath_path+'tree_result.newick',format=1)
+    output_path='%s%s'%(path,'geneCluster/')
+    visualzition_path='%s%s'%(path,'Vis/')
+    tree = Tree(output_path+'tree_result.newick',format=1)
     ## create tree json files
     jsonString=json.dumps(create_json_addLabel(species, tree, 0, path, metaFile))
     jsonString1=json.dumps(create_json_addLabel(species, tree, 1, path, metaFile))
-    os.chdir(outpath_path)
+    os.chdir(output_path)
     with open('coreGenomeTree.json', 'wb') as write_json:
         write_json.write(jsonString)
     with open('coreGenomeTree-noBranch.json', 'wb') as write_json1:
@@ -126,4 +127,11 @@ def json_parser( path, species, meta_info_file_path ):
     json_tnt_parser()
 
     ## move all *.cpk file to ./data/YourSpecies/ folder
-    os.system('mv *.cpk ..')
+    ##      coreGenomeTree.json and strainMetainfo.json file to ./data/YourSpecies/vis/ folder
+    ##      GC*json file to ./data/YourSpecies/vis/geneCluster/ folder
+    os.system('mv *.cpk ..; \
+               mv coreGenomeTree.json ../vis/;\
+               mv strainMetainfo.json ../vis/;\
+               mv geneGainLossEvent.json ../vis/;\
+               mv GC*.aln ../vis/geneCluster/;\
+               mv GC*_tree.json ../vis/geneCluster/;')

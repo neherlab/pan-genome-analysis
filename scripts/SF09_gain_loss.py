@@ -58,7 +58,7 @@ def make_genepresence_alignment(path):
             dt_strainGene[istkey]=''.join(dt_strainGene[istkey] )
             write_in_fa( presence_outfile, istkey, dt_strainGene[istkey] )
 
-    write_pickle(output_path+'dt_genePresence.cpk', dt_strainGene)
+    write_pickle(path+'dt_genePresence.cpk', dt_strainGene)
 
 
 def infer_gene_gain_loss(path, rates = [1.0, 1.0]):
@@ -118,11 +118,11 @@ def export_gain_loss(tree, path):
     # 1 and 2 are codes for gain/loss events
     events_array = ((gain_loss_array == 1) | (gain_loss_array == 2)).sum(axis=0)
     events_dict =  { index:event for index, event in enumerate(events_array) }
-    events_dict_path= sep.join([output_path, 'dt_geneEvents.cpk'])
+    events_dict_path= sep.join([ output_path, 'dt_geneEvents.cpk'])
     write_pickle(events_dict_path, events_dict)
 
     # export gene loss dict to json for visualization
-    gene_loss_fname = sep.join([ output_path+'geneGainLossEvent.json'])
+    gene_loss_fname = sep.join([ output_path, 'geneGainLossEvent.json'])
     write_json(gene_gain_loss_dict, gene_loss_fname, indent=1)
 
 

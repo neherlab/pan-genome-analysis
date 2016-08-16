@@ -202,3 +202,13 @@ tree_result.newick (strain tree)<br />
 In folder `./data/TestSet/geneCluster/`<br />
 coreGenomeTree.json (strain tree visualization)<br />
 strainMetainfo.json (strain metadata table visualization)
+- Data collection for visualization (sending data to server)
+In folder `./data/TestSet/vis/`<br />
+geneGainLossEvent.json
+geneCluster.json
+coreGenomeTree.json
+strainMetainfo.json
+In folder `./data/TestSet/vis/geneCluster/`<br />
+GC\*_na.aln
+GC\*_aa.aln
+GC\*_tree.json

@@ -236,8 +236,6 @@ class mpm_tree(object):
         build a phylogenetic tree using fasttree and raxML (optional)
         based on nextflu tree building pipeline
         '''
-        from treetime import io
-        from treetime import utils
         import subprocess
         make_dir(self.run_dir)
         os.chdir(self.run_dir)
@@ -298,10 +296,8 @@ class mpm_tree(object):
             polytomies_midpointRooting('initial_tree.newick',out_fname)
 
         # load the resulting tree as a treetime instance
-        from treetime.gtr import GTR
-        self.gtr = GTR.standard()
-        self.tt = io.treetime_from_newick(self.gtr, out_fname)
-        io.set_seqs_to_leaves(self.tt, self.aln)
+        from treetime import TreeAnc
+        self.tt = TreeAnc(tree=out_fname, aln=self.aln, gtr='Jukes-Cantor')
 
         # provide short cut to tree and revert names that conflicted with newick format
         self.tree = self.tt.tree
@@ -318,7 +314,6 @@ class mpm_tree(object):
         infer ancestral nucleotide sequences using maximum likelihood
         and translate the resulting sequences (+ terminals) to amino acids
         '''
-        self.tt.set_additional_tree_params()
         try:
             self.tt.reconstruct_anc(method='ml')
         except:
@@ -706,13 +701,13 @@ def update_gene_cluster(path, diamond_geneCluster_dt ):
 
 def postprocess_paralogs_iterative(parallel, path, nstrains,
                          branch_length_cutoff=500, paralog_cutoff=0.5, plot=False):
-    
+
     cluster_path= path+'protein_faa/diamond_matches/'
     diamond_geneCluster_dt=load_pickle(cluster_path+'orthamcl-allclusters.cpk')
 
     split_result= postprocess_paralogs( parallel, path, nstrains,
                                             diamond_geneCluster_dt,
-                                            set(), 
+                                            set(),
                                             branch_length_cutoff=branch_length_cutoff,
                                             paralog_cutoff=paralog_cutoff,
                                             plot=plot)
@@ -765,7 +760,7 @@ def postprocess_paralogs(parallel, path, nstrains, diamond_geneCluster_dt,
     else:
         fname_list = [ new_fa.replace('.fna','.nwk') for new_fa in new_fa_files_set ]
         print fname_list
-    
+
     new_fa_files_set= set()
     n_split_clusters = 0
 

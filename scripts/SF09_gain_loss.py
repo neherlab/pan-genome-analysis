@@ -6,8 +6,8 @@ from treetime.gtr import GTR
 from treetime import io
 from treetime import seq_utils
 from Bio import Phylo, AlignIO
-from SF00miscellaneous import write_json, load_pickle, write_pickle, write_in_fa
-from SF06geneCluster_align_makeTree import load_sorted_clusters
+from SF00_miscellaneous import write_json, load_pickle, write_pickle, write_in_fa
+from SF06_geneCluster_align_makeTree import load_sorted_clusters
 
 
 def create_genePresence(dt_strainGene, totalStrain, set_totalStrain, all_gene_names):
@@ -32,7 +32,7 @@ def create_genePresence(dt_strainGene, totalStrain, set_totalStrain, all_gene_na
     return dt_strainGene
 
 
-def make_genepresence_alignment(path,species):
+def make_genepresence_alignment(path):
     '''
     loop over all gene clusters and append 0/1 to strain specific
     string used as pseudo alignment of gene presence absence
@@ -46,7 +46,7 @@ def make_genepresence_alignment(path,species):
     totalStrain=len(set_totalStrain)
     dt_strainGene= defaultdict(list)
 
-    sorted_genelist = load_sorted_clusters(path, species)
+    sorted_genelist = load_sorted_clusters(path)
     ## sorted_genelist: [(clusterID, [ count_strains,[memb1,...],count_genes]),...]
     for gid, (clusterID, gene) in enumerate(sorted_genelist):
         gene_list = gene[1]
@@ -59,7 +59,7 @@ def make_genepresence_alignment(path,species):
             dt_strainGene[istkey]=''.join(dt_strainGene[istkey] )
             write_in_fa( presence_outfile, istkey, dt_strainGene[istkey] )
 
-    write_pickle(output_path+'dt_genePresence.cpk', dt_strainGene)
+    write_pickle(path+'dt_genePresence.cpk', dt_strainGene)
 
 
 def infer_gene_gain_loss(path, rates = [1.0, 1.0]):
@@ -89,7 +89,7 @@ def infer_gene_gain_loss(path, rates = [1.0, 1.0]):
     # failedleaves = io.set_seqs_to_leaves(t, AlignIO.read(fasta, 'fasta'))
     # if failedleaves > 0:
     #    print(' '.join(["Warning",str(failedleaves),"leaves have failed"]))
-    
+
     #print(t.tree.get_terminals()[10])
     #print(t.tree.get_terminals()[10].sequence[9375:9390])
     #t.tree.one_mutation = 1.0
@@ -101,12 +101,12 @@ def infer_gene_gain_loss(path, rates = [1.0, 1.0]):
     return t
 
 
-def export_gain_loss(tree, path, species):
+def export_gain_loss(tree, path):
     '''
     '''
     # write final tree with internal node names as assigned by treetime
     sep='/'
-    output_path= sep.join([path.rstrip(sep), 'geneCluster'])
+    output_path= sep.join([path.rstrip(sep), 'geneCluster/'])
     tree_fname = sep.join([output_path, 'tree_result.newick'])
     Phylo.write(tree.tree, tree_fname, 'newick')
 
@@ -124,27 +124,27 @@ def export_gain_loss(tree, path, species):
     # 1 and 2 are codes for gain/loss events
     events_array = ((gain_loss_array == 1) | (gain_loss_array == 2)).sum(axis=0)
     events_dict =  { index:event for index, event in enumerate(events_array) }
-    events_dict_path= sep.join([output_path, 'dt_geneEvents.cpk'])
+    events_dict_path= sep.join([ output_path, 'dt_geneEvents.cpk'])
     write_pickle(events_dict_path, events_dict)
 
     # export gene loss dict to json for visualization
-    gene_loss_fname = sep.join([ output_path, species+'-genePresence.json'])
+    gene_loss_fname = sep.join([ output_path, 'geneGainLossEvent.json'])
     write_json(gene_gain_loss_dict, gene_loss_fname, indent=1)
 
 
-def process_gain_loss(path, species):
-    make_genepresence_alignment(path, species)
+def process_gain_loss(path):
+    make_genepresence_alignment(path)
     tree = infer_gene_gain_loss(path)
     create_visible_pattern_dictionary(tree)
     set_seq_to_patternseq(tree)
     set_visible_pattern_to_ignore(tree,p=-1,mergeequalstrains=True)
-    
+
     def myminimizer(c):
         return compute_totallh(tree,c)
-    
+
     from scipy.optimize import minimize
     res = minimize(myminimizer,[0.5,1.],method='L-BFGS-B',bounds = [(0.0001,0.999),(0.01,1000.)])
-    
+
     if res.success == True:
         print('successfully estimated the gtr parameters. Reconstructing ancestral states...')
         change_gtr_parameters_forgainloss(tree,res.x[0],res.x[1])
@@ -152,14 +152,14 @@ def process_gain_loss(path, species):
         export_gain_loss(tree,path,species)
     else:
         print('Warning: failed to estimated the gtr parameters by ML.')
-    
-    
-    
+
+
+
 def create_visible_pattern_dictionary(tree):
     """
     create a sequence in all leaves such that each presence absence pattern occurs only once
     """
-    #create a pattern dictionary  
+    #create a pattern dictionary
     #patterndict = {pattern_tuple: [first position in pseudoalignment with pattern, number of genes with this pattern,indicator to include this pattern in the estimation]}
     #clusterdict = {first position with pattern: [number of genes with pattern,indicator to include gene in gtr inference]}
     #initialize dictionaries
@@ -182,7 +182,7 @@ def create_visible_pattern_dictionary(tree):
         else:
             tree.tree.patterndict[pattern] = [genenumber,1,1]
             tree.tree.clusterdict[tree.tree.patterndict[pattern][0]] = [tree.tree.patterndict[pattern][1],1]
-               
+
     #thin sequence to unique pattern and save result to node.patternseq
     for node in tree.tree.find_clades():
         if hasattr(node, 'sequence'):
@@ -208,7 +208,7 @@ def index2pattern(index,numstrains):
     pattern = [0] * numstrains
     for ind in index:
         pattern[ind] = 1
-    return tuple(pattern)    
+    return tuple(pattern)
 
 
 def index2pattern_reverse(index,numstrains):
@@ -218,14 +218,14 @@ def index2pattern_reverse(index,numstrains):
     pattern = [1] * numstrains
     for ind in index:
         pattern[ind] = 0
-    return tuple(pattern)  
-    
+    return tuple(pattern)
+
 def create_ignoring_pattern_dictionary(tree,p = 0):
     """
     create a dictionary of pattern that correspond to extended core genes and extended unique genes
     these pattern will be ignored in the inference of gene gain/loss rates
     """
-    #create a pattern dictionary  
+    #create a pattern dictionary
     #unpatterndict = {pattern_tuple: [first position in pseudoalignment with pattern, number of genes with this pattern]}
     #initialize dictionaries
     import itertools
@@ -235,17 +235,17 @@ def create_ignoring_pattern_dictionary(tree,p = 0):
         p = int(numstrains/10)
     corepattern = ('1',)*numstrains
     nullpattern = ('0',)*numstrains
-    
+
     #all sets of indices for p or less of numstrains individuals
     myindices = iter(())
     for i in range(p):
         myindices = itertools.chain(myindices, itertools.combinations(range(numstrains),i+1))
-        
+
     for indices in myindices:
         tree.tree.unpatterndict[index2pattern(indices,numstrains)] = [-1,0,0]
         tree.tree.unpatterndict[index2pattern_reverse(indices,numstrains)] = [-1,0,0]
-        
-        
+
+
 def create_distance_matrix(tree):
     numstrains = len(tree.tree.get_terminals())
     tree.tree.distance_matrix = np.zeros([numstrains,numstrains])
@@ -307,7 +307,7 @@ def set_visible_pattern_to_ignore(tree,p = -1,mergeequalstrains = False,lowfreq 
             if highfreq <= p:
                 tree.tree.patterndict[pattern][2] = 0
                 tree.tree.clusterdict[tree.tree.patterndict[pattern][0]][1] = 0
-    
+
     tree.tree.pattern_include = [tree.tree.clusterdict[key][1] for key in sorted(tree.tree.clusterdict.keys())]
     if sum(tree.tree.pattern_include) == 0:
         print('WARNING all pattern have been excluded, estimation of parameters is thus impossible')
@@ -348,11 +348,11 @@ def compute_lh(tree,verbose=0):
 
         node.profile = (node.profile.T/pre).T # normalize so that the sum is 1
         node.lh_prefactor += np.log(pre) # and store log-prefactor
-        
-    tree.tree.root.pattern_profile_lh = (np.log(tree.tree.root.profile).transpose() + tree.tree.root.lh_prefactor).transpose()
-    
 
-        
+    tree.tree.root.pattern_profile_lh = (np.log(tree.tree.root.profile).transpose() + tree.tree.root.lh_prefactor).transpose()
+
+
+
 
 def change_gtr_parameters_forgainloss(tree,pi_present,mu):
     genepi = np.array([1.0-pi_present,pi_present])
@@ -364,15 +364,15 @@ def change_gtr_parameters_forgainloss(tree,pi_present,mu):
     tree.gtr.W = np.ones((2,2))
     np.fill_diagonal(tree.gtr.W, - ((tree.gtr.W).sum(axis=0) - 1.))
     tree.gtr._check_fix_Q()
-    # meanwhile tree.gtr._check_fix_Q() keeps mu        
+    # meanwhile tree.gtr._check_fix_Q() keeps mu
     tree.gtr._eig()
-    
-            
+
+
 def compute_totallh(tree,params,adjustcore = True,verbose = 0):
     """
     compute the total likelihood for all genes with presence pattern set to include
     conditioned on not observing pattern set to not include (e.g. the nullpattern)
-    be careful: this function changes the gtr model 
+    be careful: this function changes the gtr model
     """
     # change the relation of genegain and geneloss rate and the speed
     pi_present = params[0]
@@ -404,17 +404,17 @@ def set_seq_to_genepresence(tree):
             node.sequence = node.genepresence
         else:
             delattr(node,sequence)
-            
+
 def plot_ll(filename,tree,mu =1.0):
-    import matplotlib.pyplot as plt    
+    import matplotlib.pyplot as plt
     xaxis = np.linspace(0.0001, 0.999, num=500)
     graph = [compute_totallh(tree,[x,mu]) for x in xaxis]
     plt.plot(xaxis, graph)
     plt.savefig(filename)
     plt.close()
-    
+
 def plot_ll_mu(filename,tree,pi_present =0.5,mu_max = 10):
-    import matplotlib.pyplot as plt    
+    import matplotlib.pyplot as plt
     xaxis = np.linspace(0.01, mu_max, num=500)
     graph = [compute_totallh(tree,[pi_present,x]) for x in xaxis]
     plt.plot(xaxis, graph)
@@ -425,26 +425,26 @@ def plot_ll_mu(filename,tree,pi_present =0.5,mu_max = 10):
     #species= 'Pat4'
     #path = '/ebio/ag-neher/share/users/wding/mpam/data/'+species+'/'
     #path = '/home/franz/tmp/'
-    
+
     #process_gain_loss(path,species)
-    
-      
+
+
     #tree = infer_gene_gain_loss(path)
 
     ##outpath = '.'
     #outpath = '/home/franz/tmp/out/'
-    
-    
+
+
     #create_visible_pattern_dictionary(tree)
     #set_seq_to_patternseq(tree)
     #set_visible_pattern_to_ignore(tree,p=-1,mergeequalstrains=True)
-    
+
     #def myminimizer(c):
         #return compute_totallh(tree,c)
-    
+
     #from scipy.optimize import minimize
     #res = minimize(myminimizer,[0.5,1.],method='L-BFGS-B',bounds = [(0.0001,0.999),(0.01,1000.)])
-    
+
     #if res.success == True:
         #print('successfully estimated the gtr parameters. Reconstructing ancestral states...')
         #change_gtr_parameters_forgainloss(tree,res.x[0],res.x[1])
@@ -452,6 +452,4 @@ def plot_ll_mu(filename,tree,pi_present =0.5,mu_max = 10):
         #export_gain_loss(tree, outpath, species)
     #else:
         #print('Warning: failed to estimated the gtr parameters by ML.')
-        
-        
 

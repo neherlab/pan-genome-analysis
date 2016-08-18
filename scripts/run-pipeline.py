@@ -1,11 +1,11 @@
 import os,sys,time,argparse
 from collections import Counter
-from SF00miscellaneous import times,load_pickle, write_pickle
-from SF02get_acc_single_serverDown import accessionID_single
-from SF03diamond_input import diamond_input
-from SF04gbk_metainfo import gbk_To_Metainfo
-from SF05diamond_orthamcl import diamond_orthamcl_cluster
-from SF06geneCluster_align_makeTree import cluster_align_makeTree, postprocess_paralogs
+from SF00_miscellaneous import times,load_pickle, write_pickle
+from SF02_get_acc_single_serverDown import accessionID_single
+from SF03_diamond_input import diamond_input
+from SF04_gbk_metainfo import gbk_To_Metainfo
+from SF05_diamond_orthamcl import diamond_orthamcl_cluster
+from SF06_geneCluster_align_makeTree import cluster_align_makeTree, postprocess_paralogs_iterative
 from SF07_core_SNP_matrix import create_core_SNP_matrix
 from SF08_core_tree_build import aln_to_Newick
 from SF09_gain_loss import process_gain_loss
@@ -25,6 +25,7 @@ parser.add_argument('-t', '--threads', type = int, default = 1, help='number of 
 parser.add_argument('-bp', '--blast_file_path', type = str, default = 'none', help='the absolute path for blast result (e.g.: /path/blast.out)')
 parser.add_argument('-rp', '--roary_file_path', type = str, default = 'none', help='the absolute path for roary result (e.g.: /path/roary.out)')
 parser.add_argument('-mi', '--meta_info_file_path', type = str, default = 'none', help='the absolute path for meta_information file (e.g.: /path/meta.out)')
+parser.add_argument('-dmt', '--diamond_max_target_seqs', type = str, default = '600', help='Diamond: the maximum number of target sequences per query to keep alignments for. Defalut: #strain * #max_duplication= 40*15= 600 ')
 
 params = parser.parse_args()
 path = params.folder_name
@@ -53,8 +54,6 @@ if 1 in params.steps: #step 01:
 ## load strain_list.cpk file and give the total number of strains
 if os.path.isfile(path+'strain_list.cpk'):
     strain_lst= load_pickle(path+'strain_list.cpk')
-else:
-    load_strains()
 nstrains =len([ istrain for istrain in strain_lst ])
 
 if 2 in params.steps:# step02:
@@ -77,20 +76,20 @@ if 4 in params.steps:# step04:
 
 if 5 in params.steps:# step05:
     start = time.time()
-    diamond_orthamcl_cluster(path, species, params.threads, params.blast_file_path, params.roary_file_path )
+    diamond_orthamcl_cluster(path, params.threads, params.blast_file_path, params.roary_file_path, params.diamond_max_target_seqs )
     print 'step05-run diamond and ortha-mcl to cluster genes: '
     print times(start)
 
 if 6 in params.steps:# step06:
     start = time.time()
-    cluster_align_makeTree(path, species, params.threads)
-    postprocess_paralogs(params.threads, path, species, nstrains)
+    cluster_align_makeTree(path, params.threads)
+    postprocess_paralogs_iterative(params.threads, path, nstrains)
     print 'step06-align genes in geneCluster by mafft and build gene trees:'
     print times(start)
 
 if 7 in params.steps:# step07:
     start = time.time()
-    create_core_SNP_matrix(path, species)
+    create_core_SNP_matrix(path)
     print 'step07-call SNPs from core genes:'
     print times(start)
 
@@ -102,13 +101,13 @@ if 8 in params.steps:# step08:
 
 if 9 in params.steps:# step09:
     start = time.time()
-    process_gain_loss(path, species)
+    process_gain_loss(path)
     print 'step09-infer gain/loss patterns of all genes:'
     print times(start)
 
 if 10 in params.steps:# step10:
     start = time.time()
-    geneCluster_to_json(path, species)
+    geneCluster_to_json(path)
     print 'step10-creates json file for geneDataTable visualization:'
     print times(start)
 
@@ -118,7 +117,7 @@ if 11 in params.steps:# step11:
     print 'step11-extract json files for tree&treeDataTable visualization,etc:'
     print times(start)
 
-if 12 in params.steps:# step11:
+if 12 in params.steps:# step12:
     from SF12_create_panGenome import ete_tree_split
     start = time.time()
     ete_tree_split(path, species)

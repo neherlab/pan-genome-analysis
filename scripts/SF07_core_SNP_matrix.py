@@ -1,6 +1,6 @@
-from SF06geneCluster_align_makeTree import load_sorted_clusters
+from SF06_geneCluster_align_makeTree import load_sorted_clusters
 
-def create_core_SNP_matrix(path, species):
+def create_core_SNP_matrix(path):
     """ create SNP matrix using core gene SNPs
         input: strain_list.cpk, core_geneList.cpk
         output: SNP_whole_matrix.aln
@@ -8,7 +8,7 @@ def create_core_SNP_matrix(path, species):
     import sys,operator
     import numpy as np
     from collections import defaultdict
-    from SF00miscellaneous import read_fasta, write_pickle, load_pickle, write_in_fa
+    from SF00_miscellaneous import read_fasta, write_pickle, load_pickle, write_in_fa
 
     alnFilePath='%s%s'%(path,'geneCluster/')
     output_path= alnFilePath
@@ -16,11 +16,11 @@ def create_core_SNP_matrix(path, species):
     ## create core gene list
     corelist=[];
     totalStrain= len(load_pickle(path+'strain_list.cpk'))
-    sorted_geneList = load_sorted_clusters(path, species)
+    sorted_geneList = load_sorted_clusters(path)
     with open(output_path+'core_geneList.txt','wb') as outfile:
         for clusterID, vg in sorted_geneList:
             if vg[0]==totalStrain and vg[2]==totalStrain:
-                coreGeneName='%s%s'%(clusterID,'.nu.aln')
+                coreGeneName='%s%s'%(clusterID,'_na.aln')
                 outfile.write(coreGeneName+'\n')
                 corelist.append(coreGeneName)
         write_pickle(output_path+'core_geneList.cpk',corelist)

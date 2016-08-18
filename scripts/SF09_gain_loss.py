@@ -86,6 +86,7 @@ def infer_gene_gain_loss(path, rates = [1.0, 1.0]):
         if leaf.name is None:
             leaf.name = str(leaf.confidence)
     t.aln = fasta
+    t.tree.root.branch_length=0.0001
     t.reconstruct_anc(method='ml')
 
     for n in t.tree.find_clades():

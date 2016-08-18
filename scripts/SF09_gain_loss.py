@@ -59,7 +59,7 @@ def make_genepresence_alignment(path):
             dt_strainGene[istkey]=''.join(dt_strainGene[istkey] )
             write_in_fa( presence_outfile, istkey, dt_strainGene[istkey] )
 
-    write_pickle(path+'dt_genePresence.cpk', dt_strainGene)
+    write_pickle(output_path+'dt_genePresence.cpk', dt_strainGene)
 
 
 def infer_gene_gain_loss(path, rates = [1.0, 1.0]):
@@ -80,19 +80,12 @@ def infer_gene_gain_loss(path, rates = [1.0, 1.0]):
     nwk =  sep.join([path.rstrip(sep), 'geneCluster', 'tree_result.newick'])
 
     # instantiate treetime with custom GTR
-    t = ta.TreeAnc(nwk, gtr =gain_loss_model, aln=fasta) # io.treetime_from_newick(gain_loss_model, nwk)
+    t = ta.TreeAnc(nwk, gtr =gain_loss_model, verbose=2)
     # fix leaves names since Bio.Phylo interprets numeric leaf names as confidence
     for leaf in t.tree.get_terminals():
         if leaf.name is None:
             leaf.name = str(leaf.confidence)
-    # load alignment and associate with tree leafs
-    # failedleaves = io.set_seqs_to_leaves(t, AlignIO.read(fasta, 'fasta'))
-    # if failedleaves > 0:
-    #    print(' '.join(["Warning",str(failedleaves),"leaves have failed"]))
-
-    #print(t.tree.get_terminals()[10])
-    #print(t.tree.get_terminals()[10].sequence[9375:9390])
-    #t.tree.one_mutation = 1.0
+    t.aln = fasta
     t.reconstruct_anc(method='ml')
 
     for n in t.tree.find_clades():
@@ -149,7 +142,7 @@ def process_gain_loss(path):
         print('successfully estimated the gtr parameters. Reconstructing ancestral states...')
         change_gtr_parameters_forgainloss(tree,res.x[0],res.x[1])
         tree.reconstruct_anc(method='ml')
-        export_gain_loss(tree,path,species)
+        export_gain_loss(tree,path)
     else:
         print('Warning: failed to estimated the gtr parameters by ML.')
 

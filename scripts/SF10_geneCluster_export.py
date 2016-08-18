@@ -4,17 +4,15 @@ from SF06_geneCluster_align_makeTree import load_sorted_clusters
 from operator import itemgetter
 from collections import defaultdict, Counter
 
-def consolidate_annotation(path,all_gene_names):
+def consolidate_annotation(path,all_gene_names, geneID_to_description_dict):
     """
     determine a consensus annotation if annotation of reference sequences
     is conflicting. hypothetical protein annotations are avoided is possible
     """
     # count annotation and sort by decreasing occurence
-    
-    # load geneID_to_description_dict
-    geneID_to_description_dict=load_pickle(path+'geneID_to_description.cpk')
-    #geneSeqID based on geneID-conitg-geneName:Annotation
-    annotations=dict(Counter( [ geneID_to_description_dict[igi]['annotation'] for igi in all_gene_names ]) )
+
+    #geneSeqID based on geneID-contig-geneName:Annotation
+    annotations=dict(Counter( [ geneID_to_description_dict[igi]['annotation'] for igi in all_gene_names]) )
     ## create split cluster generating new ID conflict
 
     annotations_sorted=sorted(annotations.iteritems(), key=itemgetter(1),reverse=True)
@@ -26,15 +24,13 @@ def consolidate_annotation(path,all_gene_names):
     allAnn=''.join(['%s#%s@'%(i_ann,j_ann) for i_ann,j_ann in annotations_sorted ])[:-1]
     return allAnn,majority
 
-def consolidate_geneName(path,all_gene_names):
+def consolidate_geneName(path,all_gene_names, geneID_to_description_dict):
     """
     determine a consensus geneName if geneName of reference sequences
     is conflicting.
     """
     # count geneName and sort by decreasing occurence
-    
-    # load geneID_to_description_dict
-    geneID_to_description_dict=load_pickle(path+'geneID_to_description.cpk')
+
     #geneSeqID based on geneID-conitg-geneName:geneName
     geneNames=dict(Counter( [ geneID_to_description_dict[igi]['geneName'] for igi in all_gene_names ]) )
     ## create split cluster generating new ID conflict
@@ -54,6 +50,9 @@ def geneCluster_to_json(path):
     input:  path to genecluster output
     output: geneCluster.json
     """
+    # load geneID_to_description_dict
+    geneID_to_description_dict=load_pickle(path+'geneID_to_description.cpk')
+
     output_path='%s%s'%(path,'geneCluster/')
     visualzition_path='%s%s'%(path,'vis/')
     os.system('mkdir %s; mkdir %sgeneCluster/'%(visualzition_path,visualzition_path))
@@ -64,7 +63,7 @@ def geneCluster_to_json(path):
     sorted_genelist= load_sorted_clusters(path)
 
     ## prepare geneId_Dt_to_locusTag
-    
+
     #geneId_Dt_to_locusTag=defaultdict(list)
     #geneId_Dt_to_locusTag={v:k for k,v in locusTag_to_geneId_Dt.items()}
 
@@ -81,10 +80,10 @@ def geneCluster_to_json(path):
             write_file_lst_json.write(',\n')
 
         ## annotation majority
-        allAnn,majority_annotation = consolidate_annotation(path, gene_list)
+        allAnn,majority_annotation = consolidate_annotation(path, gene_list, geneID_to_description_dict)
 
         ## geneName majority
-        all_geneName, majority_geneName =  consolidate_geneName(path,gene_list)
+        all_geneName, majority_geneName =  consolidate_geneName(path,gene_list, geneID_to_description_dict)
         #break
         ## extract gain/loss event count
         gene_event= dt_geneEvents[gid]

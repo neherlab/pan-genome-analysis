@@ -162,10 +162,11 @@ class mpm_tree(object):
 
     def __init__(self, alignment_fname, **kwarks):
         self.fname_prefix=alignment_fname.split('geneCluster/')[1].split('.fna')[0]
+        temp_prefix=alignment_fname.split('/geneCluster/')[0].split('/')[-1]
         self.seqs = {x.id:x for x in SeqIO.parse(alignment_fname, 'fasta')}
         if 'run_dir' not in kwarks:
             import random
-            self.run_dir = '_'.join(['temp', time.strftime('%Y%m%d-%H%M%S',time.gmtime()), str(random.randint(0,1000000))])
+            self.run_dir = '_'.join([temp_prefix, 'temp', time.strftime('%Y%m%d-%H%M%S',time.gmtime()), str(random.randint(0,100000000))])
         else:
             self.run_dir = kwarks['run_dir']
         self.nuc=True

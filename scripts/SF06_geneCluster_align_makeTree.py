@@ -303,6 +303,7 @@ class mpm_tree(object):
 
         # provide short cut to tree and revert names that conflicted with newick format
         self.tree = self.tt.tree
+        self.tree.root.branch_length=0.0001
         restore_strain_name(name_translation, self.aln)
         restore_strain_name(name_translation, self.tree.get_terminals())
 

@@ -1,5 +1,5 @@
 # Microbial pan-genome analysis toolkit (MPA)
-Author: Wei Ding and Richard Neher
+Author: Wei Ding, Franz Baumdicker and Richard Neher
 
 Overview:
 MPAM is based on an automated pan-genome identification pipeline that determines clusters of orthologous genes. The pipeline starts with a set of annotated sequences (e.g. NCBI RefSeq) of a bacterial species.

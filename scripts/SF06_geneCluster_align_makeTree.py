@@ -493,7 +493,7 @@ def align_and_makeTree(thread, alignFile_path, fa_files_list):
                 gene_diversity_values='{0:.3f}'.format(diversity)
                 geneDiversity_file.write('%s\t%s\n'%(clusterID,gene_diversity_values))
         except:
-            print("Aligning and tree building of %s failed".gene_cluster_nu_filename)
+            print("Aligning and tree building of %s failed"%gene_cluster_nu_filename)
 
 
 def cluster_align_makeTree( path, parallel ):

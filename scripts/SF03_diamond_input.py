@@ -34,7 +34,7 @@ def gbk_translation(each_gbk_path,nucleotide_dict_path, gb_file, output_filename
                 if 'product' in feature.qualifiers and 'translation' in feature.qualifiers :
                     if 'gene' in feature.qualifiers :
                         geneName='%s'%(feature.qualifiers['gene'][0]).replace(' ','_')
-                    else: geneName='None'
+                    else: geneName=''
                     product=feature.qualifiers['product'][0]
                     annotation= '_'.join(product.split(' '))
                     trans_seq=feature.qualifiers['translation'][0];
@@ -51,7 +51,7 @@ def gbk_translation(each_gbk_path,nucleotide_dict_path, gb_file, output_filename
                     geneID_to_description_dict[geneID]={'geneName': geneName,
                                                         'contig': contig_index,
                                                         'annotation': annotation}                    
-                    if geneName!='None':
+                    if geneName!='':
                         geneName='%s_'%geneName
                     geneID_to_geneSeqID_dict[geneID]='%s|%s-%d-%s%s'%(strainName,
                                                     locus_tag, contig_index,

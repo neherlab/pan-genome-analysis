@@ -37,8 +37,11 @@ def consolidate_geneName(path,all_gene_names, geneID_to_description_dict):
 
     geneNames_sorted=sorted(geneNames.iteritems(), key=itemgetter(1),reverse=True)
     majority = geneNames_sorted[0][0]
-    if majority=='None' and len(geneNames)!=1:
-        majority=geneNames_sorted[1][0]
+    if majority=='':
+        if len(geneNames)!=1:
+            majority=geneNames_sorted[1][0]
+        else: majority='None'
+
     # "#" to delimit key/count ; "@" to seperate various geneNames
     all_geneName=''.join(['%s#%s@'%(i_ann,j_ann) if i_ann!='' else 'None#%s@'%j_ann  for i_ann,j_ann in geneNames_sorted ])[:-1]
     #print all_geneName, ' ?', majority

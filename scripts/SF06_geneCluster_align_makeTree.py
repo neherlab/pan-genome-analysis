@@ -392,7 +392,6 @@ class mpm_tree(object):
         ## write tree
         Phylo.write(self.tree, path+self.fname_prefix+'.nwk', 'newick')
 
-
         ## processing node name
         for node in self.tree.get_terminals():
             node.name = node.ann.split('|')[0]
@@ -457,41 +456,44 @@ def multips(function_in_use, file_path, parallel, fa_files):
 
 def align_and_makeTree(thread, alignFile_path, fa_files_list):
     for gene_cluster_nu_filename in fa_files_list:
-        # extract GC_00002 from path/GC_00002.aln
-        clusterID = gene_cluster_nu_filename.split('/')[-1].split('.')[0]
-        start = time.time();
-        geneDiversity_file = open(alignFile_path+'gene_diversity.txt', 'a')
-        if len( read_fasta(gene_cluster_nu_filename) )==1: # nothing to do for singletons
-            ## na.aln
-            gene_cluster_nu_aln_filename= gene_cluster_nu_filename.replace('.fna','_na.aln')
-            ## geneSeqID separator '|' is replaced by '-' for msa viewer compatibility
-            with open(gene_cluster_nu_aln_filename,'wb') as write_file:
-                for SeqID, Sequence in read_fasta(gene_cluster_nu_filename).iteritems():
-                    write_in_fa(write_file, SeqID.replace('|','-'), Sequence)
+        try:
+            # extract GC_00002 from path/GC_00002.aln
+            clusterID = gene_cluster_nu_filename.split('/')[-1].split('.')[0]
+            start = time.time();
+            geneDiversity_file = open(alignFile_path+'gene_diversity.txt', 'a')
+            if len( read_fasta(gene_cluster_nu_filename) )==1: # nothing to do for singletons
+                ## na.aln
+                gene_cluster_nu_aln_filename= gene_cluster_nu_filename.replace('.fna','_na.aln')
+                ## geneSeqID separator '|' is replaced by '-' for msa viewer compatibility
+                with open(gene_cluster_nu_aln_filename,'wb') as write_file:
+                    for SeqID, Sequence in read_fasta(gene_cluster_nu_filename).iteritems():
+                        write_in_fa(write_file, SeqID.replace('|','-'), Sequence)
 
-            ## aa.aln
-            gene_cluster_aa_filename= gene_cluster_nu_filename.replace('.fna','.faa')
-            gene_cluster_aa_aln_filename= gene_cluster_nu_filename.replace('.fna','_aa.aln')
-            ## geneSeqID separator '|' is replaced by '-' for msa viewer compatibility
-            with open(gene_cluster_aa_aln_filename,'wb') as write_file:
-                for SeqID, Sequence in read_fasta(gene_cluster_aa_filename).iteritems():
-                    write_in_fa(write_file, SeqID.replace('|','-'), Sequence)
+                ## aa.aln
+                gene_cluster_aa_filename= gene_cluster_nu_filename.replace('.fna','.faa')
+                gene_cluster_aa_aln_filename= gene_cluster_nu_filename.replace('.fna','_aa.aln')
+                ## geneSeqID separator '|' is replaced by '-' for msa viewer compatibility
+                with open(gene_cluster_aa_aln_filename,'wb') as write_file:
+                    for SeqID, Sequence in read_fasta(gene_cluster_aa_filename).iteritems():
+                        write_in_fa(write_file, SeqID.replace('|','-'), Sequence)
 
-            geneDiversity_file.write('%s\t%s\n'%(clusterID,'0.0'))
+                geneDiversity_file.write('%s\t%s\n'%(clusterID,'0.0'))
 
-        else: # align and build tree
-            print gene_cluster_nu_filename
-            myTree = mpm_tree(gene_cluster_nu_filename)
-            myTree.codon_align()
-            myTree.translate()
-            myTree.build(raxml=False)
-            myTree.ancestral(translate_tree=True)
-            myTree.refine()
-            myTree.export(path=alignFile_path)
-            myTree.diversity_statistics()
-            diversity=myTree.diversity
-            gene_diversity_values='{0:.3f}'.format(diversity)
-            geneDiversity_file.write('%s\t%s\n'%(clusterID,gene_diversity_values))
+            else: # align and build tree
+                print gene_cluster_nu_filename
+                myTree = mpm_tree(gene_cluster_nu_filename)
+                myTree.codon_align()
+                myTree.translate()
+                myTree.build(raxml=False)
+                myTree.ancestral(translate_tree=True)
+                myTree.refine()
+                myTree.export(path=alignFile_path)
+                myTree.diversity_statistics()
+                diversity=myTree.diversity
+                gene_diversity_values='{0:.3f}'.format(diversity)
+                geneDiversity_file.write('%s\t%s\n'%(clusterID,gene_diversity_values))
+        except:
+            print("Aligning and tree building of %s failed".gene_cluster_nu_filename)
 
 
 def cluster_align_makeTree( path, parallel ):

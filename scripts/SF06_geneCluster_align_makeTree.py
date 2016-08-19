@@ -34,7 +34,7 @@ def tree_to_json(node, extra_attr = []):
     for prop in num_attr:
         if hasattr(node, prop):
             try:
-                tree_json[prop] = round(node.__getattribute__(prop),5)
+                tree_json[prop] = round(node.__getattribute__(prop),7)
             except:
                 print "cannot round:", node.__getattribute__(prop), "assigned as is"
                 tree_json[prop] = node.__getattribute__(prop)
@@ -201,11 +201,8 @@ class mpm_tree(object):
             cline()
             aln_aa = AlignIO.read(tmpfname[:-5]+'aligned.fasta', "fasta")
         elif alignment_tool=='mafft':
-            from Bio.Align.Applications import MafftCommandline
-            from StringIO import StringIO
-            mafft_cline = MafftCommandline(input=tmpfname)
-            stdout, stderr = mafft_cline()
-            aln_aa = AlignIO.read(StringIO(stdout), "fasta")
+            os.system("mafft --amino temp_in.fasta 1> temp_out.fasta 2> mafft.log")
+            aln_aa = AlignIO.read('temp_out.fasta', "fasta")
         else:
             print 'Alignment tool not supported:'+alignment_tool
             return
@@ -225,7 +222,7 @@ class mpm_tree(object):
         os.chdir(self.run_dir)
 
         SeqIO.write(self.seqs.values(), "temp_in.fasta", "fasta")
-        os.system("mafft --anysymbol temp_in.fasta > temp_out.fasta")
+        os.system("mafft --anysymbol temp_in.fasta 1> temp_out.fasta 2> mafft.log")
 
         self.aln = AlignIO.read('temp_out.fasta', 'fasta')
         self.sequence_lookup = {seq.id:seq for seq in self.aln}
@@ -248,8 +245,10 @@ class mpm_tree(object):
         tree_cmd = ["fasttree"]
         if self.nuc: tree_cmd.append("-nt")
         tree_cmd.append("temp.fasta")
-        tree_cmd.append(">")
+        tree_cmd.append("1>")
         tree_cmd.append("initial_tree.newick")
+        tree_cmd.append("2>")
+        tree_cmd.append("fasttree.log")
         os.system(" ".join(tree_cmd))
 
         out_fname = "tree_infer.newick"
@@ -400,6 +399,9 @@ class mpm_tree(object):
             node.longName = node.ann.split('-')[0]
 
         ## write tree json
+        for n in self.tree.root.find_clades():
+            if n.branch_length<1e-6:
+                n.branch_length = 1e-6
         timetree_fname = path+self.fname_prefix+'_tree.json'
         tree_json = tree_to_json(self.tree.root, extra_attr=extra_attr)
         write_json(tree_json, timetree_fname, indent=None)

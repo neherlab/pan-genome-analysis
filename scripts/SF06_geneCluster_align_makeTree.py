@@ -376,7 +376,8 @@ class mpm_tree(object):
             print("calculate alignment first")
             return
         self.af = calc_af(self.aln, nuc_alpha)
-        tmp_af = self.af[:-2]/self.af[:-2].sum(axis=0)
+        is_valid = self.af[:-2].sum(axis=0)>0.5
+        tmp_af = self.af[:-2,is_valid]/self.af[:-2,is_valid].sum(axis=0)
         self.entropy = np.mean(-(tmp_af*np.log(tmp_af+TINY)).sum(axis=0))
         self.diversity = np.mean(1.0-(tmp_af**2).sum(axis=0))
 

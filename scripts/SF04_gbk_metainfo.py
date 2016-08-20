@@ -20,16 +20,22 @@ def gbk_To_Metainfo(path):
         for index, record in enumerate(SeqIO.parse(open(each_gbk_path+ eachstrain+'.gbk'), "genbank")):
             for i,feature in enumerate(record.features):
                 if feature.type=='source':
-                    host,datacolct,country, strainName ='', '', '', ''
+                    host, datacolct, country, strainName ='', '', '', ''
                     if 'strain' in feature.qualifiers:
                         strainName= feature.qualifiers['strain'][0]
+                    else: 
+                        strainName='unknown'
                     if 'host' in feature.qualifiers:
                         host= feature.qualifiers['host'][0]
+                    else: 
+                        host='unknown'
                     if 'collection_date' in feature.qualifiers:
                         datacolct= feature.qualifiers['collection_date'][0]
                     if 'country' in feature.qualifiers:
                         country= feature.qualifiers['country'][0]
                         country= country.split(':')[0] #USA: New...
+                    else: 
+                        country='unknown'
 
                     # date processing
                     import re, calendar
@@ -48,11 +54,13 @@ def gbk_To_Metainfo(path):
                     elif datacolct!='':
                         if  len(datacolct)==8:
                             datacolct='%s-%s-%s'%(dates[0][:4], dates[0][4:6], dates[0][6:])
-                        else: datacolct=dates[0]+'-01-01'
+                        elif len(datacolct)==6: #'2010-05'
+                            datacolct='%s-%s-01'%(dates[0][:4], dates[0][4:6])
+                        else: 
+                            datacolct=dates[0]+'-01-01'
+                    elif datacolct=='': 
+                        datacolct='unknown'
 
-                    if datacolct=='': datacolct='unknown'
-                    if host=='': host='unknown'
-                    if country=='': country='unknown'
                     # just get the year
                     datacolct = datacolct.split('-')[0]
                     # antibiotic default: unknown

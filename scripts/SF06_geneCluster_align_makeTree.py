@@ -6,6 +6,7 @@ from Bio.Align import MultipleSeqAlignment
 from ete2 import Tree
 from SF00_miscellaneous import times, read_fasta, load_pickle, write_pickle, write_in_fa, write_json
 sys.path.append('./scripts/')
+sys.setrecursionlimit(2000)
 
 def make_dir(dname):
     import os
@@ -494,6 +495,7 @@ def align_and_makeTree(thread, alignFile_path, fa_files_list):
                 geneDiversity_file.write('%s\t%s\n'%(clusterID,gene_diversity_values))
         except:
             print("Aligning and tree building of %s failed"%gene_cluster_nu_filename)
+            print(myTree.tree)
 
 
 def cluster_align_makeTree( path, parallel ):

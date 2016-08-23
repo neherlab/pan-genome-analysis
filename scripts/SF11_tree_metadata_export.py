@@ -84,17 +84,13 @@ def json_tnt_parser():
     jsonString='';
     for ir in read_json: 
         jsonString=ir.split('\n')[0]
-    jsonString1=jsonString.replace('{"name": "", "children": [', '').replace('name', 'accession').replace(']}', '');
-    jsonString_out1='%s%s%s'%('{ "data":[', jsonString1,']}')
-
-    dt_tnt_nodeAttri=dict();
-    for i_json in json.loads('[%s]'%jsonString1):
-        # jsonString1 [{'acc':1,date:'1981'},{'acc':2,date:'1942'}]
-        acc_key=i_json['accession']
-        del i_json['accession']
-        dt_tnt_nodeAttri[acc_key]=i_json
-    jsonString_out2=json.dumps(dt_tnt_nodeAttri)
-
+    jsonString1=jsonString.replace('{"name": "", "children": [', '').replace(']}', '');
+    jsonString_out1='[%s]'%jsonString1.replace('"name"','"accession"')
+    tmp_meta_dict=json.loads(jsonString_out1);
+    tmp_meta_list= [item_dict for item_dict in tmp_meta_dict ]
+    jsonString_out1= json.dumps(tmp_meta_list)
+    jsonString_out1='{ "data": %s }'%jsonString_out1
+    tmp_meta_dict=json.loads(jsonString_out1);
     with open('strainMetainfo.json', 'wb') as write_json:
         write_json.write(jsonString_out1)
 

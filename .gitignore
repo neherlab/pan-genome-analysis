@@ -1,4 +1,5 @@
 run.sh
+run-*_*.sh
 data/*
 *log
 *sh.*

@@ -117,7 +117,7 @@ def diamond_orthamcl_cluster(path, threads, blast_cluster_file_path='none', roar
             with open(blast_cluster_file_path, 'rb') as infile:
                 geneCluster_dt=defaultdict(list)
                 for gid, iline in enumerate(infile):
-                    column=[  ico.replace('_','|') for ico in iline.rstrip().split('\t')]
+                    column=[  ico.replace('_','|') for ico in iline.rstrip().split('\t') ]
                     clusterID="GC_%08d"%gid
                     gene_list=[ ico for ico in column ]
                     geneCluster_dt[clusterID]=[0,[],0]
@@ -138,6 +138,6 @@ def diamond_orthamcl_cluster(path, threads, blast_cluster_file_path='none', roar
         with open(roary_cluster_file_path, 'rb') as cluster_external_file:
             with open(output_path+'orthamcl-allclusters.csv', 'wb') as cluster_final_file:
                 for cluster_line in cluster_external_file:
-                     cluster_final_file.write( '%s\n'%'\t'.join([ gene_tag.replace('_','|') for gene_tag in cluster_line.rstrip().split(': ')[1].split('\t')]) )
+                     cluster_final_file.write( '%s\n'%'\t'.join([ gene_tag.replace('_','|') if '|' not in gene_tag else gene_tag for gene_tag in cluster_line.rstrip().split(': ')[1].split('\t')]) )
         all_cluster_file='orthamcl-allclusters.csv';
         parse_geneCluster(output_path,all_cluster_file)

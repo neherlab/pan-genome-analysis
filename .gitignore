@@ -1,5 +1,9 @@
 run.sh
 run-*_*.sh
+x*.sh
+mapping-scr
+scripts/ss*py
+syn*py
 data/*
 *log
 *sh.*

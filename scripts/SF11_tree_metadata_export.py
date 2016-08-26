@@ -16,11 +16,17 @@ def id_separation(species, path, infile):
             meta_display_dict[h]=h
 
         for icsv_line in csv_reader:
+            #capitalize host string to consolidate GenBank meta-data
+            host_raw= icsv_line[4]
+            if host_raw!='unknown':
+                icsv_line[4]='%s%s'%(host_raw[0].upper(), host_raw[1:])
             id_dict[ icsv_line[0] ] = icsv_line
             for h, v in zip(headers, icsv_line):
                 meta_dict[h].append(v)
         for k,v in meta_dict.iteritems():
-            meta_dict[k]=dict(Counter(v)).keys()
+            meta_item_list=sorted(dict(Counter(v)).keys())
+            meta_dict[k]=meta_item_list
+
         del meta_dict[headers[0]]
         del meta_display_dict[headers[0]]
 
@@ -45,12 +51,11 @@ def create_json_simple(node):
     json0["branch_length"]=float(node.dist)
     return json0
 
-def create_json_addLabel( species, node, flag, path, metaFile):
+def create_json_addLabel( species, dt_genePresence, node, flag, path, metaFile):
     ## tree json with meta-info labels
     from collections import OrderedDict
     id_dict,headers=id_separation(species, path, metaFile); 
     node.name = node.name.replace("'", '')
-    dt_strainGene=load_pickle(path+'geneCluster/dt_genePresence.cpk')
     json0 = OrderedDict()
     if flag==0:
         json0["name"]=node.name
@@ -63,7 +68,7 @@ def create_json_addLabel( species, node, flag, path, metaFile):
     if node.children: ##branchset 
         json0["children"] = []
         for ch in node.children: ## recursively 
-            json0["children"].append(create_json_addLabel(species, ch, flag, path, metaFile))
+            json0["children"].append(create_json_addLabel(species, dt_genePresence, ch, flag, path, metaFile))
     if flag==0:
         json0["branch_length"]=float(node.dist)
 
@@ -76,7 +81,7 @@ def create_json_addLabel( species, node, flag, path, metaFile):
                 json0[head]=id_dict[accName_each][index_head]
         # load genePresence info
         if flag==0:
-            json0["genePresence"]=dt_strainGene[accName_each]
+            json0["genePresence"]=dt_genePresence[accName_each]
     return json0
 
 def json_tnt_parser():
@@ -110,9 +115,10 @@ def json_parser( path, species, meta_info_file_path ):
     output_path='%s%s'%(path,'geneCluster/')
     visualzition_path='%s%s'%(path,'Vis/')
     tree = Tree(output_path+'tree_result.newick',format=1)
+    dt_genePresence=load_pickle(path+'geneCluster/dt_genePresence.cpk')
     ## create tree json files
-    jsonString=json.dumps(create_json_addLabel(species, tree, 0, path, metaFile))
-    jsonString1=json.dumps(create_json_addLabel(species, tree, 1, path, metaFile))
+    jsonString=json.dumps(create_json_addLabel(species, dt_genePresence, tree, 0, path, metaFile))
+    jsonString1=json.dumps(create_json_addLabel(species, dt_genePresence, tree, 1, path, metaFile))
     os.chdir(output_path)
     with open('coreGenomeTree.json', 'wb') as write_json:
         write_json.write(jsonString)
@@ -125,9 +131,7 @@ def json_parser( path, species, meta_info_file_path ):
     ## move all *.cpk file to ./data/YourSpecies/ folder
     ##      coreGenomeTree.json and strainMetainfo.json file to ./data/YourSpecies/vis/ folder
     ##      GC*json file to ./data/YourSpecies/vis/geneCluster/ folder
-    os.system('mv *.cpk ..; \
-               mv coreGenomeTree.json ../vis/;\
-               mv strainMetainfo.json ../vis/;\
-               mv geneGainLossEvent.json ../vis/;\
-               mv GC*.aln ../vis/geneCluster/;\
-               mv GC*_tree.json ../vis/geneCluster/;')
+    current_path=os.getcwd()
+    os.system('ln -sf %s/*.cpk %s/../'%(current_path,current_path))
+    os.system('mv coreGenomeTree.json strainMetainfo.json geneGainLossEvent.json ../vis/;')
+    os.system('mv GC*.aln GC*_tree.json ../vis/geneCluster/;')

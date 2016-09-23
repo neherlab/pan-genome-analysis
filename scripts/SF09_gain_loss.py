@@ -351,7 +351,7 @@ def compute_lh(tree,verbose=0):
 def change_gtr_parameters_forgainloss(tree,pi_present,mu):
     genepi = np.array([1.0-pi_present,pi_present])
     genepi /= genepi.sum()
-    tree.gtr.Pi = np.diagflat(genepi)
+    tree.gtr.Pi = genepi
     # change speed
     tree.gtr.mu = mu
     # flow matrix
@@ -375,7 +375,7 @@ def compute_totallh(tree,params,adjustcore = True,verbose = 0):
 
     # this gives the log likelihoods for each pattern
     compute_lh(tree)
-    tree.tree.root.pattern_lh =  np.log(np.sum(np.exp(tree.tree.root.pattern_profile_lh)*np.diag(tree.gtr.Pi),axis=1))
+    tree.tree.root.pattern_lh =  np.log(np.sum(np.exp(tree.tree.root.pattern_profile_lh)*tree.gtr.Pi,axis=1))
     #compute the likelihood of all genes with included pattern
     tree.tree.root.total_llh =  np.sum(tree.tree.root.pattern_lh * np.array(tree.tree.pattern_abundance) * np.array(tree.tree.pattern_include))
     #adjust for pattern that should not be included

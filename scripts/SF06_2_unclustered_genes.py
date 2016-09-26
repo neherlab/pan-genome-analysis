@@ -29,6 +29,7 @@ def postprocess_unclustered_genes(n_threads, path, nstrains):
     # 5) for each subtree (ideally only one big tree), define new gene cluster and run
     #    maketree_align from standard step 6
 
+    output_path='%s%s'%(path,'geneCluster/')
     gene_clusters = load_sorted_clusters(path)
     length_to_cluster = defaultdict(list)
     length_list = []
@@ -41,6 +42,22 @@ def postprocess_unclustered_genes(n_threads, path, nstrains):
     cluster_length_distribution = np.bincount(length_list)
     ws=5
     window = np.ones(ws, dtype=float)/ws
-    smoothed_length_distribution = np.convolve(window, cluster_length_distribution, mode='same')
+    smoothed_length_distribution = np.convolve(cluster_length_distribution, window, mode='same')
+    print 3*np.sqrt(smoothed_length_distribution)
+    #print max(0.3*nstrains, 3*np.sqrt(smoothed_length_distribution))
+    peaks = (cluster_length_distribution - smoothed_length_distribution)> np.maximum(0.3*nstrains, 3*np.sqrt(smoothed_length_distribution))
+    print peaks
 
-    peaks = (cluster_length_distribution - smoothed_length_distribution)>max(0.3*nstrains, 3*np.sqrt(smoothed_length_distribution))
+    def plot_gene_cluster_length_distr():
+        '''
+        plot branch length against # of gene_cluster_length_distr across trees
+        '''
+        import matplotlib.pyplot as plt
+        plt.ion()
+        plt.figure()
+        plt.hist( cluster_length_distribution ,normed=True)
+        plt.xlabel('gene_cluster_length_distr')
+        plt.savefig('./explore_gene_cluster_length_distr.pdf')
+
+    #plot=True
+    if True: plot_gene_cluster_length_distr()

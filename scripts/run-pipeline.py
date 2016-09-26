@@ -83,8 +83,8 @@ if 5 in params.steps:# step05:
 
 if 6 in params.steps:# step06:
     start = time.time()
-    cluster_align_makeTree(path, params.threads)
-    postprocess_paralogs_iterative(params.threads, path, nstrains)
+    #cluster_align_makeTree(path, params.threads)
+    #postprocess_paralogs_iterative(params.threads, path, nstrains)
     postprocess_unclustered_genes(params.threads, path, nstrains)
     print 'step06-align genes in geneCluster by mafft and build gene trees:'
     print times(start)

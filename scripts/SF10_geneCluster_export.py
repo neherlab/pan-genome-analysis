@@ -94,7 +94,7 @@ def geneCluster_to_json(path):
         ## average length
         #start = time.time()
         geneLength_list= [ len(igene) for igene in read_fasta(output_path+'%s%s'%(clusterID,'.fna')).values() ]
-        geneClusterLength = sum(geneLength_list) / len(geneLength_list)
+        geneClusterLength = sum(geneLength_list) // len(geneLength_list)
         #print geneLength_list,geneClusterLength
         #print 'average length:', times(start)
 

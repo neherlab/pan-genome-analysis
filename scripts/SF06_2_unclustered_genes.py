@@ -10,9 +10,15 @@ from SF06_geneCluster_align_makeTree import load_sorted_clusters
 sys.path.append('./scripts/')
 sys.setrecursionlimit(2000)
 
+def concatenate_cluster_files(file_list, index):
+    print os.getcwd()
+    filenames_str=' '.join(['%s.fna'%i_file for i_file in file_list])
+    clusters_in_peak_filename='GC_unclust%03d.fna'%index
+    os.system('cat %s > %s'%(filenames_str, clusters_in_peak_filename))
+    return clusters_in_peak_filename
 
-def postprocess_unclustered_genes(n_threads, path, nstrains):
-    pass
+def postprocess_unclustered_genes(n_threads, path, nstrains, window_size=5, strain_proportion=0.3 , sigma_scale=3):
+
     # 1) detect suspicious peaks in the distribution of average length of genes in gene cluster (aa count)
     #    np.bincount([1,2,3,34,3]) -> how often each entry is found
     #    np.convolve([1,1,1,1,1], gene_length_count)
@@ -40,24 +46,17 @@ def postprocess_unclustered_genes(n_threads, path, nstrains):
         length_list.append(clusterLength)
 
     cluster_length_distribution = np.bincount(length_list)
-    ws=5
-    window = np.ones(ws, dtype=float)/ws
+    window_size=5
+    window = np.ones(window_size, dtype=float)/window_size
     smoothed_length_distribution = np.convolve(cluster_length_distribution, window, mode='same')
-    print 3*np.sqrt(smoothed_length_distribution)
-    #print max(0.3*nstrains, 3*np.sqrt(smoothed_length_distribution))
-    peaks = (cluster_length_distribution - smoothed_length_distribution)> np.maximum(0.3*nstrains, 3*np.sqrt(smoothed_length_distribution))
-    print peaks
 
-    def plot_gene_cluster_length_distr():
-        '''
-        plot branch length against # of gene_cluster_length_distr across trees
-        '''
-        import matplotlib.pyplot as plt
-        plt.ion()
-        plt.figure()
-        plt.hist( cluster_length_distribution ,normed=True)
-        plt.xlabel('gene_cluster_length_distr')
-        plt.savefig('./explore_gene_cluster_length_distr.pdf')
+    peaks = (cluster_length_distribution - smoothed_length_distribution)> np.maximum(strain_proportion*nstrains, sigma_scale*np.sqrt(smoothed_length_distribution))
+    position_peaks =np.where(peaks)[0]; cluster_len_peaks= position_peaks*3
+    unclustered_fa_files=[]
+    for index, i_peak in enumerate(position_peaks,1):
+        unclustered_fa_files.append(concatenate_cluster_files(length_to_cluster[i_peak], index))
 
-    #plot=True
-    if True: plot_gene_cluster_length_distr()
+    #fasta_path = path+'geneCluster/'
+    #multips(align_and_makeTree, fasta_path, parallel, fa_files)
+
+

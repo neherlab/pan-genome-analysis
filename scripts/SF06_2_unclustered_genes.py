@@ -10,11 +10,10 @@ from SF06_geneCluster_align_makeTree import load_sorted_clusters
 sys.path.append('./scripts/')
 sys.setrecursionlimit(2000)
 
-def concatenate_cluster_files(file_list, index):
-    print os.getcwd()
-    filenames_str=' '.join(['%s.fna'%i_file for i_file in file_list])
+def concatenate_cluster_files(file_list, index, output_path):
+    filenames_str=' '.join(['%s%s.fna'%(output_path,i_file) for i_file in file_list])
     clusters_in_peak_filename='GC_unclust%03d.fna'%index
-    os.system('cat %s > %s'%(filenames_str, clusters_in_peak_filename))
+    os.system('cat %s > %s%s'%(filenames_str, output_path, clusters_in_peak_filename))
     return clusters_in_peak_filename
 
 def postprocess_unclustered_genes(n_threads, path, nstrains, window_size=5, strain_proportion=0.3 , sigma_scale=3):
@@ -51,10 +50,10 @@ def postprocess_unclustered_genes(n_threads, path, nstrains, window_size=5, stra
     smoothed_length_distribution = np.convolve(cluster_length_distribution, window, mode='same')
 
     peaks = (cluster_length_distribution - smoothed_length_distribution)> np.maximum(strain_proportion*nstrains, sigma_scale*np.sqrt(smoothed_length_distribution))
-    position_peaks =np.where(peaks)[0]; cluster_len_peaks= position_peaks*3
+    position_peaks =np.where(peaks)[0]; #cluster_len_peaks= position_peaks*3
     unclustered_fa_files=[]
     for index, i_peak in enumerate(position_peaks,1):
-        unclustered_fa_files.append(concatenate_cluster_files(length_to_cluster[i_peak], index))
+        unclustered_fa_files.append(concatenate_cluster_files(length_to_cluster[i_peak], index,output_path))
 
     #fasta_path = path+'geneCluster/'
     #multips(align_and_makeTree, fasta_path, parallel, fa_files)

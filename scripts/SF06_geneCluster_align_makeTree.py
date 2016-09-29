@@ -391,7 +391,7 @@ class mpm_tree(object):
                     self.mut_to_branch[mut].append(node)
 
 
-    def export(self, path = '', extra_attr = ['aa_muts','ann','branch_length','name','longName']):
+    def export(self, path = '', extra_attr = ['aa_muts','ann','branch_length','name','longName'], RNA_specific=False):
         ## write tree
         Phylo.write(self.tree, path+self.fname_prefix+'.nwk', 'newick')
 
@@ -411,12 +411,14 @@ class mpm_tree(object):
         ## msa compatible
         for i_aln in self.aln:
             i_aln.id=i_aln.id.replace('|','-',1)
-        for i_aa_aln in self.aa_aln:
-            i_aa_aln.id=i_aa_aln.id.replace('|','-',1)
-
-        AlignIO.write(self.aa_aln, path+self.fname_prefix+'_aa.aln', 'fasta')
+        
         AlignIO.write(self.aln, path+self.fname_prefix+'_na.aln', 'fasta')
 
+        if RNA_specific==False:
+            for i_aa_aln in self.aa_aln:
+                i_aa_aln.id=i_aa_aln.id.replace('|','-',1)
+
+            AlignIO.write(self.aa_aln, path+self.fname_prefix+'_aa.aln', 'fasta')
 
         ## write seq json
         elems = {}

@@ -51,7 +51,7 @@ def create_core_SNP_matrix(path):
             position_has_gap = np.where(np.any(nuc_array=='-',axis=0))[0]
             position_SNP = np.setdiff1d(position_polymorphic, position_has_gap)
             snp_columns = nuc_array[:,position_SNP]
-            snp_pos_dt[align_file]=snp_columns
+            snp_pos_dt[align_file]=position_SNP
 
             if snp_wh_matrix_flag==0:
                 snp_whole_matrix=snp_columns;

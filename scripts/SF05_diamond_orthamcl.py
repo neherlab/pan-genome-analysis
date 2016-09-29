@@ -23,7 +23,7 @@ def diamond_run(query_path, output_path, dmd_ref_file, threads, diamond_max_targ
 def ortha_mcl_run(output_path):
     """ run orthAgogue and MCL """
     os.system("orthAgogue -i "+output_path+"query_matches.m8 -s '|' -O "+output_path+"ortha > "+output_path+"orthAgogu.log  2>&1")
-    os.system('mv report_orthAgogue '+output_path)
+    os.system('mv -f report_orthAgogue '+output_path)
     os.system('mv '+output_path+'ortha/all.abc '+output_path)
     os.system('mcl '+output_path+'all.abc --abc -o '+output_path+'orthamcl-cluster.output > '+output_path+'mcl.log 2>&1')
 

@@ -55,7 +55,8 @@ def geneCluster_to_json(path):
     """
     # load geneID_to_description_dict
     geneID_to_description_dict=load_pickle(path+'geneID_to_description.cpk')
-
+    # load RNAID_to_description_file
+    geneID_to_description_dict.update(load_pickle(path+'RNAID_to_description.cpk'))
     output_path='%s%s'%(path,'geneCluster/')
     visualzition_path='%s%s'%(path,'vis/')
     os.system('mkdir %s; mkdir %sgeneCluster/'%(visualzition_path,visualzition_path))

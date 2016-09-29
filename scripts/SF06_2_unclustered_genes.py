@@ -29,7 +29,7 @@ def concatenate_cluster_files(clusterID_list, index, file_path):
     os.system('cat %s > %s%s'%(faa_filenames_str, file_path, faa_clusters_in_peak_filename))
     return merged_cluster_filename, cluster_needed_deletion
 
-def find_and_merge_unclustered_genes(n_threads, path, nstrains, window_size=5, strain_proportion=0.3 , sigma_scale=3):
+def find_and_merge_unclustered_genes( path, nstrains, window_size=5, strain_proportion=0.3 , sigma_scale=3):
     """
     detect the unclustered genes and concatenate them
     params:
@@ -163,7 +163,7 @@ def cut_tree_from_merged_clusters(parallel, path, diamond_geneCluster_dt, merged
     ## align and make tree on new cluster
     multips(align_and_makeTree, file_path, parallel, list(new_fa_files_set))
 
-def postprocess_unclustered_genes(parallel, n_threads, path, nstrains, window_size=5, strain_proportion=0.3 , sigma_scale=3):
+def postprocess_unclustered_genes(parallel, path, nstrains, window_size_smoothed=5, strain_proportion=0.3 , sigma_scale=3):
 
     # 1) detect suspicious peaks in the distribution of average length of genes in gene cluster (aa count)
     #    np.bincount([1,2,3,34,3]) -> how often each entry is found
@@ -185,7 +185,7 @@ def postprocess_unclustered_genes(parallel, n_threads, path, nstrains, window_si
     diamond_geneCluster_dt=load_pickle(geneClusterPath+'orthamcl-allclusters_final.cpk')
     ## merge unclustered genes
     merged_clusters_dict=defaultdict(list)
-    merged_clusters_dict=find_and_merge_unclustered_genes(n_threads, path, nstrains, window_size, strain_proportion , sigma_scale)
+    merged_clusters_dict=find_and_merge_unclustered_genes(path, nstrains, window_size_smoothed, strain_proportion , sigma_scale)
     ## cut tree and make new clusters
     cut_tree_from_merged_clusters(parallel,path,diamond_geneCluster_dt,merged_clusters_dict)
     ## write new clusters in orthamcl-allclusters_final.cpk

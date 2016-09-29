@@ -5,9 +5,10 @@ from SF02_get_acc_single_serverDown import accessionID_single
 from SF03_diamond_input import diamond_input
 from SF04_gbk_metainfo import gbk_To_Metainfo
 from SF05_diamond_orthamcl import diamond_orthamcl_cluster
+from SF05_2_blastRNA import RNA_cluster
 from SF06_geneCluster_align_makeTree import cluster_align_makeTree, postprocess_paralogs_iterative
 from SF06_2_unclustered_genes import postprocess_unclustered_genes
-#find_and_merge_unclustered_genes, cut_tree_from_merged_clusters
+from SF06_3_clusterRNA import RNAclusters_align_makeTree
 from SF07_core_SNP_matrix import create_core_SNP_matrix
 from SF08_core_tree_build import aln_to_Newick
 from SF09_gain_loss import process_gain_loss
@@ -28,6 +29,10 @@ parser.add_argument('-bp', '--blast_file_path', type = str, default = 'none', he
 parser.add_argument('-rp', '--roary_file_path', type = str, default = 'none', help='the absolute path for roary result (e.g.: /path/roary.out)')
 parser.add_argument('-mi', '--meta_info_file_path', type = str, default = 'none', help='the absolute path for meta_information file (e.g.: /path/meta.out)')
 parser.add_argument('-dmt', '--diamond_max_target_seqs', type = str, default = '600', help='Diamond: the maximum number of target sequences per query to keep alignments for. Defalut: #strain * #max_duplication= 40*15= 600 ')
+parser.add_argument('-ws', '--window_size_smoothed', type = int, default = 5, help='postprocess_unclustered_genes: window_size for smoothed cluster length distribution')
+parser.add_argument('-spr', '--strain_proportion', type = float, default = 0.3, help='postprocess_unclustered_genes: strain_proportion')
+parser.add_argument('-ss', '--sigma_scale', type = int, default = 3, help='postprocess_unclustered_genes: sigma_scale')
+
 
 params = parser.parse_args()
 path = params.folder_name
@@ -79,14 +84,16 @@ if 4 in params.steps:# step04:
 if 5 in params.steps:# step05:
     start = time.time()
     diamond_orthamcl_cluster(path, params.threads, params.blast_file_path, params.roary_file_path, params.diamond_max_target_seqs )
+    RNA_cluster( path, params.threads )
     print 'step05-run diamond and ortha-mcl to cluster genes: '
     print times(start)
 
 if 6 in params.steps:# step06:
     start = time.time()
-    #cluster_align_makeTree(path, params.threads)
-    #postprocess_paralogs_iterative(params.threads, path, nstrains)
-    postprocess_unclustered_genes(params.threads, params.threads, path, nstrains)
+    cluster_align_makeTree(path, params.threads)
+    postprocess_paralogs_iterative(params.threads, path, nstrains)
+    postprocess_unclustered_genes(params.threads, path, nstrains, params.window_size_smoothed, params.strain_proportion, params.sigma_scale )
+    RNAclusters_align_makeTree(path, params.threads)
     print 'step06-align genes in geneCluster by mafft and build gene trees:'
     print times(start)
 

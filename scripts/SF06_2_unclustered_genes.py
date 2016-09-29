@@ -65,7 +65,7 @@ def find_and_merge_unclustered_genes( path, nstrains, window_size=5, strain_prop
         merged_clusters_dict[merged_cluster_filename]=cluster_needed_deletion
     return merged_clusters_dict
 
-def create_split_unclustered_files(file_path, fname, 
+def create_split_unclustered_files(file_path, fname,
                                gene_list,  diamond_geneCluster_dt, merged_clusters_dict):
     """
     delete the unclustered file and create new clusters
@@ -84,7 +84,7 @@ def create_split_unclustered_files(file_path, fname,
     try:
         ## delete under-clustered clusters
         for cluster_needed_deletion in merged_clusters_dict[origin_uncluster_nwk_name]:
-            if cluster_needed_deletion in diamond_geneCluster_dt: 
+            if cluster_needed_deletion in diamond_geneCluster_dt:
                 del diamond_geneCluster_dt[cluster_needed_deletion]
                 print('deleting:', cluster_needed_deletion, ' gathered in ', origin_uncluster_nwk_name)
     except:
@@ -103,7 +103,7 @@ def create_split_unclustered_files(file_path, fname,
         gene_cluster_nu_write=open( file_path+gene_cluster_nu_filename, 'wb')
         gene_cluster_aa_write=open( file_path+gene_cluster_aa_filename, 'wb')
 
-        split_fa_files_set |=  set([file_path+gene_cluster_nu_filename])
+        split_fa_files_set.add(file_path+gene_cluster_nu_filename)
 
         ## write new split cluster files
         for gene_memb in split_gene_list:
@@ -150,12 +150,15 @@ def cut_tree_from_merged_clusters(parallel, path, diamond_geneCluster_dt, merged
         leaves = set([leaf.name for leaf in myTree.tree.get_terminals()])
 
         ## find long branches and their children
-        for node in myTree.tree.get_nonterminals('preorder'):
-            if node.branch_length> 0.5:
-                gene_list.append(node.leafs)
+        # loop through tree in post-order, cut at long branch,
+        # store leaves of node intersected with leaves not yet dealt with
+        for node in myTree.tree.find_clades('postorder'):
+            if node.branch_length > 0.5:
+                gene_list.append(set.intersection(node.leafs, leaves))
                 leaves=leaves-node.leafs
-        ## gather the rest unsplit genes in one cluster
+        ## gather the rest unsplit genes in one cluster, filter for empty clusters
         gene_list.append(leaves)
+        gene_list = [x for x in gene_list if len(x)]
         ## split clades into clusters
         new_fa_files = create_split_unclustered_files(file_path, merged_cluster_file,
                                gene_list,  diamond_geneCluster_dt, merged_clusters_dict)

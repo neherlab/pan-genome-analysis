@@ -231,7 +231,7 @@ class mpm_tree(object):
         remove_dir(self.run_dir)
 
 
-    def build(self, root='midpoint', raxml=True, raxml_time_limit=0.5):
+    def build(self, root='midpoint', raxml=True, raxml_time_limit=0.5, treetime_used=True):
         '''
         build a phylogenetic tree using fasttree and raxML (optional)
         based on nextflu tree building pipeline
@@ -297,15 +297,16 @@ class mpm_tree(object):
             #shutil.copy('initial_tree.newick', out_fname)
             polytomies_midpointRooting('initial_tree.newick',out_fname)
 
-        # load the resulting tree as a treetime instance
-        from treetime import TreeAnc
-        self.tt = TreeAnc(tree=out_fname, aln=self.aln, gtr='Jukes-Cantor', verbose=0)
+        if treetime_used:
+            # load the resulting tree as a treetime instance
+            from treetime import TreeAnc
+            self.tt = TreeAnc(tree=out_fname, aln=self.aln, gtr='Jukes-Cantor', verbose=0)
 
-        # provide short cut to tree and revert names that conflicted with newick format
-        self.tree = self.tt.tree
-        self.tree.root.branch_length=0.0001
-        restore_strain_name(name_translation, self.aln)
-        restore_strain_name(name_translation, self.tree.get_terminals())
+            # provide short cut to tree and revert names that conflicted with newick format
+            self.tree = self.tt.tree
+            self.tree.root.branch_length=0.0001
+            restore_strain_name(name_translation, self.aln)
+            restore_strain_name(name_translation, self.tree.get_terminals())
 
         os.chdir('..')
         remove_dir(self.run_dir)
@@ -709,6 +710,12 @@ def update_gene_cluster(path, diamond_geneCluster_dt ):
     cluster_path = path+'protein_faa/diamond_matches/'
     write_pickle(cluster_path+'orthamcl-allclusters_final.cpk',diamond_geneCluster_dt)
 
+def update_diversity_cpk_file(path):
+    ## write gene_diversity_Dt cpk file
+    output_path = path+'geneCluster/'
+    with open(output_path+'gene_diversity.txt', 'rb') as infile:
+        write_pickle(output_path+'gene_diversity.cpk',{ i.rstrip().split('\t')[0]:i.rstrip().split('\t')[1] for i in infile})
+
 def postprocess_paralogs_iterative(parallel, path, nstrains,
                          branch_length_cutoff=500, paralog_cutoff=0.5, plot=False):
 
@@ -734,10 +741,13 @@ def postprocess_paralogs_iterative(parallel, path, nstrains,
         n_split_clusters, new_fa_files_set = split_result
         iteration+=1
 
+    
+    # output_path = path+'geneCluster/'
+    # with open(output_path+'gene_diversity.txt', 'rb') as infile:
+    #     write_pickle(output_path+'gene_diversity.cpk',{ i.rstrip().split('\t')[0]:i.rstrip().split('\t')[1] for i in infile})
+    
     ## write gene_diversity_Dt cpk file
-    output_path = path+'geneCluster/'
-    with open(output_path+'gene_diversity.txt', 'rb') as infile:
-        write_pickle(output_path+'gene_diversity.cpk',{ i.rstrip().split('\t')[0]:i.rstrip().split('\t')[1] for i in infile})
+    update_diversity_cpk_file(path)
 
     ## remove old gene cluster and create new split cluster
     update_gene_cluster(path, diamond_geneCluster_dt )
@@ -815,3 +825,14 @@ def load_sorted_clusters(path):
     return sorted(diamond_geneCluster_dt.iteritems(),
                    key=lambda (k,v): (-itemgetter(0)(v),k), reverse=False)
 
+#=============================================#
+# postprocessing unclustered genes (peaks)     
+#=============================================#
+
+# #from SF06_2_unclustered_genes import find_and_merge_unclustered_genes
+# from SF06_2_unclustered_genes import find_and_merge_unclustered_genes, cut_tree_from_merged_clusters
+
+# def postprocess_unclustered_genes(n_threads, path, nstrains, window_size=5, strain_proportion=0.3 , sigma_scale=3):
+#     diamond_geneCluster_dt=load_pickle(geneClusterPath+'orthamcl-allclusters_final.cpk')
+#     find_and_merge_unclustered_genes(n_threads, path, nstrains, window_size, strain_proportion , sigma_scale)
+#     cut_tree_from_merged_clusters(path)

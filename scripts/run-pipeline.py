@@ -7,6 +7,7 @@ from SF04_gbk_metainfo import gbk_To_Metainfo
 from SF05_diamond_orthamcl import diamond_orthamcl_cluster
 from SF06_geneCluster_align_makeTree import cluster_align_makeTree, postprocess_paralogs_iterative
 from SF06_2_unclustered_genes import postprocess_unclustered_genes
+#find_and_merge_unclustered_genes, cut_tree_from_merged_clusters
 from SF07_core_SNP_matrix import create_core_SNP_matrix
 from SF08_core_tree_build import aln_to_Newick
 from SF09_gain_loss import process_gain_loss
@@ -85,7 +86,7 @@ if 6 in params.steps:# step06:
     start = time.time()
     #cluster_align_makeTree(path, params.threads)
     #postprocess_paralogs_iterative(params.threads, path, nstrains)
-    postprocess_unclustered_genes(params.threads, path, nstrains)
+    postprocess_unclustered_genes(params.threads, params.threads, path, nstrains)
     print 'step06-align genes in geneCluster by mafft and build gene trees:'
     print times(start)
 

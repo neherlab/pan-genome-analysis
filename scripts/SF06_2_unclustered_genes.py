@@ -152,11 +152,16 @@ def cut_tree_from_merged_clusters(parallel, path, diamond_geneCluster_dt, merged
         ## find long branches and their children
         # loop through tree in post-order, cut at long branch,
         # store leaves of node intersected with leaves not yet dealt with
-        for node in myTree.tree.find_clades('postorder'):
-            if node.branch_length > 0.5:
-                gene_list.append(set.intersection(node.leafs, leaves))
-                leaves=leaves-node.leafs
-        ## gather the rest unsplit genes in one cluster, filter for empty clusters
+        try:
+            for node in myTree.tree.find_clades(order='postorder'):
+                if node.branch_length > 0.5:
+                    gene_list.append(set.intersection(node.leafs, leaves))
+                    leaves=leaves-node.leafs
+            ## gather the rest unsplit genes in one cluster, filter for empty clusters
+        except:
+            #import ipdb; ipdb.set_trace();
+            print("find_clades problem")
+
         gene_list.append(leaves)
         gene_list = [x for x in gene_list if len(x)]
         ## split clades into clusters

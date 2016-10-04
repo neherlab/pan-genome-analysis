@@ -29,6 +29,7 @@ parser.add_argument('-bp', '--blast_file_path', type = str, default = 'none', he
 parser.add_argument('-rp', '--roary_file_path', type = str, default = 'none', help='the absolute path for roary result (e.g.: /path/roary.out)')
 parser.add_argument('-mi', '--meta_info_file_path', type = str, default = 'none', help='the absolute path for meta_information file (e.g.: /path/meta.out)')
 parser.add_argument('-dmt', '--diamond_max_target_seqs', type = str, default = '600', help='Diamond: the maximum number of target sequences per query to keep alignments for. Defalut: #strain * #max_duplication= 40*15= 600 ')
+parser.add_argument('-bmt', '--blastn_RNA_max_target_seqs', type = str, default = '600', help='Blastn on RNAs: the maximum number of target sequences per query to keep alignments for. Defalut: #strain * #max_duplication= 40*15= 600 ')
 parser.add_argument('-ws', '--window_size_smoothed', type = int, default = 5, help='postprocess_unclustered_genes: window_size for smoothed cluster length distribution')
 parser.add_argument('-spr', '--strain_proportion', type = float, default = 0.3, help='postprocess_unclustered_genes: strain_proportion')
 parser.add_argument('-ss', '--sigma_scale', type = int, default = 3, help='postprocess_unclustered_genes: sigma_scale')
@@ -84,7 +85,7 @@ if 4 in params.steps:# step04:
 if 5 in params.steps:# step05:
     start = time.time()
     diamond_orthamcl_cluster(path, params.threads, params.blast_file_path, params.roary_file_path, params.diamond_max_target_seqs )
-    RNA_cluster( path, params.threads )
+    RNA_cluster( path, params.threads, params.blastn_RNA_max_target_seqs )
     print 'step05-run diamond and ortha-mcl to cluster genes: '
     print times(start)
 

@@ -135,3 +135,4 @@ def json_parser( path, species, meta_info_file_path ):
     os.system('ln -sf %s/*.cpk %s/../'%(current_path,current_path))
     os.system('mv coreGenomeTree.json strainMetainfo.json geneGainLossEvent.json ../vis/;')
     os.system('mv GC*.aln GC*_tree.json ../vis/geneCluster/;')
+    print('Pan-genome analysis is finished, your data can be transfered to the local server for data visualization and exploration via link-to-server.py in the main folder.')

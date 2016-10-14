@@ -47,7 +47,7 @@ def consolidate_geneName(path,all_gene_names, geneID_to_description_dict):
     #print all_geneName, ' ?', majority
     return all_geneName, majority
 
-def geneCluster_to_json(path):
+def geneCluster_to_json(path, disable_RNA_clustering):
     """
     create json file for gene cluster table visualzition
     input:  path to genecluster output
@@ -55,8 +55,9 @@ def geneCluster_to_json(path):
     """
     # load geneID_to_description_dict
     geneID_to_description_dict=load_pickle(path+'geneID_to_description.cpk')
-    # load RNAID_to_description_file
-    geneID_to_description_dict.update(load_pickle(path+'RNAID_to_description.cpk'))
+    if disable_RNA_clustering==0:
+        # load RNAID_to_description_file
+        geneID_to_description_dict.update(load_pickle(path+'RNAID_to_description.cpk'))
     output_path='%s%s'%(path,'geneCluster/')
     visualzition_path='%s%s'%(path,'vis/')
     os.system('mkdir %s; mkdir %sgeneCluster/'%(visualzition_path,visualzition_path))

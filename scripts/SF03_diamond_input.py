@@ -4,7 +4,7 @@ from SF00_miscellaneous import load_pickle, write_in_fa, write_pickle
 
 def gbk_translation(each_gbk_path,nucleotide_dict_path, gb_file, 
     output_filename,output_filename2, geneID_to_geneSeqID_dict, geneID_to_description_dict,
-    RNAID_to_SeqID_dict,RNAID_to_description_dict):
+    RNAID_to_SeqID_dict,RNAID_to_description_dict, disable_RNA_clustering):
     '''
     extract sequences and meta informations of all genes in one reference genbank file
     params:
@@ -28,16 +28,20 @@ def gbk_translation(each_gbk_path,nucleotide_dict_path, gb_file,
         - RNAID_to_description_dict: dictionary linking RNAID to description info
                             modified in place (key: RNAID; value: a dict including
                             information on contig_index, annotation or more)
+        - disable_RNA_clustering: not cluster rRNA and tRNA (default: 0 -> cluster RNAs)
     '''
     
     reference_gb = '%s%s'%(each_gbk_path, gb_file)
     strainName=gb_file.split('.')[0]
     gene_nuc_seq_dict= '%s%s_gene_nuc_dict.cpk'%(nucleotide_dict_path, strainName)
     gene_nucleotide_sequences=defaultdict()
-    RNA_nuc_seq_dict= '%s%s_RNA_nuc_dict.cpk'%(nucleotide_dict_path, strainName)
-    RNA_nucleotide_sequences=defaultdict()
     aa_sequence_file=open(output_filename, 'wb')
-    RNA_sequence_file=open(output_filename2, 'wb')
+
+    if disable_RNA_clustering==0:
+        RNA_nuc_seq_dict= '%s%s_RNA_nuc_dict.cpk'%(nucleotide_dict_path, strainName)
+        RNA_nucleotide_sequences=defaultdict()
+        RNA_sequence_file=open(output_filename2, 'wb')
+
     contig_index=0
     for contig in SeqIO.parse(reference_gb,'genbank'):
         contig_index+=1
@@ -70,7 +74,7 @@ def gbk_translation(each_gbk_path,nucleotide_dict_path, gb_file,
                                                     geneName, annotation)
 
                     gene_nucleotide_sequences[geneID] = feature.extract(contig.seq)
-            elif feature.type=='rRNA' or feature.type=='tRNA':
+            elif not disable_RNA_clustering and (feature.type=='rRNA' or feature.type=='tRNA'):
                 if 'product' in feature.qualifiers:
                     geneName=''
                     product=feature.qualifiers['product'][0]
@@ -96,10 +100,11 @@ def gbk_translation(each_gbk_path,nucleotide_dict_path, gb_file,
                     RNA_nucleotide_sequences[RNAID] = RNA_seq
 
     write_pickle(gene_nuc_seq_dict, gene_nucleotide_sequences)
-    write_pickle(RNA_nuc_seq_dict, RNA_nucleotide_sequences)
+    if disable_RNA_clustering==0:
+        write_pickle(RNA_nuc_seq_dict, RNA_nucleotide_sequences)
     aa_sequence_file.close()
 
-def diamond_input(path, strain_lst):
+def diamond_input(path, strain_lst,disable_RNA_clustering=0):
     '''
         go through all GenBank files and extract sequences and metadata for each one
     ''' 
@@ -125,9 +130,10 @@ def diamond_input(path, strain_lst):
         strain_name='%s'%(istrain.split('.')[0])
         diamond_input_fname=protein_folder+'%s%s'%(strain_name,'.faa');
         RNA_blast_input_fname=RNA_folder+'%s%s'%(strain_name,'.fna');
-        gbk_translation(each_gbk_path,nucleotide_dict_path,'%s%s'%(strain_name,'.gbk'), diamond_input_fname, RNA_blast_input_fname, geneID_to_geneSeqID_dict, geneID_to_description_dict, RNAID_to_SeqID_dict, RNAID_to_description_dict )
+        gbk_translation(each_gbk_path,nucleotide_dict_path,'%s%s'%(strain_name,'.gbk'), diamond_input_fname, RNA_blast_input_fname, geneID_to_geneSeqID_dict, geneID_to_description_dict, RNAID_to_SeqID_dict, RNAID_to_description_dict, disable_RNA_clustering )
     write_pickle(geneID_to_geneSeqID_file, geneID_to_geneSeqID_dict)
     write_pickle(geneID_to_description_file, geneID_to_description_dict)
-    write_pickle(RNAID_to_SeqID_file, RNAID_to_SeqID_dict)
-    write_pickle(RNAID_to_description_file, RNAID_to_description_dict)
+    if disable_RNA_clustering==0:
+        write_pickle(RNAID_to_SeqID_file, RNAID_to_SeqID_dict)
+        write_pickle(RNAID_to_description_file, RNAID_to_description_dict)
 

@@ -28,6 +28,7 @@ parser.add_argument('-t', '--threads', type = int, default = 1, help='number of 
 parser.add_argument('-bp', '--blast_file_path', type = str, default = 'none', help='the absolute path for blast result (e.g.: /path/blast.out)')
 parser.add_argument('-rp', '--roary_file_path', type = str, default = 'none', help='the absolute path for roary result (e.g.: /path/roary.out)')
 parser.add_argument('-mi', '--meta_info_file_path', type = str, default = 'none', help='the absolute path for meta_information file (e.g.: /path/meta.out)')
+parser.add_argument('-nrna', '--disable_RNA_clustering', type = int, default = 0, help='default: not disabled, cluster rRNAs and tRNAs')
 parser.add_argument('-dmt', '--diamond_max_target_seqs', type = str, default = '600', help='Diamond: the maximum number of target sequences per query to keep alignments for. Defalut: #strain * #max_duplication= 40*15= 600 ')
 parser.add_argument('-bmt', '--blastn_RNA_max_target_seqs', type = str, default = '600', help='Blastn on RNAs: the maximum number of target sequences per query to keep alignments for. Defalut: #strain * #max_duplication= 40*15= 600 ')
 parser.add_argument('-ws', '--window_size_smoothed', type = int, default = 5, help='postprocess_unclustered_genes: window_size for smoothed cluster length distribution')
@@ -72,7 +73,7 @@ if 2 in params.steps:# step02:
 
 if 3 in params.steps:# step03:
     start = time.time()
-    diamond_input(path, strain_lst)
+    diamond_input(path, strain_lst, params.disable_RNA_clustering)
     print 'step03-create input file for Diamond from genBank file (.gb):'
     print times(start)
 
@@ -85,7 +86,8 @@ if 4 in params.steps:# step04:
 if 5 in params.steps:# step05:
     start = time.time()
     diamond_orthamcl_cluster(path, params.threads, params.blast_file_path, params.roary_file_path, params.diamond_max_target_seqs )
-    RNA_cluster( path, params.threads, params.blastn_RNA_max_target_seqs )
+    if params.disable_RNA_clustering==0:
+        RNA_cluster( path, params.threads, params.blastn_RNA_max_target_seqs )
     print 'step05-run diamond and ortha-mcl to cluster genes: '
     print times(start)
 
@@ -94,7 +96,8 @@ if 6 in params.steps:# step06:
     cluster_align_makeTree(path, params.threads)
     postprocess_paralogs_iterative(params.threads, path, nstrains)
     postprocess_unclustered_genes(params.threads, path, nstrains, params.window_size_smoothed, params.strain_proportion, params.sigma_scale )
-    RNAclusters_align_makeTree(path, params.threads)
+    if params.disable_RNA_clustering==0:
+        RNAclusters_align_makeTree(path, params.threads)
     print 'step06-align genes in geneCluster by mafft and build gene trees:'
     print times(start)
 
@@ -118,7 +121,7 @@ if 9 in params.steps:# step09:
 
 if 10 in params.steps:# step10:
     start = time.time()
-    geneCluster_to_json(path)
+    geneCluster_to_json(path, params.disable_RNA_clustering)
     print 'step10-creates json file for geneDataTable visualization:'
     print times(start)
 

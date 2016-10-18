@@ -21,7 +21,7 @@ def parse_RNACluster(path,inputfile):
             RNACluster_dt[clusterID][1]=[ icol for icol in col ]
     write_pickle(path+'orthamcl-allclusters.cpk',RNACluster_dt)
 
-def RNA_cluster(path, threads,blastn_RNA_max_target_seqs):
+def RNA_cluster(path, threads,blastn_RNA_max_target_seqs, mcl_inflation ):
     '''
     make all-against-all comparison using diamond
     THEN generate RNA clusters followed by orthoMCL/orthagogue+MCL
@@ -29,9 +29,10 @@ def RNA_cluster(path, threads,blastn_RNA_max_target_seqs):
     OR use the output of roary
     params:
         path:                    path to directory including data and output
-        threads:                 number of parallel threads used to run diamond
+        threads:                 number of parallel threads used to run blastn
 
     '''
+    threads=str(threads)
     input_path=path+'RNA_fna/'
     output_path=input_path
     ## prepare query & reference file (all against all): merge all fna files
@@ -42,11 +43,11 @@ def RNA_cluster(path, threads,blastn_RNA_max_target_seqs):
     run_makeblastdb=''.join(['makeblastdb -in ',input_path,all_RNA_filename,'.fna -dbtype nucl -out ',input_path,all_RNA_filename])
     os.system(run_makeblastdb)
     ### run blastn
-    run_blastn=''.join(['blastn -db ',input_path,all_RNA_filename,' -query ',input_path,all_RNA_filename,'.fna -out ',input_path,'query_matches.m8 -evalue 0.001 -outfmt 6 -max_target_seqs ',blastn_RNA_max_target_seqs,' -num_threads ',str(threads),' > ',input_path,'blastn-output.log'])
+    run_blastn=''.join(['blastn -db ',input_path,all_RNA_filename,' -query ',input_path,all_RNA_filename,'.fna -out ',input_path,'query_matches.m8 -evalue 0.001 -outfmt 6 -max_target_seqs ',blastn_RNA_max_target_seqs,' -num_threads ',threads,' > ',input_path,'blastn-output.log'])
     os.system(run_blastn)
     
     ## run orthagogue and MCL
-    ortha_mcl_run(output_path)
+    ortha_mcl_run(output_path, threads, mcl_inflation)
     ## save singeltons
     origin_cluster_file='orthamcl-cluster.output';
     orthagogue_singletons(output_path,origin_cluster_file,'%s.fna'%(all_RNA_filename))

@@ -6,8 +6,9 @@ from Bio.SeqRecord import SeqRecord
 
 def times(start): 
     import time
-    t = int(time.time()-start + 0.5); 
-    return '%dm %ds.' % (t/60,t%60)
+    t = int(time.time()-start)
+    time_record=' %d minutes %d seconds (%d s)'%(t/60, t%60, t)
+    return time_record
 
 def read_fasta(filename):
     fa_dt={}

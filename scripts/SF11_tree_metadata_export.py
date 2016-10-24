@@ -14,14 +14,16 @@ def id_separation(species, path, infile):
         for h in headers:
             meta_dict[h] = []
             meta_display_dict[h]=h
-
         for icsv_line in csv_reader:
             #capitalize host string to consolidate GenBank meta-data
             host_raw= icsv_line[4]
+            icsv_line= ["unknown" if len(i)==0 else i for i in icsv_line ]
             if host_raw!='unknown':
                 icsv_line[4]='%s%s'%(host_raw[0].upper(), host_raw[1:])
             id_dict[ icsv_line[0] ] = icsv_line
             for h, v in zip(headers, icsv_line):
+                if len(v)==0:
+                    v= "unknown" 
                 meta_dict[h].append(v)
         for k,v in meta_dict.iteritems():
             meta_item_list=sorted(dict(Counter(v)).keys())

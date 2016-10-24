@@ -1,10 +1,12 @@
 run.sh
 run-*_*.sh
 x*.sh
+*tmp*/
 mapping-scr
 scripts/ss*py
 syn*py
 data/*
+.nfs*
 *log
 *sh.*
 *pyc

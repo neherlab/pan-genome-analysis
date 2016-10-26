@@ -172,7 +172,7 @@ class mpm_tree(object):
             self.run_dir = kwarks['run_dir']
         self.nuc=True
 
-    def codon_align(self, alignment_tool="mafft", prune=True):
+    def codon_align(self, alignment_tool="mafft", prune=True, discard_premature_stops=False):
         '''
         takes a nucleotide alignment, translates it, aligns the amino acids, pads the gaps
         note that this suppresses any compensated frameshift mutations
@@ -186,9 +186,9 @@ class mpm_tree(object):
         # translate
         aa_seqs = {}
         for seq in self.seqs.values():
-            tempseq = seq.seq.translate()
-            # use only sequences that translate with out trouble
-            if '*' not in str(tempseq)[:-1] or prune==False:
+            tempseq = seq.seq.translate(table="Bacterial")
+            # use only sequences that translate without trouble
+            if not discard_premature_stops or '*' not in str(tempseq)[:-1] or prune==False:
                 aa_seqs[seq.id]=SeqRecord(tempseq,id=seq.id)
             else:
                 print(seq.id,"has premature stops, discarding")
@@ -352,10 +352,11 @@ class mpm_tree(object):
             str_seq = seq
         try:
             # soon not needed as future biopython version will translate --- into -
-            tmp_seq = Seq(str(Seq(str_seq.replace('---', 'NNN')).translate()).replace('X','-'))
+            tmp_seq = Seq(str(Seq(str_seq.replace('---', 'NNN')).translate(table="Bacterial")).replace('X','-'))
         except:
-            tmp_seq = Seq(str(Seq(str_seq.replace('-', 'N')).translate()).replace('X','-'))
-            print("Trouble translating",seq)
+            tmp_seq = Seq(str(Seq(str_seq.replace('-', 'N')).translate(table="Bacterial")).replace('X','-'))
+            #print("Trouble translating",seq)
+            print("Trouble translating", self.fname_prefix)
         return tmp_seq
 
 
@@ -499,7 +500,7 @@ def align_and_makeTree(thread, alignFile_path, fa_files_list):
                 geneDiversity_file.write('%s\t%s\n'%(clusterID,gene_diversity_values))
         except:
             print("Aligning and tree building of %s failed"%gene_cluster_nu_filename)
-            print(myTree.tree)
+            #print(myTree.tree)
 
 
 def cluster_align_makeTree( path, parallel ):
@@ -624,7 +625,10 @@ def explore_paralogs(path, nstrains, branch_length_cutoff=500, paralog_cutoff=0.
         #if fi%10==0: print('paralog check:', fname.split('/')[-1], fi, 'out of', len(fname_list))
         tree = Phylo.read(fname, 'newick')
         best_split = find_best_split(tree)
-        median_branch_length = np.max(0.01, np.median([n.branch_length for n in tree.find_clades()]))
+        try:
+            median_branch_length = np.maximum(0.01, np.median([n.branch_length for n in tree.find_clades()]))
+        except:
+            print 'error in getting median_branch_length :',fname, np.median([n.branch_length for n in tree.find_clades()])
         if best_split is None:
             pass;#paralog_stat.append([fname, 0, 0])
         else:
@@ -791,7 +795,10 @@ def postprocess_paralogs(parallel, path, nstrains, diamond_geneCluster_dt,
         best_split = find_best_split(tree)
 
         # determine median branch length used as scale for the paralog splitting criterion.
-        median_branch_length = np.max(0.01, np.median([n.branch_length for n in tree.find_clades()]))
+        try:
+            median_branch_length = np.maximum(0.01, np.median([n.branch_length for n in tree.find_clades()]))
+        except:
+            print 'error in getting median_branch_length:',fname, np.median([n.branch_length for n in tree.find_clades()])
         if best_split is not None:
             do_split = split_cluster(tree,
                                      max_branch_length = branch_length_cutoff*median_branch_length,

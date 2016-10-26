@@ -5,7 +5,7 @@ def create_core_SNP_matrix(path):
         input: strain_list.cpk, core_geneList.cpk
         output: SNP_whole_matrix.aln
     """
-    import sys,operator
+    import os,sys,operator
     import numpy as np
     from collections import defaultdict
     from SF00_miscellaneous import read_fasta, write_pickle, load_pickle, write_in_fa
@@ -21,8 +21,13 @@ def create_core_SNP_matrix(path):
         for clusterID, vg in sorted_geneList:
             if vg[0]==totalStrain and vg[2]==totalStrain:
                 coreGeneName='%s%s'%(clusterID,'_na.aln')
-                outfile.write(coreGeneName+'\n')
-                corelist.append(coreGeneName)
+                ## sequences might be discarded because of premature stops
+                coreGeneName_path= alnFilePath+coreGeneName
+                if os.path.exists(coreGeneName_path) and len(read_fasta(coreGeneName_path)) == totalStrain:
+                    outfile.write(coreGeneName+'\n')
+                    corelist.append(coreGeneName)
+                else:
+                    print '%s%s%s'%('warning: ',coreGeneName_path,' is not a core gene')
         write_pickle(output_path+'core_geneList.cpk',corelist)
 
     refSeqList=load_pickle(path+'strain_list.cpk');refSeqList.sort()
@@ -33,31 +38,27 @@ def create_core_SNP_matrix(path):
     snps_by_gene=[]
     for align_file in corelist:## all core genes
         fa_dt=read_fasta(alnFilePath+align_file)
-        if len(fa_dt) != totalStrain:
-            print '%s%s%s'%('warning: problem in ',align_file,'; not a core gene')
-            continue
-        else:
-            fa_sorted_lst=sorted(fa_dt.items(), key=lambda x: x[0].split('|')[0])
-            nuc_array=np.array([])
-            flag=0
-            for ka, va in enumerate(fa_sorted_lst):
-                if flag==0:
-                    flag=1
-                    nuc_array=np.array(np.fromstring(va[1], dtype='S1'))
-                else:
-                    nuc_array=np.vstack((nuc_array,np.fromstring(va[1], dtype='S1')))
-
-            position_polymorphic = np.where(np.all(nuc_array== nuc_array[0, :],axis = 0)==False)[0]
-            position_has_gap = np.where(np.any(nuc_array=='-',axis=0))[0]
-            position_SNP = np.setdiff1d(position_polymorphic, position_has_gap)
-            snp_columns = nuc_array[:,position_SNP]
-            snp_pos_dt[align_file]=position_SNP
-
-            if snp_wh_matrix_flag==0:
-                snp_whole_matrix=snp_columns;
-                snp_wh_matrix_flag=1
+        fa_sorted_lst=sorted(fa_dt.items(), key=lambda x: x[0].split('|')[0])
+        nuc_array=np.array([])
+        flag=0
+        for ka, va in enumerate(fa_sorted_lst):
+            if flag==0:
+                flag=1
+                nuc_array=np.array(np.fromstring(va[1], dtype='S1'))
             else:
-                snp_whole_matrix=np.hstack((snp_whole_matrix, snp_columns))
+                nuc_array=np.vstack((nuc_array,np.fromstring(va[1], dtype='S1')))
+
+        position_polymorphic = np.where(np.all(nuc_array== nuc_array[0, :],axis = 0)==False)[0]
+        position_has_gap = np.where(np.any(nuc_array=='-',axis=0))[0]
+        position_SNP = np.setdiff1d(position_polymorphic, position_has_gap)
+        snp_columns = nuc_array[:,position_SNP]
+        snp_pos_dt[align_file]=position_SNP
+
+        if snp_wh_matrix_flag==0:
+            snp_whole_matrix=snp_columns;
+            snp_wh_matrix_flag=1
+        else:
+            snp_whole_matrix=np.hstack((snp_whole_matrix, snp_columns))
 
     write_pickle(output_path+'snp_pos.cpk',snp_pos_dt)
 

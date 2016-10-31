@@ -25,7 +25,7 @@ def diamond_run(query_path, output_path, dmd_ref_file, threads, diamond_max_targ
     # print 'command line record:', view_command
     # print 'view:', times(start)
 
-    os.system(''.join(['rm ',output_path,'nr.dmnd; rm ',output_path,'*faa']))
+    os.system(''.join(['rm ',output_path,'nr.dmnd']))
 
 def ortha_mcl_run(output_path, threads, mcl_inflation):
     """ run orthAgogue and MCL """
@@ -117,6 +117,8 @@ def diamond_orthamcl_cluster(path, threads, blast_cluster_file_path='none', roar
             ## save singeltons
             origin_cluster_file='orthamcl-cluster.output';
             orthagogue_singletons(output_path,origin_cluster_file,dmd_query_file)
+            ## clean up diamond_query_file
+            os.system(''.join(['rm ',output_path,'*faa']))
             all_cluster_file='orthamcl-allclusters.csv';
             parse_geneCluster(output_path,all_cluster_file)
         else: ## using user-given cluster file based on blast

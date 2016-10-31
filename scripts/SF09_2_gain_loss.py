@@ -6,61 +6,7 @@ from treetime.gtr import GTR
 from treetime import io
 from treetime import seq_utils
 from Bio import Phylo, AlignIO
-from SF00_miscellaneous import write_json, load_pickle, write_pickle, write_in_fa
-from SF06_geneCluster_align_makeTree import load_sorted_clusters
-
-
-def create_genePresence(dt_strainGene, totalStrain, set_totalStrain, all_gene_names):
-    """
-    append to dictionary for gene presence/absence string {strain: '010100010010...',}
-    function is called for every gene cluster
-    params:
-        - totalStrain:      total number of strains
-        - set_totalStrain:  set of all strain names
-        - all_gene_names:    list of gene names (incl strain name) of all genes in cluster
-    """
-    # determine set of strains that are represented in gene cluster (first element of gene name)
-    set_sharedStrain=set([ igl.split('|')[0] for igl in all_gene_names])
-    for ist in set_sharedStrain:
-        # append '1' to strains that have the gene
-        dt_strainGene[ist].append('1')
-    if totalStrain!=len(set_sharedStrain):
-        # append '0' to the remaining strains
-        for ist0 in set_totalStrain-set_sharedStrain:
-            dt_strainGene[ist0].append('0')
-    # return modified dictionary
-    return dt_strainGene
-
-
-def make_genepresence_alignment(path):
-    '''
-    loop over all gene clusters and append 0/1 to strain specific
-    string used as pseudo alignment of gene presence absence
-    '''
-    geneClusterPath='%s%s'%(path,'protein_fna/diamond_matches/')
-    output_path='%s%s'%(path,'geneCluster/');
-
-    ## load strain list and prepare for gene presence/absence
-    strain_list= load_pickle(path+'strain_list.cpk')
-    set_totalStrain=set([ istrain for istrain in strain_list ])
-    totalStrain=len(set_totalStrain)
-    dt_strainGene= defaultdict(list)
-
-    sorted_genelist = load_sorted_clusters(path)
-    ## sorted_genelist: [(clusterID, [ count_strains,[memb1,...],count_genes]),...]
-    for gid, (clusterID, gene) in enumerate(sorted_genelist):
-        gene_list = gene[1]
-        ## append 0/1 to each strain
-        dt_strainGene=create_genePresence(dt_strainGene, totalStrain, set_totalStrain, gene_list)
-
-
-    with open(output_path+'genePresence.aln','wb') as presence_outfile:
-        for istkey in dt_strainGene:
-            dt_strainGene[istkey]=''.join(dt_strainGene[istkey] )
-            write_in_fa( presence_outfile, istkey, dt_strainGene[istkey] )
-
-    write_pickle(output_path+'dt_genePresence.cpk', dt_strainGene)
-
+from SF00_miscellaneous import write_json, write_pickle
 
 def infer_gene_gain_loss(path, rates = [1.0, 1.0]):
     # initialize GTR model with default parameters
@@ -127,7 +73,7 @@ def export_gain_loss(tree, path):
 
 
 def process_gain_loss(path):
-    make_genepresence_alignment(path)
+    ##  infer gain/loss event
     tree = infer_gene_gain_loss(path)
     create_visible_pattern_dictionary(tree)
     set_seq_to_patternseq(tree)
@@ -137,16 +83,22 @@ def process_gain_loss(path):
         return compute_totallh(tree,c)
 
     from scipy.optimize import minimize
-    res = minimize(myminimizer,[0.5,1.],method='L-BFGS-B',bounds = [(0.0001,0.999),(0.01,1000.)])
-
-    if res.success == True:
+    try:
+        res = minimize(myminimizer,[0.5,1.],method='L-BFGS-B',bounds = [(0.0001,0.999),(0.01,1000.)])
+        success = res.success
+    except:
+        success = False        
+    if success == True:
         print('successfully estimated the gtr parameters. Reconstructing ancestral states...')
         change_gtr_parameters_forgainloss(tree,res.x[0],res.x[1])
         tree.reconstruct_anc(method='ml')
         export_gain_loss(tree,path)
     else:
         print('Warning: failed to estimated the gtr parameters by ML.')
-
+        import ipdb;ipdb.set_trace()
+        change_gtr_parameters_forgainloss(tree,0.5,1.0)
+        tree.reconstruct_anc(method='ml')
+        export_gain_loss(tree,path)
 
 
 def create_visible_pattern_dictionary(tree):
@@ -345,9 +297,6 @@ def compute_lh(tree,verbose=0):
 
     tree.tree.root.pattern_profile_lh = (np.log(tree.tree.root.profile).transpose() + tree.tree.root.lh_prefactor).transpose()
 
-
-
-
 def change_gtr_parameters_forgainloss(tree,pi_present,mu):
     genepi = np.array([1.0-pi_present,pi_present])
     genepi /= genepi.sum()
@@ -383,7 +332,11 @@ def compute_totallh(tree,params,adjustcore = True,verbose = 0):
     if verbose > 2:
         print("adjusting for all pattern that have been set to pattern_include == 0")
     tree.tree.root.total_llh = tree.tree.root.total_llh - ( np.log(1.- ll_forsumofignored) * np.sum(np.array(tree.tree.pattern_abundance) * np.array(tree.tree.pattern_include)) )
-    return tree.tree.root.total_llh * -1.
+    #print("totalLH:", pi_present, mymu, tree.tree.root.total_llh)
+    if np.isnan(tree.tree.root.total_llh) or np.isinf(tree.tree.root.total_llh):
+        return 1e50
+    else:
+        return tree.tree.root.total_llh * -1.
 
 def set_seq_to_patternseq(tree):
     for node in tree.tree.find_clades():
@@ -414,36 +367,3 @@ def plot_ll_mu(filename,tree,pi_present =0.5,mu_max = 10):
     plt.plot(xaxis, graph)
     plt.savefig(filename)
     plt.close()
-
-#if __name__=='__main__':
-    #species= 'Pat4'
-    #path = '/ebio/ag-neher/share/users/wding/mpam/data/'+species+'/'
-    #path = '/home/franz/tmp/'
-
-    #process_gain_loss(path,species)
-
-
-    #tree = infer_gene_gain_loss(path)
-
-    ##outpath = '.'
-    #outpath = '/home/franz/tmp/out/'
-
-
-    #create_visible_pattern_dictionary(tree)
-    #set_seq_to_patternseq(tree)
-    #set_visible_pattern_to_ignore(tree,p=-1,mergeequalstrains=True)
-
-    #def myminimizer(c):
-        #return compute_totallh(tree,c)
-
-    #from scipy.optimize import minimize
-    #res = minimize(myminimizer,[0.5,1.],method='L-BFGS-B',bounds = [(0.0001,0.999),(0.01,1000.)])
-
-    #if res.success == True:
-        #print('successfully estimated the gtr parameters. Reconstructing ancestral states...')
-        #change_gtr_parameters_forgainloss(tree,res.x[0],res.x[1])
-        #tree.reconstruct_anc(method='ml')
-        #export_gain_loss(tree, outpath, species)
-    #else:
-        #print('Warning: failed to estimated the gtr parameters by ML.')
-

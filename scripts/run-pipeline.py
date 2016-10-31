@@ -11,7 +11,8 @@ from SF06_2_unclustered_genes import postprocess_unclustered_genes
 from SF06_3_clusterRNA import RNAclusters_align_makeTree
 from SF07_core_SNP_matrix import create_core_SNP_matrix
 from SF08_core_tree_build import aln_to_Newick
-from SF09_gain_loss import process_gain_loss
+from SF09_1_gene_presence import make_genepresence_alignment
+from SF09_2_gain_loss import process_gain_loss
 from SF10_geneCluster_export import geneCluster_to_json
 from SF11_tree_metadata_export import json_parser
 #command line example
@@ -35,6 +36,7 @@ parser.add_argument('-bmt', '--blastn_RNA_max_target_seqs', type = str, default 
 parser.add_argument('-ws', '--window_size_smoothed', type = int, default = 5, help='postprocess_unclustered_genes: window_size for smoothed cluster length distribution')
 parser.add_argument('-spr', '--strain_proportion', type = float, default = 0.3, help='postprocess_unclustered_genes: strain_proportion')
 parser.add_argument('-ss', '--sigma_scale', type = int, default = 3, help='postprocess_unclustered_genes: sigma_scale')
+parser.add_argument('-kt', '--keep_temporary_file', type = str, default = True, help='default keep_temporary_file')
 
 
 params = parser.parse_args()
@@ -116,8 +118,9 @@ if 8 in params.steps:# step08:
 
 if 9 in params.steps:# step09:
     start = time.time()
+    make_genepresence_alignment(path)
     process_gain_loss(path)
-    print 'step09-infer gain/loss patterns of all genes:'
+    print 'step09-infer presence/absence and gain/loss patterns of all genes:'
     print times(start)
 
 if 10 in params.steps:# step10:

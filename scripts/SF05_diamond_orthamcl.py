@@ -14,24 +14,27 @@ def diamond_run(query_path, output_path, dmd_ref_file, threads, diamond_max_targ
 
     start = time.time()
     print 'diamond_max_target_seqs used: %s'%diamond_max_target_seqs
-    blastp_command= ''.join([diam,' blastp --sensitive -p ',threads,' -k ',diamond_max_target_seqs,' -d ',output_path,'nr -q ',query_path,'query.faa',' -a ',output_path,'query_matches -t ./  > ',output_path,'diamond_blastp.log  2>&1'])
+    blastp_command= ''.join([diam,' blastp --sensitive -p ',threads,' -k ',diamond_max_target_seqs,' -d ',output_path,'nr -q ',query_path,'query.faa',' -o ',output_path,'query_matches.m8 -t ./  > ',output_path,'diamond_blastp.log  2>&1'])
     os.system(blastp_command)
     print 'command line record:', blastp_command
     print 'matchin:', times(start)
 
-    start = time.time()
-    view_command= ''.join([diam+' view -a  '+output_path+'query_matches.daa -o '+output_path+'query_matches.m8 > '+output_path+'diamond_view.log  2>&1'])
-    os.system(view_command)
-    print 'command line record:', view_command
-    print 'view:', times(start)
-    os.system('rm '+output_path+'nr.dmnd; rm '+output_path+'*.daa')
+    # start = time.time()
+    # view_command= ''.join([diam+' view -a  '+output_path+'query_matches.daa -o '+output_path+'query_matches.m8 > '+output_path+'diamond_view.log  2>&1'])
+    # os.system(view_command)
+    # print 'command line record:', view_command
+    # print 'view:', times(start)
+
+    os.system(''.join(['rm ',output_path,'nr.dmnd; rm ',output_path,'*faa']))
 
 def ortha_mcl_run(output_path, threads, mcl_inflation):
     """ run orthAgogue and MCL """
-    os.system(''.join(["orthAgogue -c ",threads," -i ",output_path,"query_matches.m8 -s '|' -O ",output_path,"ortha > ",output_path,"orthAgogu.log  2>&1"]))
+    orthAgogue_path='/ebio/ag-neher/share/users/wding/tool/orthagogue/'
+    os.system(''.join([orthAgogue_path,"orthAgogue -c ",threads," -i ",output_path,"query_matches.m8 -s '|' -O ",output_path,"ortha > ",output_path,"orthAgogu.log  2>&1"]))
     os.system(''.join(['mv -f report_orthAgogue ',output_path]))
     os.system(''.join(['mv ',output_path,'ortha/all.abc ',output_path]))
     os.system(''.join(['mcl ',output_path,'all.abc --abc -o ',output_path,'orthamcl-cluster.output -I ',str(mcl_inflation),' > ',output_path,'mcl.log 2>&1']))
+    os.system(''.join(['rm ',output_path,'all.abc']))
 
 def orthagogue_singletons(path,origin_cluster_file,all_faa_file):
     """ add singletons from original MCL output """

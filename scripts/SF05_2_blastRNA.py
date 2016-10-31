@@ -55,3 +55,5 @@ def RNA_cluster(path, threads,blastn_RNA_max_target_seqs, mcl_inflation ):
     parse_RNACluster(output_path,all_cluster_file)
     ## remove database file
     os.system(''.join(['rm ',input_path,all_RNA_filename,'*']))
+    os.system(''.join(['rm ',input_path,'*fna']))
+    os.system(''.join(['rm ',input_path,'all.abc']))

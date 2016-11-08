@@ -25,7 +25,13 @@ The genomes are split into individual genes and all genes from all strains are c
 
   2. Required python packages:
      - pip install numpy scipy biopython ete2
-     - [treetime](http://github.com/neherlab/treetime)
+     - [treetime](http://github.com/neherlab/treetime) (please fetch treetime using the following two commands)
+       ```
+       git submodule init
+       ```
+       ```
+       git submodule update
+       ```
 
 2. How to run:
   - sh run.sh

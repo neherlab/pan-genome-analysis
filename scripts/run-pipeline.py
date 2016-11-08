@@ -57,7 +57,7 @@ def load_strains():
     """ load input strains in strain_list """
     if os.path.isfile(path+strain_list):
         with open(path+strain_list,'rb') as infile:
-            write_pickle(path+'strain_list.cpk', [ ist.rstrip().split('.')[0] for ist in infile] )
+            write_pickle(path+'strain_list.cpk', [ ist.rstrip().split('.gbk')[0] for ist in infile] )
 
 if 1 in params.steps: #step 01:
     load_strains()

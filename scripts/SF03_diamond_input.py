@@ -32,7 +32,7 @@ def gbk_translation(each_gbk_path,nucleotide_dict_path, gb_file,
     '''
     
     reference_gb = '%s%s'%(each_gbk_path, gb_file)
-    strainName=gb_file.split('.')[0]
+    strainName=gb_file.split('.gbk')[0]
     gene_nuc_seq_dict= '%s%s_gene_nuc_dict.cpk'%(nucleotide_dict_path, strainName)
     gene_nucleotide_sequences=defaultdict()
     aa_sequence_file=open(output_filename, 'wb')
@@ -126,8 +126,7 @@ def diamond_input(path, strain_lst,disable_RNA_clustering=0):
     RNAID_to_SeqID_dict= defaultdict()
     RNAID_to_description_file= path+'RNAID_to_description.cpk'
     RNAID_to_description_dict= defaultdict()
-    for istrain in strain_lst:
-        strain_name='%s'%(istrain.split('.')[0])
+    for strain_name in strain_lst:
         diamond_input_fname=protein_folder+'%s%s'%(strain_name,'.faa');
         RNA_blast_input_fname=RNA_folder+'%s%s'%(strain_name,'.fna');
         gbk_translation(each_gbk_path,nucleotide_dict_path,'%s%s'%(strain_name,'.gbk'), diamond_input_fname, RNA_blast_input_fname, geneID_to_geneSeqID_dict, geneID_to_description_dict, RNAID_to_SeqID_dict, RNAID_to_description_dict, disable_RNA_clustering )

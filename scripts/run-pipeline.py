@@ -29,7 +29,7 @@ parser.add_argument('-t', '--threads', type = int, default = 1, help='number of 
 parser.add_argument('-bp', '--blast_file_path', type = str, default = 'none', help='the absolute path for blast result (e.g.: /path/blast.out)')
 parser.add_argument('-rp', '--roary_file_path', type = str, default = 'none', help='the absolute path for roary result (e.g.: /path/roary.out)')
 parser.add_argument('-mi', '--meta_info_file_path', type = str, default = 'none', help='the absolute path for meta_information file (e.g.: /path/meta.out)')
-parser.add_argument('-nrna', '--disable_RNA_clustering', type = int, default = 0, help='default: not disabled, cluster rRNAs and tRNAs')
+parser.add_argument('-nrna', '--disable_RNA_clustering', type = int, default = 1, help='default:  disabled, not cluster rRNAs and tRNAs')
 parser.add_argument('-dmt', '--diamond_max_target_seqs', type = str, default = '600', help='Diamond: the maximum number of target sequences per query to keep alignments for. Defalut: #strain * #max_duplication= 40*15= 600 ')
 parser.add_argument('-imcl', '--mcl_inflation', type = float, default = 2.0, help='MCL: inflation parameter (varying this parameter affects granularity) ')
 parser.add_argument('-bmt', '--blastn_RNA_max_target_seqs', type = str, default = '600', help='Blastn on RNAs: the maximum number of target sequences per query to keep alignments for. Defalut: #strain * #max_duplication= 40*15= 600 ')

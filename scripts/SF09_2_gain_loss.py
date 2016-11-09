@@ -1,10 +1,10 @@
 from __future__ import print_function, division
 import os,sys,copy;import numpy as np
 from collections import defaultdict
-from treetime import treeanc as ta
-from treetime.gtr import GTR
-from treetime import io
-from treetime import seq_utils
+from treetime.treetime import treeanc as ta
+from treetime.treetime.gtr import GTR
+from treetime.treetime import io
+from treetime.treetime import seq_utils
 from Bio import Phylo, AlignIO
 from SF00_miscellaneous import write_json, write_pickle
 
@@ -95,7 +95,7 @@ def process_gain_loss(path):
         export_gain_loss(tree,path)
     else:
         print('Warning: failed to estimated the gtr parameters by ML.')
-        #import ipdb;ipdb.set_trace()
+        import ipdb;ipdb.set_trace()
         change_gtr_parameters_forgainloss(tree,0.5,1.0)
         tree.reconstruct_anc(method='ml')
         export_gain_loss(tree,path)

@@ -29,8 +29,9 @@ def diamond_run(query_path, output_path, dmd_ref_file, threads, diamond_max_targ
 
 def ortha_mcl_run(output_path, threads, mcl_inflation):
     """ run orthAgogue and MCL """
-    orthAgogue_path='/ebio/ag-neher/share/users/wding/tool/orthagogue/'
-    os.system(''.join([orthAgogue_path,"orthAgogue -c ",threads," -i ",output_path,"query_matches.m8 -s '|' -O ",output_path,"ortha > ",output_path,"orthAgogu.log  2>&1"]))
+    #orthAgogue_path='/ebio/ag-neher/share/users/wding/tool/orthagogue/'
+    #os.system(''.join([orthAgogue_path,"orthAgogue -c ",threads," -i ",output_path,"query_matches.m8 -s '|' -O ",output_path,"ortha > ",output_path,"orthAgogu.log  2>&1"]))
+    os.system(''.join(["orthAgogue -c ",threads," -i ",output_path,"query_matches.m8 -s '|' -O ",output_path,"ortha > ",output_path,"orthAgogu.log  2>&1"]))
     os.system(''.join(['mv -f report_orthAgogue ',output_path]))
     os.system(''.join(['mv ',output_path,'ortha/all.abc ',output_path]))
     os.system(''.join(['mcl ',output_path,'all.abc --abc -o ',output_path,'orthamcl-cluster.output -I ',str(mcl_inflation),' > ',output_path,'mcl.log 2>&1']))

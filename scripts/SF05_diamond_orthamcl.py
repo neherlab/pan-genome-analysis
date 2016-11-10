@@ -4,7 +4,7 @@ from SF00_miscellaneous import times,load_pickle,read_fasta,write_pickle
 def diamond_run(query_path, output_path, dmd_ref_file, threads, diamond_max_target_seqs):
     """ runn diamond using sensitive alignment mode """
     os.system('pwd')
-    diam='./tools/diamond'
+    diam=os.path.dirname(os.path.realpath(__file__)) + '/../tools/diamond'
     print '# Run for query.faa'
     start = time.time()
     makedb_command= ''.join([diam,' makedb -p ',threads,' --in ',output_path, dmd_ref_file,' -d ',output_path,'nr > ',output_path,'diamond_makdedb.log  2>&1'])

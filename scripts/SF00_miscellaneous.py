@@ -50,3 +50,25 @@ def write_json(data, file_name, indent=1):
         json.dump(data, handle, indent=indent)
         handle.close()
 
+def check_exe(program):
+    # Based on http://stackoverflow.com/questions/377017/test-if-executable-exists-in-python
+    import os
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            print program + ' .. ok'
+            return(program)
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                print program + ' .. ok [' +  exe_file + ']'
+                return(program)
+
+                
+    print program + ' .. failed - required in PATH'
+    exit()

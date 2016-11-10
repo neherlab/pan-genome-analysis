@@ -4,7 +4,7 @@ from Bio import Phylo, SeqIO, AlignIO
 from Bio.Seq import Seq; from Bio.SeqRecord import SeqRecord
 from Bio.Align import MultipleSeqAlignment
 from ete2 import Tree
-from SF00_miscellaneous import times, read_fasta, load_pickle, write_pickle, write_in_fa, write_json
+from SF00_miscellaneous import times, read_fasta, load_pickle, write_pickle, write_in_fa, write_json, check_exe
 sys.path.append('./scripts/')
 sys.setrecursionlimit(2000)
 
@@ -508,6 +508,10 @@ def cluster_align_makeTree( path, parallel ):
     create gene clusters as nucleotide/ amino_acid fasta files
     and build individual gene trees based on fna files
     """
+
+    for exe in ['mafft', 'fasttree', 'raxml']:
+        check_exe(exe)
+
     def create_geneCluster_fa():
         """ dict storing amino_acid Id/Seq from '.faa' files
             input: '.faa', '_gene_nuc_dict.cpk', '-orthamcl-allclusters.cpk'

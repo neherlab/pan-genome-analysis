@@ -1,5 +1,5 @@
 import os,sys,time; from collections import defaultdict,Counter
-from SF00_miscellaneous import times,load_pickle,read_fasta,write_pickle
+from SF00_miscellaneous import times,load_pickle,read_fasta,write_pickle,check_exe
 
 def diamond_run(query_path, output_path, dmd_ref_file, threads, diamond_max_target_seqs):
     """ runn diamond using sensitive alignment mode """
@@ -101,6 +101,10 @@ def diamond_orthamcl_cluster(path, threads, blast_cluster_file_path='none', roar
                                   per query to keep alignments for. Defalut: 
                                   #strain * #max_duplication= 40*15= 600 
     '''
+
+    for exe in ['orthAgogue', 'mcl']:
+        check_exe(exe)
+
     input_path=path+'protein_faa/';
     output_path=input_path+'diamond_matches/';
     threads=str(threads)

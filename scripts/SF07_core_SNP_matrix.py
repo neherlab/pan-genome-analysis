@@ -1,12 +1,16 @@
 from SF06_geneCluster_align_makeTree import load_sorted_clusters
 
-def create_core_SNP_matrix(path):
+def create_core_SNP_matrix(path, core_cutoff=1.0):#1.0
     """ create SNP matrix using core gene SNPs
         input: strain_list.cpk, core_geneList.cpk
         output: SNP_whole_matrix.aln
+        core_cutoff: percentage of strains used to decide whether a gene is core 
+            default: 1.0 (strictly core gene, which is present in all strains)
+            customized: 0.9 ( soft core, considered as core if present in 90% of strains)
     """
     import os,sys,operator
     import numpy as np
+    import numpy.ma as ma
     from collections import defaultdict
     from SF00_miscellaneous import read_fasta, write_pickle, load_pickle, write_in_fa
 
@@ -14,52 +18,97 @@ def create_core_SNP_matrix(path):
     output_path= alnFilePath
 
     ## create core gene list
-    corelist=[];
-    totalStrain= len(load_pickle(path+'strain_list.cpk'))
+    corelist=[]
+    strain_list=load_pickle(path+'strain_list.cpk')
+    totalStrain= len(strain_list)
     sorted_geneList = load_sorted_clusters(path)
     with open(output_path+'core_geneList.txt','wb') as outfile:
         for clusterID, vg in sorted_geneList:
-            if vg[0]==totalStrain and vg[2]==totalStrain:
+            if core_cutoff==1.0:
+                strain_core_cutoff=totalStrain
+            else:
+                strain_core_cutoff=int(totalStrain*core_cutoff)
+            if vg[0]==vg[2] and vg[0]>=strain_core_cutoff:
                 coreGeneName='%s%s'%(clusterID,'_na.aln')
                 ## sequences might be discarded because of premature stops
                 coreGeneName_path= alnFilePath+coreGeneName
-                if os.path.exists(coreGeneName_path) and len(read_fasta(coreGeneName_path)) == totalStrain:
+                if os.path.exists(coreGeneName_path) and len(read_fasta(coreGeneName_path)) >= strain_core_cutoff:
                     outfile.write(coreGeneName+'\n')
                     corelist.append(coreGeneName)
                 else:
-                    print '%s%s%s'%('warning: ',coreGeneName_path,' is not a core gene')
+                    pass
+                    #print '%s%s%s'%('warning: ',coreGeneName_path,' is not a core gene')
+
         write_pickle(output_path+'core_geneList.cpk',corelist)
 
     refSeqList=load_pickle(path+'strain_list.cpk');refSeqList.sort()
 
     snp_fre_lst=[]; snp_wh_matrix_flag=0
     snp_pos_dt=defaultdict(list); snp_whole_matrix=np.array([])
-
     snps_by_gene=[]
-    for align_file in corelist:## all core genes
-        fa_dt=read_fasta(alnFilePath+align_file)
-        fa_sorted_lst=sorted(fa_dt.items(), key=lambda x: x[0].split('|')[0])
-        nuc_array=np.array([])
-        flag=0
-        for ka, va in enumerate(fa_sorted_lst):
-            if flag==0:
-                flag=1
-                nuc_array=np.array(np.fromstring(va[1], dtype='S1'))
-            else:
-                nuc_array=np.vstack((nuc_array,np.fromstring(va[1], dtype='S1')))
+    for align_file in corelist:## core genes
+        nuc_array=np.array([]) # array to store nucleotides for each gene
+        totalStrain_sorted_lst=sorted(strain_list)
+        # build strain_seq_dt from gene_seq_dt
+        gene_seq_dt=read_fasta(alnFilePath+align_file)
+        strain_seq_dt=defaultdict()
+        for gene, seq in gene_seq_dt.iteritems():
+            strain_seq_dt[gene.split('-')[0]]=seq # strain-locus_tag-...
+        strain_seq_sorted_lst=sorted(strain_seq_dt.items(), key=lambda x: x[0])
+        # set sequences for missing gene ('-'*gene_length)
+        missing_gene_seq='-'*len(gene_seq_dt.values()[0])
 
-        position_polymorphic = np.where(np.all(nuc_array== nuc_array[0, :],axis = 0)==False)[0]
-        position_has_gap = np.where(np.any(nuc_array=='-',axis=0))[0]
-        position_SNP = np.setdiff1d(position_polymorphic, position_has_gap)
-        snp_columns = nuc_array[:,position_SNP]
-        snp_pos_dt[align_file]=position_SNP
+        start_flag=0
+        if core_cutoff==1.0:
+            for ka, va in strain_seq_sorted_lst:
+                if start_flag==0:                
+                    nuc_array=np.array(np.fromstring(va, dtype='S1'))
+                    start_flag=1
+                else:
+                    nuc_array=np.vstack((nuc_array,np.fromstring(va, dtype='S1')))
+            ## find SNP positions
+            position_polymorphic = np.where(np.all(nuc_array== nuc_array[0, :],axis = 0)==False)[0]
+            position_has_gap = np.where(np.any(nuc_array=='-',axis=0))[0]
+            position_SNP = np.setdiff1d(position_polymorphic, position_has_gap)
+            snp_columns = nuc_array[:,position_SNP]
+            snp_pos_dt[align_file]=position_SNP
+        else:
+        ## add '-' for missing genes when dealing with soft core genes
+            core_gene_strain=[ gene for gene in strain_seq_dt.keys()]
+            for strain in totalStrain_sorted_lst:
+                if start_flag==0:
+                    if strain in core_gene_strain:
+                        nuc_array=np.array(np.fromstring(strain_seq_dt[strain], dtype='S1'))
+                    else:
+                        print 'Soft core gene: gene not present in strain %s for cluster %s'%(strain,align_file)
+                        nuc_array=np.array(np.fromstring(missing_gene_seq, dtype='S1'))
+                    start_flag=1
+                else:
+                    if strain in core_gene_strain:
+                        nuc_array=np.vstack((nuc_array,np.fromstring(strain_seq_dt[strain], dtype='S1')))
+                    else:
+                        print 'Soft core gene: gene not present in strain %s for cluster %s'%(strain,align_file)
+                        nuc_array=np.vstack((nuc_array,np.fromstring(missing_gene_seq, dtype='S1')))
+            ## find SNP positions
+            ## mask missing genes
+            is_missing = np.where(np.all(nuc_array=='-',axis=1))[0]
+            if len(nuc_array[:,is_missing])!=0: # with missing genes
+                nuc_array[is_missing]=' '
+            masked_non_missing_array= np.ma.masked_array(nuc_array, nuc_array==' ')
+            position_polymorphic = np.where(np.any(masked_non_missing_array!= masked_non_missing_array[0, :],axis = 0))[0]
+            position_has_gap = np.where(np.any(masked_non_missing_array=='-',axis=0))[0]
+            position_SNP = np.setdiff1d(position_polymorphic, position_has_gap)
+            if len(nuc_array[:,is_missing])!=0: # with missing genes
+                nuc_array[is_missing]='-'
+            snp_columns = nuc_array[:,position_SNP]
+            snp_pos_dt[align_file]=position_SNP
+            #print snp_columns
 
         if snp_wh_matrix_flag==0:
             snp_whole_matrix=snp_columns;
             snp_wh_matrix_flag=1
         else:
             snp_whole_matrix=np.hstack((snp_whole_matrix, snp_columns))
-
     write_pickle(output_path+'snp_pos.cpk',snp_pos_dt)
 
     with open(output_path+'SNP_whole_matrix.aln','wb') as outfile:

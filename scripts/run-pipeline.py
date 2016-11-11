@@ -37,7 +37,7 @@ parser.add_argument('-ws', '--window_size_smoothed', type = int, default = 5, he
 parser.add_argument('-spr', '--strain_proportion', type = float, default = 0.3, help='postprocess_unclustered_genes: strain_proportion')
 parser.add_argument('-ss', '--sigma_scale', type = int, default = 3, help='postprocess_unclustered_genes: sigma_scale')
 parser.add_argument('-kt', '--keep_temporary_file', type = str, default = True, help='default keep_temporary_file')
-
+parser.add_argument('-cg', '--core_genome_threshold', type = float, default = 1.0, help='percentage of strains used to decide whether a gene is core. Default: 1.0 for strictly core gene; customized instance: 0.9 for soft core genes')
 
 params = parser.parse_args()
 path = params.folder_name
@@ -106,7 +106,7 @@ if 6 in params.steps:# step06:
 
 if 7 in params.steps:# step07:
     start = time.time()
-    create_core_SNP_matrix(path)
+    create_core_SNP_matrix(path, params.core_genome_threshold)
     print 'step07-call SNPs from core genes:'
     print times(start)
 

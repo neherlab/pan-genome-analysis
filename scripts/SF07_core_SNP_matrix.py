@@ -92,13 +92,13 @@ def create_core_SNP_matrix(path, core_cutoff=1.0):#1.0
             ## find SNP positions
             ## mask missing genes
             is_missing = np.where(np.all(nuc_array=='-',axis=1))[0]
-            if len(nuc_array[:,is_missing])!=0: # with missing genes
+            if len(is_missing)!=0: # with missing genes
                 nuc_array[is_missing]=' '
             masked_non_missing_array= np.ma.masked_array(nuc_array, nuc_array==' ')
             position_polymorphic = np.where(np.any(masked_non_missing_array!= masked_non_missing_array[0, :],axis = 0))[0]
             position_has_gap = np.where(np.any(masked_non_missing_array=='-',axis=0))[0]
             position_SNP = np.setdiff1d(position_polymorphic, position_has_gap)
-            if len(nuc_array[:,is_missing])!=0: # with missing genes
+            if len(is_missing)!=0: # with missing genes
                 nuc_array[is_missing]='-'
             snp_columns = nuc_array[:,position_SNP]
             snp_pos_dt[align_file]=position_SNP

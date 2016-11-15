@@ -4,7 +4,7 @@ def create_core_SNP_matrix(path, core_cutoff=1.0):#1.0
     """ create SNP matrix using core gene SNPs
         input: strain_list.cpk, core_geneList.cpk
         output: SNP_whole_matrix.aln
-        core_cutoff: percentage of strains used to decide whether a gene is core 
+        core_cutoff: percentage of strains used to decide whether a gene is core
             default: 1.0 (strictly core gene, which is present in all strains)
             customized: 0.9 ( soft core, considered as core if present in 90% of strains)
     """
@@ -61,17 +61,17 @@ def create_core_SNP_matrix(path, core_cutoff=1.0):#1.0
         start_flag=0
         if core_cutoff==1.0:
             for ka, va in strain_seq_sorted_lst:
-                if start_flag==0:                
+                if start_flag==0:
                     nuc_array=np.array(np.fromstring(va, dtype='S1'))
                     start_flag=1
                 else:
                     nuc_array=np.vstack((nuc_array,np.fromstring(va, dtype='S1')))
             ## find SNP positions
-            position_polymorphic = np.where(np.all(nuc_array== nuc_array[0, :],axis = 0)==False)[0]
-            position_has_gap = np.where(np.any(nuc_array=='-',axis=0))[0]
-            position_SNP = np.setdiff1d(position_polymorphic, position_has_gap)
+            position_polymorphic = np.any(nuc_array != nuc_array[0, :], axis = 0)
+            position_has_gap = np.any(nuc_array=='-', axis=0)
+            position_SNP = position_polymorphic&(~position_has_gap)
             snp_columns = nuc_array[:,position_SNP]
-            snp_pos_dt[align_file]=position_SNP
+            snp_pos_dt[align_file]=np.where(position_SNP)[0]
         else:
         ## add '-' for missing genes when dealing with soft core genes
             core_gene_strain=[ gene for gene in strain_seq_dt.keys()]
@@ -90,18 +90,19 @@ def create_core_SNP_matrix(path, core_cutoff=1.0):#1.0
                         print 'Soft core gene: gene not present in strain %s for cluster %s'%(strain,align_file)
                         nuc_array=np.vstack((nuc_array,np.fromstring(missing_gene_seq, dtype='S1')))
             ## find SNP positions
-            ## mask missing genes
-            is_missing = np.where(np.all(nuc_array=='-',axis=1))[0]
-            if len(is_missing)!=0: # with missing genes
+            ## mask missing genes -- determine rows that have '-' in every column
+            is_missing = np.all(nuc_array=='-',axis=1)
+            if is_missing.sum()>0: # with missing genes
                 nuc_array[is_missing]=' '
             masked_non_missing_array= np.ma.masked_array(nuc_array, nuc_array==' ')
-            position_polymorphic = np.where(np.any(masked_non_missing_array!= masked_non_missing_array[0, :],axis = 0))[0]
-            position_has_gap = np.where(np.any(masked_non_missing_array=='-',axis=0))[0]
-            position_SNP = np.setdiff1d(position_polymorphic, position_has_gap)
-            if len(is_missing)!=0: # with missing genes
+            position_polymorphic = np.any(masked_non_missing_array!= masked_non_missing_array[0, :],axis = 0)
+            position_has_gap = np.any(masked_non_missing_array=='-',axis=0)
+            position_SNP = position_polymorphic&(~position_has_gap)
+            # the below seems duplicated from 5 lines above??
+            if is_missing.sum()>0: # with missing genes
                 nuc_array[is_missing]='-'
             snp_columns = nuc_array[:,position_SNP]
-            snp_pos_dt[align_file]=position_SNP
+            snp_pos_dt[align_file]=np.where(position_SNP)[0]
             #print snp_columns
 
         if snp_wh_matrix_flag==0:

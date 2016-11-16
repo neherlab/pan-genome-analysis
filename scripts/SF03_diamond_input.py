@@ -55,6 +55,9 @@ def gbk_translation(each_gbk_path,nucleotide_dict_path, gb_file,
                     annotation= '_'.join(product.split(' '))
                     trans_seq=feature.qualifiers['translation'][0];
                     locus_tag=feature.qualifiers['locus_tag'][0];
+                    ## force to replace '-' with '_' in locus_tag
+                    if '-' in locus_tag:
+                        locus_tag=locus_tag.replace('-','_')
                     if "PROKKA" in locus_tag:
                         locus_tag=locus_tag.replace('PROKKA_','')
                     if '%s_'%strainName in locus_tag:

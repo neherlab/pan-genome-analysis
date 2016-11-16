@@ -48,15 +48,17 @@ def create_core_SNP_matrix(path, core_cutoff=1.0):#1.0
     snps_by_gene=[]
     for align_file in corelist:## core genes
         nuc_array=np.array([]) # array to store nucleotides for each gene
-        totalStrain_sorted_lst=sorted(strain_list)
-        # build strain_seq_dt from gene_seq_dt
         gene_seq_dt=read_fasta(alnFilePath+align_file)
+        if core_cutoff!=1.0:
+            # set sequences for missing gene (space*gene_length)
+            missing_gene_seq=' '*len(gene_seq_dt.values()[0])
+            totalStrain_sorted_lst=sorted(strain_list)
+        # build strain_seq_dt from gene_seq_dt
         strain_seq_dt=defaultdict()
         for gene, seq in gene_seq_dt.iteritems():
             strain_seq_dt[gene.split('-')[0]]=seq # strain-locus_tag-...
         strain_seq_sorted_lst=sorted(strain_seq_dt.items(), key=lambda x: x[0])
-        # set sequences for missing gene ('-'*gene_length)
-        missing_gene_seq='-'*len(gene_seq_dt.values()[0])
+
 
         start_flag=0
         if core_cutoff==1.0:
@@ -90,10 +92,8 @@ def create_core_SNP_matrix(path, core_cutoff=1.0):#1.0
                         print 'Soft core gene: gene not present in strain %s for cluster %s'%(strain,align_file)
                         nuc_array=np.vstack((nuc_array,np.fromstring(missing_gene_seq, dtype='S1')))
             ## find SNP positions
-            ## mask missing genes -- determine rows that have '-' in every column
-            is_missing = np.all(nuc_array=='-',axis=1)
-            if is_missing.sum()>0: # with missing genes
-                nuc_array[is_missing]=' '
+            ## mask missing genes -- determine rows that have ' ' in every column
+            is_missing = np.all(nuc_array==' ',axis=1)
             masked_non_missing_array= np.ma.masked_array(nuc_array, nuc_array==' ')
             position_polymorphic = np.any(masked_non_missing_array!= masked_non_missing_array[0, :],axis = 0)
             position_has_gap = np.any(masked_non_missing_array=='-',axis=0)

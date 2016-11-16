@@ -1,4 +1,5 @@
-import os,sys,time,argparse
+import argparse
+import os, sys, time, glob
 from collections import Counter
 from SF00_miscellaneous import times,load_pickle, write_pickle
 from SF02_get_acc_single_serverDown import accessionID_single
@@ -29,6 +30,7 @@ parser.add_argument('-t', '--threads', type = int, default = 1, help='number of 
 parser.add_argument('-bp', '--blast_file_path', type = str, default = 'none', help='the absolute path for blast result (e.g.: /path/blast.out)')
 parser.add_argument('-rp', '--roary_file_path', type = str, default = 'none', help='the absolute path for roary result (e.g.: /path/roary.out)')
 parser.add_argument('-mi', '--meta_info_file_path', type = str, default = 'none', help='the absolute path for meta_information file (e.g.: /path/meta.out)')
+parser.add_argument('-np', '--disable_cluster_postprocessing', type = int, default = 0, help='default: run post-processing procedure for splitting paralogs and clustering un-clustered genes')
 parser.add_argument('-nrna', '--disable_RNA_clustering', type = int, default = 1, help='default:  disabled, not cluster rRNAs and tRNAs')
 parser.add_argument('-dmt', '--diamond_max_target_seqs', type = str, default = '600', help='Diamond: the maximum number of target sequences per query to keep alignments for. Defalut: #strain * #max_duplication= 40*15= 600 ')
 parser.add_argument('-imcl', '--mcl_inflation', type = float, default = 2.0, help='MCL: inflation parameter (varying this parameter affects granularity) ')
@@ -41,23 +43,33 @@ parser.add_argument('-cg', '--core_genome_threshold', type = float, default = 1.
 
 params = parser.parse_args()
 path = params.folder_name
-strain_list= params.strain_list
+strain_list_file= params.strain_list
 ## run all steps
 if params.steps[0]=='all':
     params.steps=range(1,12)
-# if roary output is preferred, Step 02,... will be skipped.
-#if params.roary_file_path!='none':
-#    params.steps = set(params.steps) - set([2])
 
-if path[:-1]!='/': path=path+'/'
+if path[:-1]!='/':
+    path=path+'/'
 print path
-species=strain_list.split('-RefSeq')[0]
+species=strain_list_file.split('-RefSeq')[0]
 
 def load_strains():
     """ load input strains in strain_list """
-    if os.path.isfile(path+strain_list):
-        with open(path+strain_list,'rb') as infile:
-            write_pickle(path+'strain_list.cpk', [ ist.rstrip().split('.gbk')[0] for ist in infile] )
+    if os.path.isfile(path+strain_list_file):
+        with open(path+strain_list_file,'rb') as infile:
+            strain_list=[]
+            for gbk_filepath in glob.glob(path+'*gbk'):
+                gbk_filename=gbk_filepath.split('/')[-1]
+                if '-' in gbk_filename:
+                    new_gbk_filename=gbk_filename.replace('-','_')
+                    #print'mv %s %s%s'%(gbk_filepath,path,new_gbk_filename)
+                    print new_gbk_filename.split('.gbk')[0]
+                    strain_list.append(new_gbk_filename.split('.gbk')[0])
+                    os.system('mv %s %s%s'%(gbk_filepath,path,new_gbk_filename))
+                else:
+                    strain_list.append(gbk_filename.split('.gbk')[0])
+            print strain_list
+            write_pickle(path+'strain_list.cpk', strain_list )
 
 if 1 in params.steps: #step 01:
     load_strains()
@@ -65,18 +77,18 @@ if 1 in params.steps: #step 01:
 
 ## load strain_list.cpk file and give the total number of strains
 if os.path.isfile(path+'strain_list.cpk'):
-    strain_lst= load_pickle(path+'strain_list.cpk')
-nstrains =len([ istrain for istrain in strain_lst ])
+    strain_list= load_pickle(path+'strain_list.cpk')
+nstrains =len([ istrain for istrain in strain_list ])
 
 if 2 in params.steps:# step02:
     start = time.time()
-    accessionID_single(path, strain_lst)
+    accessionID_single(path, strain_list)
     print 'step02-download NCBI refseq GenBank file from strain list:'
     print times(start)
 
 if 3 in params.steps:# step03:
     start = time.time()
-    diamond_input(path, strain_lst, params.disable_RNA_clustering)
+    diamond_input(path, strain_list, params.disable_RNA_clustering)
     print 'step03-create input file for Diamond from genBank file (.gb):'
     print times(start)
 
@@ -96,9 +108,10 @@ if 5 in params.steps:# step05:
 
 if 6 in params.steps:# step06:
     start = time.time()
-    cluster_align_makeTree(path, params.threads)
-    postprocess_paralogs_iterative(params.threads, path, nstrains)
-    postprocess_unclustered_genes(params.threads, path, nstrains, params.window_size_smoothed, params.strain_proportion, params.sigma_scale )
+    cluster_align_makeTree(path, params.threads, params.disable_cluster_postprocessing)
+    if params.disable_cluster_postprocessing==0:
+        postprocess_paralogs_iterative(params.threads, path, nstrains)
+        postprocess_unclustered_genes(params.threads, path, nstrains, params.window_size_smoothed, params.strain_proportion, params.sigma_scale )
     if params.disable_RNA_clustering==0:
         RNAclusters_align_makeTree(path, params.threads)
     print 'step06-align genes in geneCluster by mafft and build gene trees:'

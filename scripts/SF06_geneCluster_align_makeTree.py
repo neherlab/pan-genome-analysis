@@ -503,7 +503,7 @@ def align_and_makeTree(thread, alignFile_path, fa_files_list):
             #print(myTree.tree)
 
 
-def cluster_align_makeTree( path, parallel ):
+def cluster_align_makeTree( path, parallel, disable_cluster_postprocessing ):
     """
     create gene clusters as nucleotide/ amino_acid fasta files
     and build individual gene trees based on fna files
@@ -564,6 +564,13 @@ def cluster_align_makeTree( path, parallel ):
         os.system('rm '+fasta_path+'gene_diversity.txt')
     fa_files=glob.glob(fasta_path+"*.fna")
     multips(align_and_makeTree, fasta_path, parallel, fa_files)
+
+    ## if cluster_postprocessing skipped, rename orthamcl-allclusters.cpk as the final cluster file
+    if disable_cluster_postprocessing==1:
+        ## write gene_diversity_Dt cpk file
+        update_diversity_cpk_file(path)
+        geneCluster_path=path+'protein_faa/diamond_matches/'
+        os.system('mv %sorthamcl-allclusters.cpk %sorthamcl-allclusters_final.cpk'%(geneCluster_path,geneCluster_path))
 
 
 ################################################################################
@@ -746,11 +753,6 @@ def postprocess_paralogs_iterative(parallel, path, nstrains,
                                                 plot=plot)
         n_split_clusters, new_fa_files_set = split_result
         iteration+=1
-
-    
-    # output_path = path+'geneCluster/'
-    # with open(output_path+'gene_diversity.txt', 'rb') as infile:
-    #     write_pickle(output_path+'gene_diversity.cpk',{ i.rstrip().split('\t')[0]:i.rstrip().split('\t')[1] for i in infile})
     
     ## write gene_diversity_Dt cpk file
     update_diversity_cpk_file(path)
@@ -833,15 +835,3 @@ def load_sorted_clusters(path):
     # followed by increasing clusterID GC_00001
     return sorted(diamond_geneCluster_dt.iteritems(),
                    key=lambda (k,v): (-itemgetter(0)(v),k), reverse=False)
-
-#=============================================#
-# postprocessing unclustered genes (peaks)     
-#=============================================#
-
-# #from SF06_2_unclustered_genes import find_and_merge_unclustered_genes
-# from SF06_2_unclustered_genes import find_and_merge_unclustered_genes, cut_tree_from_merged_clusters
-
-# def postprocess_unclustered_genes(n_threads, path, nstrains, window_size=5, strain_proportion=0.3 , sigma_scale=3):
-#     diamond_geneCluster_dt=load_pickle(geneClusterPath+'orthamcl-allclusters_final.cpk')
-#     find_and_merge_unclustered_genes(n_threads, path, nstrains, window_size, strain_proportion , sigma_scale)
-#     cut_tree_from_merged_clusters(path)

@@ -146,7 +146,7 @@ def polytomies_midpointRooting(infileName, outfileName):
     except:
         print 'can not conduct midpoint rooting'
     tree.ladderize()
-    print 'ladderized'
+    #print 'ladderized'
 
     ## adding the missing node.name
     #for ind, node in enumerate(tree.traverse("postorder")):
@@ -444,7 +444,7 @@ class mpm_tree(object):
 ### functions to run the tree building and alignment routines
 ################################################################################
 
-def multips(function_in_use, file_path, parallel, fa_files):
+def multips(function_in_use, parallel, file_path , fa_files, *args):
     """ running multiple threads """
     from multiprocessing import Process
     fa_files_len_part=len(fa_files)/parallel
@@ -452,15 +452,18 @@ def multips(function_in_use, file_path, parallel, fa_files):
 
     for i in range(0, parallel):
         if i!=parallel-1:
-            p = Process( target=function_in_use, args=(i,file_path, fa_files[ i*fa_files_len_part : (i+1)*fa_files_len_part ], ) )
+            args_content= [file_path, fa_files[ i*fa_files_len_part : (i+1)*fa_files_len_part ]], [ i for i in args]
+            args_content= (element for sub_list in args_content for element in sub_list)
+            p = Process( target=function_in_use, args=args_content )
         else: # the left-overs
-            p = Process( target=function_in_use, args=(i,file_path, fa_files[ i*fa_files_len_part : len(fa_files) ], ) )
+            args_content= [file_path, fa_files[ i*fa_files_len_part : len(fa_files) ]], [ i for i in args]
+            args_content= (element for sub_list in args_content for element in sub_list)
+            p = Process( target=function_in_use, args=args_content )
         p.Daemon = True;p.start();procs.append(p)
-    for p in procs: p.join()
+    for p in procs:
+        p.join()
 
-    print 'time-SF06*py:', times(start)
-
-def align_and_makeTree(thread, alignFile_path, fa_files_list):
+def align_and_makeTree(alignFile_path, fa_files_list):
     for gene_cluster_nu_filename in fa_files_list:
         try:
             # extract GC_00002 from path/GC_00002.aln
@@ -563,14 +566,15 @@ def cluster_align_makeTree( path, parallel, disable_cluster_postprocessing ):
     if os.path.exists(fasta_path+'gene_diversity.txt'):
         os.system('rm '+fasta_path+'gene_diversity.txt')
     fa_files=glob.glob(fasta_path+"*.fna")
-    multips(align_and_makeTree, fasta_path, parallel, fa_files)
+    multips(align_and_makeTree, parallel, fasta_path, fa_files)
 
     ## if cluster_postprocessing skipped, rename orthamcl-allclusters.cpk as the final cluster file
     if disable_cluster_postprocessing==1:
         ## write gene_diversity_Dt cpk file
-        update_diversity_cpk_file(path)
+        update_diversity_cpk(path)
         geneCluster_path=path+'protein_faa/diamond_matches/'
         os.system('mv %sorthamcl-allclusters.cpk %sorthamcl-allclusters_final.cpk'%(geneCluster_path,geneCluster_path))
+        write_final_cluster(path)
 
 
 ################################################################################
@@ -718,12 +722,22 @@ def create_split_cluster_files(file_path, fname,
         diamond_geneCluster_dt[ newClusterId ][1]=[ ig.split('-')[0] for ig in split_gene_list ]
     return split_fa_files_set
 
-def update_gene_cluster(path, diamond_geneCluster_dt ):
+def write_final_cluster(path):
+    clusters=load_sorted_clusters(path)
+    outfileName='orthamcl-allclusters_final.tsv'
+    with open(path+'protein_faa/diamond_matches/'+outfileName, 'wb') as outfile:
+        for cluster_id, cluster in enumerate(clusters):
+            cluster_stat=cluster[1]
+            outfile.write('\t'.join([gene for gene in cluster_stat[1]]))
+            outfile.write('\n')
+
+def update_geneCluster_cpk(path, diamond_geneCluster_dt ):
     ## update gene cluster pickled file
     cluster_path = path+'protein_faa/diamond_matches/'
     write_pickle(cluster_path+'orthamcl-allclusters_final.cpk',diamond_geneCluster_dt)
+    write_final_cluster(path)
 
-def update_diversity_cpk_file(path):
+def update_diversity_cpk(path):
     ## write gene_diversity_Dt cpk file
     output_path = path+'geneCluster/'
     with open(output_path+'gene_diversity.txt', 'rb') as infile:
@@ -755,10 +769,10 @@ def postprocess_paralogs_iterative(parallel, path, nstrains,
         iteration+=1
     
     ## write gene_diversity_Dt cpk file
-    update_diversity_cpk_file(path)
+    update_diversity_cpk(path)
 
     ## remove old gene cluster and create new split cluster
-    update_gene_cluster(path, diamond_geneCluster_dt )
+    update_geneCluster_cpk(path, diamond_geneCluster_dt )
 
 
 def postprocess_paralogs(parallel, path, nstrains, diamond_geneCluster_dt,
@@ -819,7 +833,7 @@ def postprocess_paralogs(parallel, path, nstrains, diamond_geneCluster_dt,
 
     print 'new_split_fasta_files', time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()), new_fa_files_set
     ## make new aln and tree
-    multips(align_and_makeTree, file_path, parallel, list(new_fa_files_set))
+    multips(align_and_makeTree, parallel, file_path, list(new_fa_files_set))
 
     return n_split_clusters, new_fa_files_set
 

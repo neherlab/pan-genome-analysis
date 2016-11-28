@@ -1,12 +1,6 @@
 import os,glob,sys,time,shutil; import numpy as np
-#from itertools import izip; 
-#from collections import defaultdict, Counter
-#from Bio import Phylo, SeqIO, AlignIO
-#from Bio.Seq import Seq; from Bio.SeqRecord import SeqRecord
-#from Bio.Align import MultipleSeqAlignment
-#from ete2 import Tree
 from SF00_miscellaneous import times, read_fasta, load_pickle, write_pickle, write_in_fa, write_json
-from SF06_geneCluster_align_makeTree import mpm_tree, multips, align_and_makeTree, load_sorted_clusters, update_gene_cluster, update_diversity_cpk_file
+from SF06_geneCluster_align_makeTree import mpm_tree, multips, align_and_makeTree, load_sorted_clusters, update_diversity_cpk
 
 sys.path.append('./scripts/')
 sys.setrecursionlimit(2000)
@@ -111,4 +105,4 @@ def RNAclusters_align_makeTree( path, parallel ):
     ### update gene cluster with RNA cluster
     update_gene_cluster_with_RNA(path, diamond_RNACluster_dt, diamond_geneCluster_dt)
     ### update diversity file
-    update_diversity_cpk_file(path)
+    update_diversity_cpk(path)

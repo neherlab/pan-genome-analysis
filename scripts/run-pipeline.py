@@ -33,6 +33,9 @@ parser.add_argument('-mi', '--meta_info_file_path', type = str, default = 'none'
 parser.add_argument('-np', '--disable_cluster_postprocessing', type = int, default = 0, help='default: run post-processing procedure for splitting paralogs and clustering un-clustered genes')
 parser.add_argument('-nrna', '--disable_RNA_clustering', type = int, default = 1, help='default:  disabled, not cluster rRNAs and tRNAs')
 parser.add_argument('-dmt', '--diamond_max_target_seqs', type = str, default = '600', help='Diamond: the maximum number of target sequences per query to keep alignments for. Defalut: #strain * #max_duplication= 40*15= 600 ')
+parser.add_argument('-dmi', '--diamond_identity', type = str, default = '0', help='Diamond: sequence identity threshold to report an alignment. Default: empty. When applied to species with low genetic diversity: 70 could be a decent starting point. All alignments with identity below 70% will not be reported, thus also saving computational time. ')
+parser.add_argument('-dmc', '--diamond_query-cover', type = str, default = '0', help='Diamond: sequence (query) coverage threshold to report an alignment.  Default: empty. When applied to species with low genetic diversity: 70 could be a decent starting point. All alignments with less than 70% query coverage will not be reported, thus also saving computational time. ')
+#parser.add_argument('-orto', '--orthAgogue_overlap', type = int, default = 75, help='orthAgogue -o: threshold for protein pair overlap) ')
 parser.add_argument('-imcl', '--mcl_inflation', type = float, default = 2.0, help='MCL: inflation parameter (varying this parameter affects granularity) ')
 parser.add_argument('-bmt', '--blastn_RNA_max_target_seqs', type = str, default = '600', help='Blastn on RNAs: the maximum number of target sequences per query to keep alignments for. Defalut: #strain * #max_duplication= 40*15= 600 ')
 parser.add_argument('-ws', '--window_size_smoothed', type = int, default = 5, help='postprocess_unclustered_genes: window_size for smoothed cluster length distribution')
@@ -73,7 +76,7 @@ def load_strains():
 
 if 1 in params.steps: #step 01:
     load_strains()
-    print 'step01-refSeq strain list successfully found.'
+    print '======  step01: refSeq strain list successfully found.'
 
 ## load strain_list.cpk file and give the total number of strains
 if os.path.isfile(path+'strain_list.cpk'):
@@ -81,32 +84,41 @@ if os.path.isfile(path+'strain_list.cpk'):
 nstrains =len([ istrain for istrain in strain_list ])
 
 if 2 in params.steps:# step02:
+    print '======  starting step02: download NCBI refseq GenBank file from strain list'
     start = time.time()
     accessionID_single(path, strain_list)
-    print 'step02-download NCBI refseq GenBank file from strain list:'
-    print times(start)
+    print '======  time for step02: download NCBI refseq GenBank file from strain list'
+    print times(start),'\n'
 
 if 3 in params.steps:# step03:
+    print '======  starting step03: create input file for Diamond from GenBank file (.gb)'
     start = time.time()
     diamond_input(path, strain_list, params.disable_RNA_clustering)
-    print 'step03-create input file for Diamond from genBank file (.gb):'
-    print times(start)
+    print '======  time for step03: create input file for Diamond from GenBank file (.gb)'
+    print times(start),'\n'
 
 if 4 in params.steps:# step04:
+    print '======  starting step04: extra meta_info (country,date, host...) from GenBank file'
     start = time.time()
     gbk_To_Metainfo(path)
-    print 'step04-extra meta_info (country,date, host...) from genBank file:'
-    print times(start)
+    print '======  time for step04: extra meta_info (country,date, host...) from GenBank file'
+    print times(start),'\n'
 
 if 5 in params.steps:# step05:
+    print '======  starting step05: run diamond and ortha-mcl to cluster genes'
     start = time.time()
-    diamond_orthamcl_cluster(path, params.threads, params.blast_file_path, params.roary_file_path, params.diamond_max_target_seqs, params.mcl_inflation )
+    diamond_orthamcl_cluster(path, params.threads,
+        params.blast_file_path, params.roary_file_path,
+        params.diamond_max_target_seqs,
+        params.diamond_identity, params.diamond_query_cover,
+        params.mcl_inflation )
     if params.disable_RNA_clustering==0:
         RNA_cluster( path, params.threads, params.blastn_RNA_max_target_seqs, params.mcl_inflation )
-    print 'step05-run diamond and ortha-mcl to cluster genes: '
-    print times(start)
+    print '======  time for step05: run diamond and ortha-mcl to cluster genes'
+    print times(start),'\n'
 
 if 6 in params.steps:# step06:
+    print '======  starting step06: align genes in geneCluster by mafft and build gene trees'
     start = time.time()
     cluster_align_makeTree(path, params.threads, params.disable_cluster_postprocessing)
     if params.disable_cluster_postprocessing==0:
@@ -114,43 +126,49 @@ if 6 in params.steps:# step06:
         postprocess_unclustered_genes(params.threads, path, nstrains, params.window_size_smoothed, params.strain_proportion, params.sigma_scale )
     if params.disable_RNA_clustering==0:
         RNAclusters_align_makeTree(path, params.threads)
-    print 'step06-align genes in geneCluster by mafft and build gene trees:'
-    print times(start)
+    print '======  time for step06: align genes in geneCluster by mafft and build gene trees'
+    print times(start),'\n'
 
 if 7 in params.steps:# step07:
+    print '======  starting step07: call SNPs from core genes'
     start = time.time()
     create_core_SNP_matrix(path, params.core_genome_threshold)
-    print 'step07-call SNPs from core genes:'
-    print times(start)
+    print '======  time for step07: call SNPs from core genes'
+    print times(start),'\n'
 
 if 8 in params.steps:# step08:
+    print '======  starting step08: run fasttree and raxml for tree construction'
     start = time.time()
     aln_to_Newick(path, params.raxml_max_time, params.threads)
-    print 'step08-run fasttree and raxml for tree construction:'
-    print times(start)
+    print '======  time for step08: run fasttree and raxml for tree construction'
+    print times(start),'\n'
 
 if 9 in params.steps:# step09:
+    print '======  starting step09: infer presence/absence and gain/loss patterns of all genes'
     start = time.time()
     make_genepresence_alignment(path)
     process_gain_loss(path)
-    print 'step09-infer presence/absence and gain/loss patterns of all genes:'
-    print times(start)
+    print '======  time for step09: infer presence/absence and gain/loss patterns of all genes'
+    print times(start),'\n'
 
 if 10 in params.steps:# step10:
+    print '======  starting step10: create json file for geneDataTable visualization'
     start = time.time()
     geneCluster_to_json(path, params.disable_RNA_clustering)
-    print 'step10-creates json file for geneDataTable visualization:'
-    print times(start)
+    print '======  time for step10: create json file for geneDataTable visualization'
+    print times(start),'\n'
 
 if 11 in params.steps:# step11:
+    print '======  starting step11: extract json files for tree and treeDataTable visualization,etc'
     start = time.time()
     json_parser(path, species, params.meta_info_file_path)
-    print 'step11-extract json files for tree&treeDataTable visualization,etc:'
-    print times(start)
+    print '======  time for step11: extract json files for tree and treeDataTable visualization,etc'
+    print times(start),'\n'
 
 if 12 in params.steps:# step12:
     from SF12_create_panGenome import ete_tree_split
+    print '======  starting step12: create pan-genome'
     start = time.time()
     ete_tree_split(path, species)
-    print 'step12-create pan-genome:'
-    print times(start)
+    print '======  time for step12: create pan-genome'
+    print times(start),'\n'

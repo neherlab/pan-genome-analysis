@@ -1,3 +1,4 @@
+import os, glob
 import numpy as np, gzip, cPickle
 from collections import defaultdict
 from Bio import SeqIO
@@ -50,3 +51,22 @@ def write_json(data, file_name, indent=1):
         json.dump(data, handle, indent=indent)
         handle.close()
 
+def load_strains(path):
+    """ load input strains in strain_list """
+    gbk_path='%s%s'%(path,'input_GenBank/')
+    ## move gbk files in folder input_GenBank
+    os.system('mkdir %s;mv %s*gbk %s'%(gbk_path,path,gbk_path))
+    strain_list=[]
+    for gbk_filepath in glob.glob(gbk_path+'*gbk'):
+        gbk_filename=gbk_filepath.split('/')[-1]
+        ## harmonize GenBank file name 
+        ## force '-' to be replaced as '_' in GenBank filename
+        if '-' in gbk_filename:
+            new_gbk_filename=gbk_filename.replace('-','_')
+            print('Filename harmonized: ',\
+                gbk_filename,' -> ', new_gbk_filename.split('.gbk')[0]) 
+            strain_list.append(new_gbk_filename.split('.gbk')[0])
+            os.system('mv %s %s%s'%(gbk_filepath,gbk_path,new_gbk_filename))
+        else:
+            strain_list.append(gbk_filename.split('.gbk')[0])
+    write_pickle(path+'strain_list.cpk', strain_list )

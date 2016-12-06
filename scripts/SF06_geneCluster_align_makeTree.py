@@ -1,11 +1,14 @@
-import os,glob,sys,time,shutil; import numpy as np
-from itertools import izip; from collections import defaultdict, Counter
+import os, sys, glob, time, shutil
+import numpy as np
+from itertools import izip
+from collections import defaultdict, Counter
+from ete2 import Tree
 from Bio import Phylo, SeqIO, AlignIO
 from Bio.Seq import Seq; from Bio.SeqRecord import SeqRecord
 from Bio.Align import MultipleSeqAlignment
-from ete2 import Tree
+
 from SF00_miscellaneous import times, read_fasta, load_pickle, write_pickle, write_in_fa, write_json
-sys.path.append('./scripts/')
+
 sys.setrecursionlimit(2000)
 
 def make_dir(dname):
@@ -513,7 +516,7 @@ def cluster_align_makeTree( path, parallel, disable_cluster_postprocessing ):
     """
     def create_geneCluster_fa():
         """ dict storing amino_acid Id/Seq from '.faa' files
-            input: '.faa', '_gene_nuc_dict.cpk', '-orthamcl-allclusters.cpk'
+            input: '.faa', '_gene_nuc_dict.cpk', 'allclusters.cpk'
             output:
         """
         ## make sure the geneCluster folder is empty
@@ -535,7 +538,7 @@ def cluster_align_makeTree( path, parallel, disable_cluster_postprocessing ):
 
         ## load gene cluster cpk file
         geneCluster_path=faa_path+'diamond_matches/'
-        diamond_geneCluster_dt=load_pickle(geneCluster_path+'orthamcl-allclusters.cpk')
+        diamond_geneCluster_dt=load_pickle(geneCluster_path+'allclusters.cpk')
 
         ## load geneID_to_geneSeqID geneSeqID cpk file
         geneID_to_geneSeqID_dict=load_pickle(path+'geneID_to_geneSeqID.cpk')
@@ -568,12 +571,12 @@ def cluster_align_makeTree( path, parallel, disable_cluster_postprocessing ):
     fa_files=glob.glob(fasta_path+"*.fna")
     multips(align_and_makeTree, parallel, fasta_path, fa_files)
 
-    ## if cluster_postprocessing skipped, rename orthamcl-allclusters.cpk as the final cluster file
+    ## if cluster_postprocessing skipped, rename allclusters.cpk as the final cluster file
     if disable_cluster_postprocessing==1:
         ## write gene_diversity_Dt cpk file
         update_diversity_cpk(path)
         geneCluster_path=path+'protein_faa/diamond_matches/'
-        os.system('mv %sorthamcl-allclusters.cpk %sorthamcl-allclusters_final.cpk'%(geneCluster_path,geneCluster_path))
+        os.system('mv %sallclusters.cpk %sallclusters_final.cpk'%(geneCluster_path,geneCluster_path))
         write_final_cluster(path)
 
 
@@ -724,7 +727,7 @@ def create_split_cluster_files(file_path, fname,
 
 def write_final_cluster(path):
     clusters=load_sorted_clusters(path)
-    outfileName='orthamcl-allclusters_final.tsv'
+    outfileName='allclusters_final.tsv'
     with open(path+'protein_faa/diamond_matches/'+outfileName, 'wb') as outfile:
         for cluster_id, cluster in enumerate(clusters):
             cluster_stat=cluster[1]
@@ -734,7 +737,7 @@ def write_final_cluster(path):
 def update_geneCluster_cpk(path, diamond_geneCluster_dt ):
     ## update gene cluster pickled file
     cluster_path = path+'protein_faa/diamond_matches/'
-    write_pickle(cluster_path+'orthamcl-allclusters_final.cpk',diamond_geneCluster_dt)
+    write_pickle(cluster_path+'allclusters_final.cpk',diamond_geneCluster_dt)
     write_final_cluster(path)
 
 def update_diversity_cpk(path):
@@ -747,7 +750,7 @@ def postprocess_paralogs_iterative(parallel, path, nstrains,
                          branch_length_cutoff=500, paralog_cutoff=0.5, plot=False):
 
     cluster_path= path+'protein_faa/diamond_matches/'
-    diamond_geneCluster_dt=load_pickle(cluster_path+'orthamcl-allclusters.cpk')
+    diamond_geneCluster_dt=load_pickle(cluster_path+'allclusters.cpk')
 
     split_result= postprocess_paralogs( parallel, path, nstrains,
                                             diamond_geneCluster_dt,
@@ -843,7 +846,7 @@ def load_sorted_clusters(path):
     load gene clusters and sort 1st by abundance and then by clusterID
     '''
     geneClusterPath='%s%s'%(path,'protein_faa/diamond_matches/')
-    diamond_geneCluster_dt=load_pickle(geneClusterPath+'orthamcl-allclusters_final.cpk')
+    diamond_geneCluster_dt=load_pickle(geneClusterPath+'allclusters_final.cpk')
     from operator import itemgetter
     # sort by decreasing abundance (-v[0], minus to achieve decreasing)
     # followed by increasing clusterID GC_00001

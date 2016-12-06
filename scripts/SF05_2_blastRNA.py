@@ -19,7 +19,7 @@ def parse_RNACluster(path,inputfile):
             RNACluster_dt[clusterID][2]=len(dict(Counter([ ivg for ivg in col])).keys())
             ## RNA members
             RNACluster_dt[clusterID][1]=[ icol for icol in col ]
-    write_pickle(path+'orthamcl-allclusters.cpk',RNACluster_dt)
+    write_pickle(path+'allclusters.cpk',RNACluster_dt)
 
 def RNA_cluster(path, threads,blastn_RNA_max_target_seqs, mcl_inflation ):
     '''
@@ -49,9 +49,9 @@ def RNA_cluster(path, threads,blastn_RNA_max_target_seqs, mcl_inflation ):
     ## run orthagogue and MCL
     ortha_mcl_run(output_path, threads, mcl_inflation)
     ## save singeltons
-    origin_cluster_file='orthamcl-cluster.output';
+    origin_cluster_file='cluster.output';
     orthagogue_singletons(output_path,origin_cluster_file,'%s.fna'%(all_RNA_filename))
-    all_cluster_file='orthamcl-allclusters.csv';
+    all_cluster_file='allclusters.tsv';
     parse_RNACluster(output_path,all_cluster_file)
     ## remove database file
     os.system(''.join(['rm ',input_path,all_RNA_filename,'*']))

@@ -1,5 +1,6 @@
-import os,sys,time; from collections import defaultdict,Counter
-from SF00_miscellaneous import times,load_pickle,read_fasta,write_pickle
+import os, sys, time
+from collections import defaultdict, Counter
+from SF00_miscellaneous import times, load_pickle, read_fasta, write_pickle
 
 def diamond_run(query_path, output_path, dmd_ref_file, threads, 
     diamond_max_target_seqs, diamond_identity, diamond_query_cover):
@@ -46,8 +47,8 @@ def ortha_mcl_run(output_path, threads, mcl_inflation):
     print 'command line orthAgogue: ', command_orthagogue
     os.system(command_orthagogue)
     #os.system(''.join(['mv ortha/all.abc ./']))
-    command_mcl=''.join(['mcl ortha/all.abc --abc -o orthamcl-cluster.output -I ',str(mcl_inflation),' > mcl.log 2>&1'])
-    print 'command line orthAgogue:', command_mcl
+    command_mcl=''.join(['mcl ortha/all.abc --abc -o cluster.output -I ',str(mcl_inflation),' > mcl.log 2>&1'])
+    print 'command line MCL:', command_mcl
     os.system(command_mcl)
     os.chdir(current_path)
     #os.system(''.join(['rm ',output_path,'all.abc']))
@@ -57,7 +58,7 @@ def orthagogue_singletons(path,origin_cluster_file,all_faa_file):
     from operator import or_
     all_faa_file="%s%s"%(path,all_faa_file)
     origin_cluster_file="%s%s"%(path,origin_cluster_file)
-    all_cluster_file="%s%s"%(path,'orthamcl-allclusters.csv')
+    all_cluster_file="%s%s"%(path,'allclusters.tsv')
 
     # loop over cluster_file, each line is one cluster tab delimited geneIDs (strain-locusTag)
     # generate union of all genes in all clusters excluding singletons
@@ -92,15 +93,15 @@ def parse_geneCluster(path,inputfile, cluster_log=False):
             geneCluster_dt[clusterID][2]=len(dict(Counter([ ivg for ivg in col])).keys())
             ## gene members
             geneCluster_dt[clusterID][1]=[ icol for icol in col ]
-    write_pickle(path+'orthamcl-allclusters.cpk',geneCluster_dt)
+    write_pickle(path+'allclusters.cpk',geneCluster_dt)
 
     if cluster_log==True:
-        with open(path+'orthamcl-allclusters.log', 'wb') as write_fn_lst:
+        with open(path+'allclusters.log', 'wb') as write_fn_lst:
             orthagogue_geneCount_lst=sorted( geneCluster_dt.iteritems(), key=itemgetter(1), reverse=True);
             for kd, vd in orthagogue_geneCount_lst:
                 write_fn_lst.write('%s%s\n'%(kd, vd));
 
-def diamond_orthamcl_cluster(path, threads, blast_cluster_file_path, roary_cluster_file_path, diamond_orthamcl_cluster, diamond_identity, diamond_query_cover, mcl_inflation):
+def diamond_orthamcl_cluster(path, threads, blast_cluster_file_path, roary_cluster_file_path, diamond_max_target_seqs, diamond_identity, diamond_query_cover, mcl_inflation):
     ''' 
     make all-against-all comparison using diamond
     THEN generate gene clusters followed by orthoMCL/orthagogue+MCL
@@ -112,7 +113,7 @@ def diamond_orthamcl_cluster(path, threads, blast_cluster_file_path, roary_clust
         blast_cluster_file_path: gene clusters by all-to-all blast 
                                  comparison and orthoMCL/orthagogue+MCL
         roary_cluster_file_path: gene clusters by roary
-        diamond_orthamcl_cluster: Diamond setting: the maximum number of target sequences 
+        diamond_max_target_seqs: Diamond setting: the maximum number of target sequences 
                                   per query to keep alignments for. Defalut: 
                                   #strain * #max_duplication= 40*15= 600 
     '''
@@ -128,14 +129,14 @@ def diamond_orthamcl_cluster(path, threads, blast_cluster_file_path, roary_clust
             os.system('cat '+input_path+'*faa > '+output_path+dmd_query_file)
             ## dmd_query_file is dmd_ref_file
             os.system('cp '+output_path+dmd_query_file+' '+output_path+dmd_ref_file)
-            diamond_run(output_path, output_path, dmd_ref_file, threads, diamond_orthamcl_cluster, diamond_identity, diamond_query_cover)
+            diamond_run(output_path, output_path, dmd_ref_file, threads, diamond_max_target_seqs, diamond_identity, diamond_query_cover)
             ortha_mcl_run(output_path, threads, mcl_inflation)
             ## save singletons
-            origin_cluster_file='orthamcl-cluster.output';
+            origin_cluster_file='cluster.output';
             orthagogue_singletons(output_path,origin_cluster_file,dmd_query_file)
             ## clean up diamond_query_file
             os.system(''.join(['rm ',output_path,'*faa']))
-            all_cluster_file='orthamcl-allclusters.csv';
+            all_cluster_file='allclusters.tsv';
             parse_geneCluster(output_path,all_cluster_file)
         else: ## using user-given cluster file based on blast
             os.system('mkdir %s'%output_path)
@@ -154,18 +155,18 @@ def diamond_orthamcl_cluster(path, threads, blast_cluster_file_path, roary_clust
                     geneCluster_dt[ clusterID ][0]=num_stains
                     geneCluster_dt[ clusterID ][2]=num_gene
                     geneCluster_dt[ clusterID ][1]=gene_list
-            write_pickle(output_path+'orthamcl-allclusters.cpk', geneCluster_dt)
+            write_pickle(output_path+'allclusters.cpk', geneCluster_dt)
 
             orthagogue_geneCount_lst=sorted( geneCluster_dt.iteritems(), key=itemgetter(1), reverse=True)
-            with open(output_path+'orthamcl-allclusters.log', 'wb') as write_fn_lst:
+            with open(output_path+'allclusters.log', 'wb') as write_fn_lst:
                 for kd, vd in orthagogue_geneCount_lst:
                     write_fn_lst.write('%s%s\n'%(kd, vd))
     else: ## using cluster files from roary
         os.system('mkdir %s'%output_path)
         os.system('ln -sf %s %sclustered_proteins'%(roary_cluster_file_path, output_path))
         with open(roary_cluster_file_path, 'rb') as cluster_external_file:
-            with open(output_path+'orthamcl-allclusters.csv', 'wb') as cluster_final_file:
+            with open(output_path+'allclusters.tsv', 'wb') as cluster_final_file:
                 for cluster_line in cluster_external_file:
                      cluster_final_file.write( '%s\n'%'\t'.join([ gene_tag.replace('_','|') if '|' not in gene_tag else gene_tag for gene_tag in cluster_line.rstrip().split(': ')[1].split('\t')]) )
-        all_cluster_file='orthamcl-allclusters.csv';
+        all_cluster_file='allclusters.tsv';
         parse_geneCluster(output_path,all_cluster_file)

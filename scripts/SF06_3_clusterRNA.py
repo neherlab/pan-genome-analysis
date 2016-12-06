@@ -1,8 +1,9 @@
-import os,glob,sys,time,shutil; import numpy as np
+import os, sys, glob, time, shutil
+import numpy as np
 from SF00_miscellaneous import times, read_fasta, load_pickle, write_pickle, write_in_fa, write_json
 from SF06_geneCluster_align_makeTree import mpm_tree, multips, align_and_makeTree, load_sorted_clusters, update_diversity_cpk
 
-sys.path.append('./scripts/')
+#sys.path.append('./scripts/')
 sys.setrecursionlimit(2000)
 
 def update_gene_cluster_with_RNA(path, diamond_RNACluster_dt, diamond_geneCluster_dt ):
@@ -11,11 +12,11 @@ def update_gene_cluster_with_RNA(path, diamond_RNACluster_dt, diamond_geneCluste
 
     diamond_geneCluster_dt.update(diamond_RNACluster_dt)
 
-    write_pickle(cluster_path+'orthamcl-allclusters_final.cpk',diamond_geneCluster_dt)
+    write_pickle(cluster_path+'allclusters_final.cpk',diamond_geneCluster_dt)
 
 def create_RNACluster_fa(path):
     """
-        input: '.fna', '_RNA_nuc_dict.cpk', '-orthamcl-allclusters.cpk'
+        input: '.fna', '_RNA_nuc_dict.cpk', 'allclusters.cpk'
         output: '.aln', 'tree.json', etc
     """
     if 0:
@@ -32,7 +33,7 @@ def create_RNACluster_fa(path):
 
     ## load RNA cluster cpk file
     RNACluster_path=path+'RNA_fna/'
-    diamond_RNACluster_dt=load_pickle(RNACluster_path+'orthamcl-allclusters.cpk')
+    diamond_RNACluster_dt=load_pickle(RNACluster_path+'allclusters.cpk')
 
     ## load RNAID_to_RNASeqID RNASeqID cpk file
     RNAID_to_RNASeqID_dict=load_pickle(path+'RNAID_to_SeqID.cpk')
@@ -100,8 +101,8 @@ def RNAclusters_align_makeTree( path, parallel ):
     ## add RNA cluster in diamond_geneCluster_dt
     ### load gene cluster
     geneClusterPath='%s%s'%(path,'protein_faa/diamond_matches/')
-    os.system('cp %sorthamcl-allclusters_final.cpk %s/orthamcl-allclusters_final.cpk.bk '%(geneClusterPath,geneClusterPath))
-    diamond_geneCluster_dt=load_pickle(geneClusterPath+'orthamcl-allclusters_final.cpk')
+    os.system('cp %sallclusters_final.cpk %s/allclusters_final.cpk.bk '%(geneClusterPath,geneClusterPath))
+    diamond_geneCluster_dt=load_pickle(geneClusterPath+'allclusters_final.cpk')
     ### update gene cluster with RNA cluster
     update_gene_cluster_with_RNA(path, diamond_RNACluster_dt, diamond_geneCluster_dt)
     ### update diversity file

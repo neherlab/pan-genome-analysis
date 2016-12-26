@@ -1,9 +1,10 @@
-import os,glob,sys,time,shutil
+import os, sys, glob, time, shutil
 import numpy as np
 from collections import defaultdict, Counter
 from Bio import Phylo, SeqIO, AlignIO
-from SF00_miscellaneous import times, read_fasta, load_pickle, write_pickle, write_in_fa, write_json
-from SF06_geneCluster_align_makeTree import multips, align_and_makeTree, load_sorted_clusters, update_geneCluster_cpk, update_diversity_cpk, mpm_tree
+from SF00_miscellaneous import times, read_fasta, write_in_fa, load_pickle, write_pickle 
+from SF06_geneCluster_align_makeTree import multips,\
+    mpm_tree, align_and_makeTree, update_geneCluster_cpk, update_diversity_cpk
 
 def update_geneCluster_dt(path,geneCluster_dt):
     """
@@ -16,7 +17,7 @@ def update_geneCluster_dt(path,geneCluster_dt):
             print('adding newly split clusters %s'%k)
             geneCluster_dt[k] = v
 
-def cut_tree_gather_clades(tree, cut_branch_threshold=0.5):
+def cut_tree_gather_clades(tree, cut_branch_threshold):
     """
     cut tree via breaking up long branches and gather genes in cutted clades,
     the rest ones are collected in leftover set.
@@ -39,7 +40,7 @@ def cut_tree_gather_clades(tree, cut_branch_threshold=0.5):
     # store leaves of node intersected with leaves not yet dealt with
     try:
         for node in tree.find_clades(order='postorder'):
-            if node.branch_length > cut_branch_threshold: #0.5
+            if node.branch_length > cut_branch_threshold:
                 gene_list.append(set.intersection(node.leafs, leaves))
                 leaves=leaves-node.leafs
         ## gather the rest unsplit genes in one cluster, filter for empty clusters
@@ -117,16 +118,15 @@ def output_cutted_clusters(file_path, uncluster_filename, gene_list, geneCluster
         gene_cluster_aa_filename="%s%s"%(newClusterId,'.faa')
         gene_cluster_aa_filepath= file_path+gene_cluster_aa_filename
         gene_cluster_aa_write=open( file_path+gene_cluster_aa_filename, 'wb')
-        print '\n'
-        for gene_memb in split_gene_list:
-            if '\\' in gene_memb:
-                # replace '\' in node name for consistency
-                #NC_018495|CM9_RS01675-1-guanosine-3',5' in fasta ID
-                #NC_018495|CM9_RS01675-1-guanosine-3\',5\' in tree node name
-                gene_memb=gene_memb.replace('\\','')
 
-            #if 'MIT9107|01485' in gene_memb or 'GC_00000000' in origin_uncluster_nu_fa:
-            #    print 'fff ', gene_memb, origin_uncluster_nu_fa , len(origin_nu_fa_dt[gene_memb])
+        for gene_memb in split_gene_list:
+            if "\\'" in gene_memb:
+                # Replace '\' in node name:
+                ## NC_018495|CM9_RS01675-1-guanosine-3',5'-... in fasta ID
+                ## 'NC_018495|CM9_RS01675-1-guanosine-3\',5\'-...' in nwk node name
+                ## Use origin_nu_fa_dt[gene_memb] will throw the KeyError:
+                ## "NC_018495|CM9_RS01675-1-guanosine-3\\',5\\'"
+                gene_memb=gene_memb.replace("\\'","'")
 
             write_in_fa(gene_cluster_nu_write, gene_memb, origin_nu_fa_dt[gene_memb])
             write_in_fa(gene_cluster_aa_write, gene_memb, origin_aa_fa_dt[gene_memb])
@@ -233,7 +233,7 @@ def cutTree_outputCluster(file_path, files_list, geneCluster_dt, treefile_used,c
                             cut_branch_threshold,
                             treefile_used=False, cut_leftover=False)
 
-def postprocess_split_overclusters(parallel, path, cut_branch_threshold=0.5):
+def postprocess_split_overclusters(parallel, path, cut_branch_threshold=0.3):
     """
     Split tree via breaking up long branches.
     Remote homology leads to over-clustering. This yields tree with long branches.
@@ -248,7 +248,7 @@ def postprocess_split_overclusters(parallel, path, cut_branch_threshold=0.5):
 
     ## load clusters
     cluster_path='%s%s'%(path,'protein_faa/diamond_matches/')
-    geneCluster_dt=load_pickle(cluster_path+'orthamcl-allclusters.cpk')
+    geneCluster_dt=load_pickle(cluster_path+'allclusters.cpk')
 
     ## gather all trees generated before postprocessing
     tree_path = file_path
@@ -264,7 +264,6 @@ def postprocess_split_overclusters(parallel, path, cut_branch_threshold=0.5):
     # parallelization: 
     # "post-clustering workflow for splitting trees on over-clustered records"
     treefile_used=True
-    cut_branch_threshold=0.3
     multips(cutTree_outputCluster, parallel, file_path, tree_fname_list, geneCluster_dt,treefile_used,cut_branch_threshold)
 
     ## gather new clusters from refined_clusters.txt

@@ -11,7 +11,7 @@ def diamond_run(query_path, output_path, dmd_ref_file, threads,
     start = time.time()
     makedb_command= ''.join([diam,' makedb -p ',threads,
                         ' --in ', output_path, dmd_ref_file,
-                        ' -d ',output_path,'nr > ',output_path,'diamond_makdedb.log 2>&1'
+                        ' -d ',output_path,'nr > ',output_path,'diamond_makedb.log 2>&1'
                         ])
     os.system(makedb_command)
     print 'command line record:', makedb_command
@@ -55,7 +55,7 @@ def ortha_mcl_run(output_path, threads, mcl_inflation):
 
 def orthagogue_singletons(path,origin_cluster_file,all_faa_file):
     """ add singletons from original MCL output """
-    from operator import or_
+    #from operator import or_
     all_faa_file="%s%s"%(path,all_faa_file)
     origin_cluster_file="%s%s"%(path,origin_cluster_file)
     all_cluster_file="%s%s"%(path,'allclusters.tsv')
@@ -63,7 +63,8 @@ def orthagogue_singletons(path,origin_cluster_file,all_faa_file):
     # loop over cluster_file, each line is one cluster tab delimited geneIDs (strain-locusTag)
     # generate union of all genes in all clusters excluding singletons
     with open(origin_cluster_file, 'rb') as infile:
-        orthagogue_set=reduce(or_, [ set(iline.rstrip().split('\t')) for iline in infile ])
+        orthagogue_set= set.union(*[set(iline.rstrip().split('\t')) for iline in infile])
+        #orthagogue_set=reduce(or_, [ set(iline.rstrip().split('\t')) for iline in infile ])
 
     # read all geneIDs from all genes from all strains, determine singletons as set difference
     all_faa_set=set( read_fasta(all_faa_file).keys() )

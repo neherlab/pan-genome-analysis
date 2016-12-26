@@ -95,7 +95,7 @@ def process_gain_loss(path):
         export_gain_loss(tree,path)
     else:
         print('Warning: failed to estimated the gtr parameters by ML.')
-        import ipdb;ipdb.set_trace()
+        #import ipdb;ipdb.set_trace()
         change_gtr_parameters_forgainloss(tree,0.5,1.0)
         tree.reconstruct_anc(method='ml')
         export_gain_loss(tree,path)

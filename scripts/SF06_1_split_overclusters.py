@@ -80,6 +80,9 @@ def delete_original_clusters(file_path, geneCluster_dt):
         for uncluster_filename in uncluster_filename_list:
             if uncluster_filename in geneCluster_dt:
                 del geneCluster_dt[uncluster_filename]
+                command_move_deleted_clusters=''.join([
+                    'mv ',file_path,uncluster_filename,'.* ',file_path,'deleted_clusters/'])
+                os.system(command_move_deleted_clusters)
     return geneCluster_dt
 
 def output_cutted_clusters(file_path, uncluster_filename, gene_list, geneCluster_dt, cut_branch_threshold, treefile_used, cut_leftover=False):
@@ -245,6 +248,10 @@ def postprocess_split_overclusters(parallel, path, cut_branch_threshold=0.3):
         ## remove the folder from previous run
         os.system(''.join(['rm -r ',new_split_folder]))
     os.system(''.join(['mkdir ',new_split_folder]))
+    deleted_clusters_folder=''.join([file_path,'deleted_clusters/'])
+    if os.path.exists(deleted_clusters_folder):
+        os.system(''.join(['rm -r ',deleted_clusters_folder]))
+    os.system(''.join(['mkdir ',deleted_clusters_folder]))
 
     ## load clusters
     cluster_path='%s%s'%(path,'protein_faa/diamond_matches/')

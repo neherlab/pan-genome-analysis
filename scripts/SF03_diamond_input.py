@@ -1,11 +1,11 @@
 import os
 from collections import defaultdict
 from Bio import SeqIO
-from SF00_miscellaneous import load_pickle, write_in_fa, write_pickle
+from SF00_miscellaneous import read_fasta, write_in_fa, load_pickle, write_pickle
 
-def gbk_translation(gbk_path,nucleotide_dict_path, gb_file, 
-    output_filename,output_filename2, geneID_to_geneSeqID_dict, geneID_to_description_dict,
-    RNAID_to_SeqID_dict,RNAID_to_description_dict, disable_RNA_clustering):
+def gbk_translation(gbk_path,nucleotide_dict_path, gb_file,
+    output_filename, output_filename2, geneID_to_geneSeqID_dict,geneID_to_description_dict,
+    RNAID_to_SeqID_dict, RNAID_to_description_dict, disable_RNA_clustering):
     '''
     extract sequences and meta informations of all genes in one reference genbank file
     params:
@@ -93,7 +93,7 @@ def gbk_translation(gbk_path,nucleotide_dict_path, gb_file,
                     RNAID= '%s|%s'%(strainName,locus_tag)
                     RNA_seq= str(feature.extract(contig.seq))
                     write_in_fa(RNA_sequence_file, RNAID, RNA_seq)
-                    # give tag 'gname:' to genes which have gene name and separate it from annotation 
+                    # give tag 'gname:' to genes which have gene name and separate it from annotation
                     RNAID_to_description_dict[RNAID]={
                                                     'geneName': '',
                                                     'contig': contig_index,
@@ -108,14 +108,15 @@ def gbk_translation(gbk_path,nucleotide_dict_path, gb_file,
         write_pickle(RNA_nuc_seq_dict, RNA_nucleotide_sequences)
     aa_sequence_file.close()
 
-def diamond_input(path, strain_lst,disable_RNA_clustering=0):
+def diamond_input(path, strain_lst, gbk_present, disable_RNA_clustering):
     '''
         go through all GenBank files and extract sequences and metadata for each one
     '''
     gbk_path='%s%s'%(path,'input_GenBank/')
     protein_folder='%s%s'%(path,'protein_faa/')
     os.system('mkdir %s'%protein_folder)
-    nucleotide_dict_path= '%s%s'%(path,'nucleotide_fna/')
+    nuc_seq_folder='%s%s'%(path,'nucleotide_fna/')
+    nucleotide_dict_path=nuc_seq_folder
     os.system('mkdir %s'%nucleotide_dict_path)
     RNA_folder='%s%s'%(path,'RNA_fna/')
     os.system('mkdir %s'%RNA_folder)    
@@ -129,13 +130,39 @@ def diamond_input(path, strain_lst,disable_RNA_clustering=0):
     RNAID_to_SeqID_dict= defaultdict()
     RNAID_to_description_file= path+'RNAID_to_description.cpk'
     RNAID_to_description_dict= defaultdict()
-    for strain_name in strain_lst:
-        diamond_input_fname=protein_folder+'%s%s'%(strain_name,'.faa');
-        RNA_blast_input_fname=RNA_folder+'%s%s'%(strain_name,'.fna');
-        gbk_translation(gbk_path,nucleotide_dict_path,'%s%s'%(strain_name,'.gbk'), diamond_input_fname, RNA_blast_input_fname, geneID_to_geneSeqID_dict, geneID_to_description_dict, RNAID_to_SeqID_dict, RNAID_to_description_dict, disable_RNA_clustering )
+    if gbk_present==1:
+        ## process gbk file
+        for strain_name in strain_lst:
+            diamond_input_fname=protein_folder+'%s%s'%(strain_name,'.faa')
+            RNA_blast_input_fname=RNA_folder+'%s%s'%(strain_name,'.fna')
+            gbk_translation(gbk_path,nucleotide_dict_path,'%s%s'%(strain_name,'.gbk'),\
+                    diamond_input_fname, RNA_blast_input_fname,\
+                    geneID_to_geneSeqID_dict,geneID_to_description_dict,\
+                    RNAID_to_SeqID_dict, RNAID_to_description_dict, disable_RNA_clustering)
+    else:
+        ## process fna/faa files if gbk files are not given.
+        command_organize_aa_input= 'mv %s*.faa %s'%(path,protein_folder)
+        command_organize_nuc_input='mv %s*.fna %s'%(path,nuc_seq_folder)
+        os.system(command_organize_nuc_input)
+        os.system(command_organize_aa_input)
+        for strain_name in strain_lst:
+            ## amino acid sequences
+            diamond_input_fname=protein_folder+'%s%s'%(strain_name,'.faa')
+            aa_sequence_dt=read_fasta(diamond_input_fname)
+            ## nucleotide sequences
+            nuc_sequence_fname='%s%s%s'%(nucleotide_dict_path,strain_name,'.fna')
+            nu_sequence_dt=read_fasta(nuc_sequence_fname)
+            gene_nuc_seq_dict= '%s%s_gene_nuc_dict.cpk'%(nucleotide_dict_path, strain_name)
+            write_pickle(gene_nuc_seq_dict, nu_sequence_dt)
+            ## prepare geneSeqID and description
+            for geneID in aa_sequence_dt.keys():
+                geneName, annotation= '',''
+                geneID_to_geneSeqID_dict[geneID]=geneID
+                geneID_to_description_dict[geneID]={'geneName': geneName,
+                                                    'annotation': annotation}
     write_pickle(geneID_to_geneSeqID_file, geneID_to_geneSeqID_dict)
     write_pickle(geneID_to_description_file, geneID_to_description_dict)
+    ## option: process RNA sequences for RNA_clustering
     if disable_RNA_clustering==0:
         write_pickle(RNAID_to_SeqID_file, RNAID_to_SeqID_dict)
         write_pickle(RNAID_to_description_file, RNAID_to_description_dict)
-

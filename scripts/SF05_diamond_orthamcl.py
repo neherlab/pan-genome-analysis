@@ -1,38 +1,7 @@
 import os, sys, time
 from collections import defaultdict, Counter
 from SF00_miscellaneous import times, load_pickle, read_fasta, write_pickle
-
-def diamond_run(query_path, output_path, dmd_ref_file, threads, 
-    diamond_max_target_seqs, diamond_identity, diamond_query_cover):
-    """ runn diamond using sensitive alignment mode """
-    os.system('pwd')
-    diam='./tools/diamond'
-    print '# Run for query.faa'
-    start = time.time()
-    makedb_command= ''.join([diam,' makedb -p ',threads,
-                        ' --in ', output_path, dmd_ref_file,
-                        ' -d ',output_path,'nr > ',output_path,'diamond_makedb.log 2>&1'
-                        ])
-    os.system(makedb_command)
-    print 'command line record:', makedb_command
-    print 'build index:', times(start)
-
-    start = time.time()
-    print 'diamond_max_target_seqs used: %s'%diamond_max_target_seqs
-    blastp_command= ''.join([diam,' blastp --sensitive -p ',threads,
-                        ' --id ', diamond_identity,
-                        ' --query-cover ', diamond_query_cover,
-                        ' -k ', diamond_max_target_seqs,
-                        ' -d ',output_path,'nr',
-                        ' -q ',query_path,'query.faa',
-                        ' -o ',output_path,'query_matches.m8 -t ./  > ',output_path,'diamond_blastp.log  2>&1'
-                        ])
-    os.system(blastp_command)
-    print 'command line record:', blastp_command
-    print 'matchin:', times(start),'\n'
-
-    ## remove diamond binary database (dmnd) file
-    os.system(''.join(['rm ',output_path,'nr.dmnd']))
+from SF05_cluster_protein import diamond_run
 
 def ortha_mcl_run(output_path, threads, mcl_inflation):
     """ run orthAgogue and MCL """
@@ -63,7 +32,7 @@ def orthagogue_singletons(path,origin_cluster_file,all_faa_file):
     # loop over cluster_file, each line is one cluster tab delimited geneIDs (strain-locusTag)
     # generate union of all genes in all clusters excluding singletons
     with open(origin_cluster_file, 'rb') as infile:
-        orthagogue_set= set.union(*[set(iline.rstrip().split('\t')) for iline in infile])
+        orthagogue_set= set.union(*[ set(iline.rstrip().split('\t')) for iline in infile])
         #orthagogue_set=reduce(or_, [ set(iline.rstrip().split('\t')) for iline in infile ])
 
     # read all geneIDs from all genes from all strains, determine singletons as set difference
@@ -102,7 +71,10 @@ def parse_geneCluster(path,inputfile, cluster_log=False):
             for kd, vd in orthagogue_geneCount_lst:
                 write_fn_lst.write('%s%s\n'%(kd, vd));
 
-def diamond_orthamcl_cluster(path, threads, blast_cluster_file_path, roary_cluster_file_path, diamond_max_target_seqs, diamond_identity, diamond_query_cover, mcl_inflation):
+def diamond_orthamcl_cluster(
+    path, threads, blast_cluster_file_path, roary_cluster_file_path,
+    diamond_evalue, diamond_max_target_seqs, diamond_identity,
+    diamond_query_cover, diamond_subject_cover, mcl_inflation):
     ''' 
     make all-against-all comparison using diamond
     THEN generate gene clusters followed by orthoMCL/orthagogue+MCL
@@ -124,13 +96,15 @@ def diamond_orthamcl_cluster(path, threads, blast_cluster_file_path, roary_clust
     ## using standard pipeline (roary_cluster_file_path=='none')
     if roary_cluster_file_path=='none':
         if blast_cluster_file_path=='none':
-            dmd_ref_file='reference.faa'; dmd_query_file='query.faa'
+            dmd_ref_file='reference.faa'#dmd_query_file='query.faa'
             ## prepare dmd_query_file
             os.system('mkdir '+output_path)
-            os.system('cat '+input_path+'*faa > '+output_path+dmd_query_file)
+            os.system('cat '+input_path+'*faa > '+output_path+dmd_ref_file)
             ## dmd_query_file is dmd_ref_file
-            os.system('cp '+output_path+dmd_query_file+' '+output_path+dmd_ref_file)
-            diamond_run(output_path, output_path, dmd_ref_file, threads, diamond_max_target_seqs, diamond_identity, diamond_query_cover)
+            #os.system('cp '+output_path+dmd_ref_file+' '+output_path+dmd_query_file)
+            ## run diamond
+            diamond_run(output_path, dmd_ref_file, threads, diamond_evalue,
+                diamond_max_target_seqs, diamond_identity, diamond_query_cover, diamond_subject_cover)
             ortha_mcl_run(output_path, threads, mcl_inflation)
             ## save singletons
             origin_cluster_file='cluster.output';
@@ -138,6 +112,7 @@ def diamond_orthamcl_cluster(path, threads, blast_cluster_file_path, roary_clust
             ## clean up diamond_query_file
             os.system(''.join(['rm ',output_path,'*faa']))
             all_cluster_file='allclusters.tsv';
+            os.system('cp %sallclusters.tsv %sorthamcl-allclusters.tsv'%(output_path,output_path))
             parse_geneCluster(output_path,all_cluster_file)
         else: ## using user-given cluster file based on blast
             os.system('mkdir %s'%output_path)

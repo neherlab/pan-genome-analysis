@@ -6,8 +6,9 @@ from SF02_get_acc_single_serverDown import accessionID_single
 from SF03_diamond_input import diamond_input
 from SF04_gbk_metainfo import gbk_To_Metainfo
 from SF05_cluster_protein import clustering_protein_sequences
+from SF05_preclustering import preclustering_protein_sequences
 from SF05_cluster_protein_divide_conquer import clustering_divide_conquer
-#from SF05_diamond_orthamcl import diamond_orthamcl_cluster
+from SF05_diamond_orthamcl import diamond_orthamcl_cluster
 from SF05_2_blastRNA import RNA_cluster
 from SF06_x_geneCluster_correl_stats import cluster_align_makeTree_correl_stats 
 from SF06_geneCluster_align_makeTree import cluster_align_makeTree, postprocess_paralogs_iterative
@@ -26,38 +27,114 @@ from SF11_tree_metadata_export import json_parser
 
 #python run-pipeline.py -fn data/Pmnb -sl Pat3-RefSeq.txt -st 5 -bp Pm_clustering/Pm_allclusters.tab > Pmnb-5.log 2>&1
 
-parser = argparse.ArgumentParser(description='Pipeline for identifying core and pan-genome from NCBI RefSeq genome sequences.')
-parser.add_argument('-fn', '--folder_name', type = str, required=True, help='the absolute path for project folder ')
-parser.add_argument('-sl', '--strain_list', type = str, required=True, help='the file name for strain list (e.g.: Pa-RefSeq.txt)')
-parser.add_argument('-gbk', '--gbk_present', type = int, default = 1, help=' Using GenBank files by default. Otherwise, nucleotide/amino_acid sequence fna/faa files should be provided.')
-parser.add_argument('-st', '--steps', nargs='+', type = int, default = ['all'], help='select specific steps to run or run all steps by default ')
-parser.add_argument('-rt', '--raxml_max_time', type = int, default = 30, help='RAxML tree optimization: maximal runing time (in minutes, default: 30 min)')
-parser.add_argument('-t', '--threads', type = int, default = 1, help='number of threads')
-parser.add_argument('-bp', '--blast_file_path', type = str, default = 'none', help='the absolute path for blast result (e.g.: /path/blast.out)')
-parser.add_argument('-rp', '--roary_file_path', type = str, default = 'none', help='the absolute path for roary result (e.g.: /path/roary.out)')
-parser.add_argument('-mi', '--meta_info_file_path', type = str, default = 'none', help='the absolute path for meta_information file (e.g.: /path/meta.out)')
-parser.add_argument('-cst', '--enable_cluster_correl_stats', type = int, default = 0, help='default: calculate statistics on each cluster for correlation test')
-parser.add_argument('-np', '--disable_cluster_postprocessing', type = int, default = 0, help='default: run post-processing procedure for splitting paralogs and clustering un-clustered genes')
-parser.add_argument('-nrna', '--disable_RNA_clustering', type = int, default = 1, help='default:  disabled, not cluster rRNAs and tRNAs')
-parser.add_argument('-dme', '--diamond_evalue', type = str, default = '0.001', help='default: e-value threshold below 0.001')
-parser.add_argument('-dmt', '--diamond_max_target_seqs', type = str, default = '600', help='Diamond: the maximum number of target sequences per query to keep alignments for. Defalut: #strain * #max_duplication= 40*15= 600 ')
-parser.add_argument('-dmi', '--diamond_identity', type = str, default = '0', help='Diamond: sequence identity threshold to report an alignment. Default: empty. When applied to species with low genetic diversity: 70 could be a decent starting point. All alignments with identity below 70% will not be reported, thus also saving computational time. ')
-parser.add_argument('-dmqc', '--diamond_query_cover', type = str, default = '0', help='Diamond: sequence (query) coverage threshold to report an alignment.  Default: empty. When applied to species with low genetic diversity: 70 could be a decent starting point. All alignments with less than 70% query coverage will not be reported, thus also saving computational time. ')
-parser.add_argument('-dmsc', '--diamond_subject_cover', type = str, default = '0', help='Diamond: sequence (subject) coverage threshold to report an alignment.  Default: empty. When applied to species with low genetic diversity: 70 could be a decent starting point. All alignments with less than 70%  subject coverage will not be reported, thus also saving computational time. ')
-parser.add_argument('-dmdc', '--diamond_divide_conquer', type = int, default = 0, help='Default: running diamond alignment in divide-and-conquer(DC) method is not activated; this option is designed for large dataset.')
-parser.add_argument('-dcs', '--subset_size', type = int, default = 50, help='Default:subset_size (number of strains in each subset) for divide-and-conquer(DC) method')
-parser.add_argument('-imcl', '--mcl_inflation', type = float, default = 2.0, help='MCL: inflation parameter (varying this parameter affects granularity) ')
-parser.add_argument('-bmt', '--blastn_RNA_max_target_seqs', type = str, default = '600', help='Blastn on RNAs: the maximum number of target sequences per query to keep alignments for. Defalut: #strain * #max_duplication= 40*15= 600 ')
-parser.add_argument('-cb', '--cut_branch_threshold', type = float, default = 0.3, help='branch length threshold used to decide whether to cut sub-trees for resolving over-clustering')
-parser.add_argument('-cbc', '--cut_branch_threshold_customized', type = str, default = False,\
-    help='Default: use cut-tree branch-length threshold calculated from core gene diversity; \
-        if it is set to True: use the threshold provided by user')
-parser.add_argument('-ws', '--window_size_smoothed', type = int, default = 5, help='postprocess_unclustered_genes: window_size for smoothed cluster length distribution')
-parser.add_argument('-spr', '--strain_proportion', type = float, default = 0.3, help='postprocess_unclustered_genes: strain_proportion')
-parser.add_argument('-ss', '--sigma_scale', type = int, default = 3, help='postprocess_unclustered_genes: sigma_scale')
-parser.add_argument('-kt', '--keep_temporary_file', type = str, default = True, help='default keep_temporary_file')
-parser.add_argument('-cg', '--core_genome_threshold', type = float, default = 1.0, help='percentage of strains used to decide whether a gene is core. Default: 1.0 for strictly core gene; customized instance: 0.9 for soft core genes')
-parser.add_argument('-ortha', '--orthAgogue_used', type = int, default = 0, help='Default: orthAgogue not used')
+parser = argparse.ArgumentParser(description=\
+    'Software for computing core and pan-genome from a set of genome sequences.',
+    usage='%(prog)s')
+parser.add_argument('-fn', '--folder_name', type = str, required=True,
+    help='the absolute path for project folder ', metavar='')
+parser.add_argument('-sl', '--strain_list', type = str, required=True,
+    help='the file name for strain list (e.g.: Pa-RefSeq.txt)', metavar='')
+parser.add_argument('-gbk', '--gbk_present', type = int, default = 1,
+    help=' Using GenBank files by default. \
+    Otherwise, nucleotide/amino_acid sequence fna/faa files should be provided.', metavar='')
+parser.add_argument('-st', '--steps', nargs='+', type = int, default = ['all'],
+    help='select specific steps to run or run all steps by default ', metavar='')
+parser.add_argument('-rt', '--raxml_max_time', type = int, default = 30,
+    help='RAxML tree optimization: maximal runing time (in minutes, default: 30 min)' , metavar='')
+parser.add_argument('-t', '--threads', type = int, default = 1,
+    help='number of threads', metavar='')
+
+#/*==================================
+#            clustering            
+#==================================*/
+parser.add_argument('-bp', '--blast_file_path', type = str, default = 'none',
+    help='the absolute path for blast result (e.g.: /path/blast.out)' , metavar='')
+parser.add_argument('-rp', '--roary_file_path', type = str, default = 'none',
+    help='the absolute path for roary result (e.g.: /path/roary.out)' , metavar='')
+parser.add_argument('-mi', '--meta_info_file_path', type = str, default = 'none',
+    help='the absolute path for meta_information file (e.g.: /path/meta.out)' , metavar='')
+parser.add_argument('-dme', '--diamond_evalue', type = str, default = '0.00001',
+    help='default: e-value threshold below 0.001', metavar='')
+parser.add_argument('-dmt', '--diamond_max_target_seqs', type = str, default = '600',
+    help='Diamond: the maximum number of target sequences per query to keep alignments for.\
+    Calculation: #strain * #max_duplication (40*15= 600)', metavar='')
+parser.add_argument('-dmi', '--diamond_identity', type = str, default = '30',
+    help='Diamond: sequence identity threshold to report an alignment. Default: empty.\
+    When applied to species with low genetic diversity: 70 could be a decent starting point.\
+    All alignments with identity below 0.7 of will not be reported, \
+    thus also saving computational time. ', metavar='')
+parser.add_argument('-dmqc', '--diamond_query_cover', type = str, default = '30',
+    help='Diamond: sequence (query) coverage threshold to report an alignment.  Default: empty.\
+    When applied to species with low genetic diversity: 70 could be a decent starting point.\
+    All alignments with less than 0.7 of query coverage will not be reported, \
+    thus also saving computational time. ', metavar='')
+parser.add_argument('-dmsc', '--diamond_subject_cover', type = str, default = '30',
+    help='Diamond: sequence (subject) coverage threshold to report an alignment.  Default: empty.\
+    When applied to species with low genetic diversity: 70 could be a decent starting point.\
+    All alignments with less than 0.7 of subject coverage will not be reported, \
+    thus also saving computational time. ', metavar='')
+parser.add_argument('-dmip', '--diamond_identity_precluster', type = str, default = '90',
+    help='Diamond: sequence identity threshold to report an alignment.', metavar='')
+parser.add_argument('-dmqcp', '--diamond_query_cover_precluster', type = str, default = '90',
+    help='Diamond: sequence (query) coverage threshold to report an alignment.', metavar='')
+parser.add_argument('-dmscp', '--diamond_subject_cover_precluster', type = str, default = '90',
+    help='Diamond: sequence (subject) coverage threshold to report an alignment.', metavar='')
+parser.add_argument('-dmdc', '--diamond_divide_conquer', type = int, default = 0,
+    help='Default: running diamond alignment in divide-and-conquer(DC) method is not activated;\
+    this option is designed for large dataset.', metavar='')
+parser.add_argument('-dcs', '--subset_size', type = int, default = 50,
+    help='Default:subset_size (number of strains in a subset) for divide-and-conquer(DC) method',\
+    metavar='')
+parser.add_argument('-imcl', '--mcl_inflation', type = float, default = 2.0,
+    help='MCL: inflation parameter (varying this parameter affects granularity) ', metavar='')
+parser.add_argument('-ortha', '--orthAgogue_used', type = int, default = 0,
+    help='Default: orthAgogue not used', metavar='')
+parser.add_argument('-bmt', '--blastn_RNA_max_target_seqs', type = str, default = '100',
+    help='Blastn on RNAs: the maximum number of target sequences per query to keep alignments for.\
+    Calculation: #strain * #max_duplication', metavar='')
+parser.add_argument('-cst', '--enable_cluster_correl_stats', type = int, default = 0,
+    help='default: calculate statistics on each cluster for correlation test', metavar='')
+
+#/*=======================================
+#            post-processing            
+#=======================================*/
+parser.add_argument('-np', '--disable_cluster_postprocessing', type = int, default = 0,
+    help='default: run post-processing procedure for splitting overclustered genes and paralogs,\
+    and clustering un-clustered genes', metavar='')
+parser.add_argument('-nrna', '--disable_RNA_clustering', type = int, default = 1,
+    help='default:  disabled, not cluster rRNAs and tRNAs', metavar='')
+## split tree via breaking up long branches (resolving over-clustering)
+parser.add_argument('-cbc', '--cut_branch_threshold_customized', type = str, default = False,
+    help='[Resolving over-clustering]\
+    default: use cut_tree branch_length threshold calculated from core gene diversity;\
+    if this is set to True: use the threshold provided by user', metavar='')
+parser.add_argument('-cb', '--cut_branch_threshold', type = float, default = 0.3,
+    help='[Resolving over-clustering]\
+    branch_length threshold to indicate whether to cut sub-trees:',metavar='')
+## split paralogy
+parser.add_argument('-pep', '--explore_paralog_plot', type = int, default = 0,
+    help='default: not plot paralog statistics', metavar='')
+parser.add_argument('-pc', '--paralog_cutoff', type = float, default = 0.3,
+    help='Fraction of strains required for splitting paralogy. Default: 0.3', metavar='')
+parser.add_argument('-pbc', '--paralog_branch_length_cutoff', type = float, default = 1,
+    help='Branch_length cutoff used in paralogy splitting', metavar='')
+## resolve peaks (unclustered records)
+parser.add_argument('-ws', '--window_size_smoothed', type = int, default = 5,
+    help='postprocess_unclustered_genes: window_size for smoothed cluster length distribution',
+    metavar='')
+parser.add_argument('-spr', '--strain_proportion', type = float, default = 0.3,
+    help='postprocess_unclustered_genes: strain_proportion', metavar='')
+parser.add_argument('-ss', '--sigma_scale', type = int, default = 3,
+    help='postprocess_unclustered_genes: sigma_scale', metavar='')
+
+## core genome cutoff
+parser.add_argument('-cg', '--core_genome_threshold', type = float, default = 1.0,
+    help='percentage of strains used to decide whether a gene is core.\
+    Default: 1.0 for strictly core gene; customized instance: 0.9 for soft core genes',
+    metavar='')
+
+parser.add_argument('-kt', '--keep_temporary_file', type = str, default = True,
+    help='default keep_temporary_file', metavar='')
 
 params = parser.parse_args()
 path = params.folder_name
@@ -107,26 +184,35 @@ if 5 in params.steps:# step05:
     print '======  starting step05: cluster genes'
     start = time.time()
     if params.diamond_divide_conquer==1:
-        clustering_divide_conquer( path, params.threads,
+        ## clustering with divide_and_conquer method for large dataset
+        clustering_divide_conquer(path, params.threads,
              params.diamond_evalue, params.diamond_max_target_seqs,
             params.diamond_identity, params.diamond_query_cover,
             params.diamond_subject_cover, params.mcl_inflation, params.subset_size)
     elif params.orthAgogue_used==0:
-        clustering_protein_sequences( path, params.threads,
-            params.blast_file_path, params.roary_file_path,
-            params.diamond_evalue, params.diamond_max_target_seqs,
-            params.diamond_identity, params.diamond_query_cover, params.diamond_subject_cover,
-            params.mcl_inflation
-            )
+        ## pre-clustering
+        if 0:
+            preclustering_protein_sequences(path, params.threads,
+                params.diamond_evalue, params.diamond_max_target_seqs,
+                params.diamond_identity_precluster, params.diamond_query_cover_precluster, params.diamond_subject_cover_precluster)
+        ## clustering
+        if 1:
+            clustering_protein_sequences(path, params.threads,
+                params.blast_file_path, params.roary_file_path,
+                params.diamond_evalue, params.diamond_max_target_seqs,
+                params.diamond_identity, params.diamond_query_cover, params.diamond_subject_cover,
+                params.mcl_inflation
+                )
     else:
+        ## test ortha+mcl
         diamond_orthamcl_cluster(path, params.threads,
             params.blast_file_path, params.roary_file_path,
             params.diamond_evalue, params.diamond_max_target_seqs,
             params.diamond_identity, params.diamond_query_cover, params.diamond_subject_cover,
-            params.mcl_inflation )
+            params.mcl_inflation)
     ## clustering RNA when option activated
     if params.disable_RNA_clustering==0:
-        RNA_cluster( path, params.threads, params.blastn_RNA_max_target_seqs, params.mcl_inflation )
+        RNA_cluster(path, params.threads, params.blastn_RNA_max_target_seqs, params.mcl_inflation)
     print '======  time for step05: cluster genes'
     print times(start),'\n'
 
@@ -153,7 +239,10 @@ if 6 in params.steps:# step06:
     ## with/without post-processing
     if params.disable_cluster_postprocessing==0:
         postprocess_split_overclusters(params.threads, path, cut_branch_threshold)
-        postprocess_paralogs_iterative(params.threads, path, nstrains)
+        if 1:
+            postprocess_paralogs_iterative(params.threads, path, nstrains,\
+                params.paralog_cutoff, params.paralog_branch_length_cutoff,\
+                params.explore_paralog_plot)
         postprocess_unclustered_genes(params.threads, path, nstrains,\
             params.window_size_smoothed, params.strain_proportion, params.sigma_scale )
     if params.disable_RNA_clustering==0:

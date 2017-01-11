@@ -1,4 +1,4 @@
-def gbk_To_Metainfo(path, gbk_present):
+def extract_metadata(path, strain_list, folders_dict, gbk_present):
     """
     extract metainfo (date/country) from genBank file
     This step is not necessary if the user provides a tab-delimited
@@ -8,20 +8,16 @@ def gbk_To_Metainfo(path, gbk_present):
     Input: genBank file
     Output: metainfo csv file
     """
-    import os, sys
     from Bio import SeqIO
-    from SF00_miscellaneous import load_pickle
-    with open(path+'metainfo.tsv', 'wb') as writeseq:
-        # write the headers:
-        # (default: accName, strainName, dateInfo, country, host)
+    with open('%s%s'%(path,'metainfo.tsv'), 'wb') as writeseq:
+        #headers: accName, strainName, dateInfo, country, host
         writeseq.write( "%s\n"%('\t'.join(['accName' , 'strainName', 'collection_date', 'country', 'host'])) )
-        strainList=load_pickle(path+ 'strain_list.cpk')
         if gbk_present==1:
-            each_gbk_path='%s%s'%(path,'input_GenBank/')
-            # check each genBank file to get meta-type
-            for eachstrain in strainList:
-                for index, record in enumerate(SeqIO.parse(open(each_gbk_path+ eachstrain+'.gbk'), "genbank")):
-                    for i,feature in enumerate(record.features):
+            gbk_path=folders_dict['gbk_path']
+            for strainID in strain_list:
+                gbk_fpath=''.join([gbk_path,strainID,'.gbk'])
+                for record in SeqIO.parse(gbk_fpath, "genbank"):
+                    for feature in record.features:
                         host, datacolct, country, strainName ='unknown', 'unknown', 'unknown', 'unknown'
                         if feature.type=='source':
                             if 'strain' in feature.qualifiers:
@@ -60,12 +56,8 @@ def gbk_To_Metainfo(path, gbk_present):
                             # just get the year
                             datacolct = datacolct.split('-')[0]
                             break
-                    writeseq.write( "%s\n"%('\t'.join([eachstrain, strainName, datacolct, country, host])) )
-
+                    writeseq.write( "%s\n"%('\t'.join([strainID, strainName, datacolct, country, host])) )
         else: #gbk files are not provided
             strainName = datacolct = country = host='unknown'
-            for eachstrain in strainList:
-                writeseq.write( "%s\n"%('\t'.join([eachstrain, strainName, datacolct, country, host])) )
-    
-    os.system('cp %smetainfo.tsv %smetainfo_curated.tsv'%(path,path))    
-    ## meta-info tsv table can be manually modified by user.
+            for strainID in strain_list:
+                writeseq.write( "%s\n"%('\t'.join([strainID, strainName, datacolct, country, host])) )

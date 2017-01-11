@@ -1,23 +1,22 @@
-import operator
 import os, sys, time, glob
 import numpy as np
-from collections import defaultdict, Counter
+from collections import defaultdict
 from SF00_miscellaneous import times, load_pickle, write_pickle, read_fasta, write_in_fa
-from SF05_cluster_protein import diamond_run, filter_hits_single, parse_geneCluster#mcl_run, 
+from sf_cluster_protein import diamond_run, filter_hits_single, parse_geneCluster, cleanup_clustering #mcl_run
 
-def mcl_run(output_path, threads, input_prefix, mcl_inflation):
+def mcl_run(clustering_path, threads, input_prefix, mcl_inflation):
     """ """
     start = time.time()
-    os.chdir(output_path)
+    os.chdir(clustering_path)
     command_mcl=''.join(['mcl ',input_prefix,'_filtered_hits.abc --abc ',\
                         '-o ',input_prefix,'_cluster.output -I ',str(mcl_inflation),\
                         ' -te ',str(threads),' > ','mcl-',input_prefix,'.log 2>&1'])
     os.system(command_mcl)
-    print 'run command line mcl in ',output_path,': \n', command_mcl
+    print 'run command line mcl in ',clustering_path,': \n', command_mcl
     print 'mcl runtime for ', input_prefix,': ', times(start), '\n'
     os.chdir('../../../../')
 
-def calculate_aln_consensus(output_path, aln_file):
+def calculate_aln_consensus(aln_file):
     """ """
     aln_dt= read_fasta(aln_file)
     alphabet = 'ACDEFGHIKLMNPQRSTVWY*-X'#alphabet = 'ACGT-N'
@@ -40,13 +39,13 @@ def calculate_aln_consensus(output_path, aln_file):
             print 'errors in calculating consensus seq: ', aln_file
     return consensus_arr_seq
 
-def calculate_consensus_cluster(output_path, threads, input_prefix):
+def calculate_consensus_cluster(clustering_path, threads, input_prefix):
     """ """
-    cluster_file= ''.join([output_path,input_prefix,'_cluster.output'])
+    cluster_file= ''.join([clustering_path,input_prefix,'_cluster.output'])
     subproblem_run_number= input_prefix.split('subproblem_')[1]
-    consensus_strain_outputfile= ''.join([output_path,input_prefix,'_consensus','.faa'])
-    subproblem_seqs_path= '%ssubproblem_cluster_seqs/'%output_path
-    subproblem_merged_faa= ''.join([output_path,input_prefix,'.faa'])
+    consensus_strain_outputfile= ''.join([clustering_path,input_prefix,'_consensus','.faa'])
+    subproblem_seqs_path= '%ssubproblem_cluster_seqs/'%clustering_path
+    subproblem_merged_faa= ''.join([clustering_path,input_prefix,'.faa'])
     subproblem_faa_dict= read_fasta(subproblem_merged_faa)
     with open(consensus_strain_outputfile, 'wb') as consensus_strain_output:
         with open(cluster_file, 'rb') as cluster_input:
@@ -68,16 +67,16 @@ def calculate_consensus_cluster(output_path, threads, input_prefix):
                 else:
                     os.system('cp %s %s'%(faa_file,aln_file))
                 ## calculate consensus of aligned sequences
-                consensus_seq= calculate_aln_consensus(output_path, aln_file)
+                consensus_seq= calculate_aln_consensus(aln_file)
                 ## write in consensus strain
                 write_in_fa(consensus_strain_output, clusterID, consensus_seq)
-            write_pickle(''.join([output_path,input_prefix,'_dict.cpk']),\
+            write_pickle(''.join([clustering_path,input_prefix,'_dict.cpk']),\
                         subproblem_geneCluster_dt)
-            with open(''.join([output_path,input_prefix,'cluster_dt.log']),'wb') as clust_log:
+            with open(''.join([clustering_path,input_prefix,'cluster_dt.log']),'wb') as clust_log:
                 for k,v in subproblem_geneCluster_dt.iteritems():
                     clust_log.write('%s\t%s\n'%(k,v))
 
-def clustering_subproblem(output_path, threads, subproblem_merged_faa,
+def clustering_subproblem(clustering_path, threads, subproblem_merged_faa,
         diamond_evalue, diamond_max_target_seqs, diamond_identity,
         diamond_query_cover, diamond_subject_cover,
         mcl_inflation,last_run_flag):
@@ -87,37 +86,37 @@ def clustering_subproblem(output_path, threads, subproblem_merged_faa,
     else:
         diamond_identity= diamond_query_cover= diamond_subject_cover='30'
 
-    diamond_run(output_path, subproblem_merged_faa, threads,
+    diamond_run(clustering_path, subproblem_merged_faa, threads,
                 diamond_evalue, diamond_max_target_seqs, diamond_identity,
                 diamond_query_cover, diamond_subject_cover)
     input_prefix= subproblem_merged_faa.split('.faa')[0]
-    filter_hits_single(output_path, threads, input_prefix=input_prefix)
-    mcl_run(output_path, threads, input_prefix, mcl_inflation)
+    filter_hits_single(clustering_path, threads, input_prefix=input_prefix)
+    mcl_run(clustering_path, threads, input_prefix, mcl_inflation)
     if last_run_flag==0:
-        calculate_consensus_cluster(output_path, threads, input_prefix)
+        calculate_consensus_cluster(clustering_path, threads, input_prefix)
 
-def concatenate_faa_file(output_path, sub_list, subproblem_merged_faa):
+def concatenate_faa_file(clustering_path, sub_list, subproblem_merged_faa):
     """ """
-    command_cat= ''.join(['cat ',' '.join(sub_list),' > ',output_path, subproblem_merged_faa])
-    print command_cat
+    command_cat= ''.join(['cat ',' '.join(sub_list),' > ',clustering_path, subproblem_merged_faa])
+    #print command_cat
     os.system(command_cat)
 
-def integrate_clusters(output_path):
+def integrate_clusters(clustering_path, cluster_fpath):
     """ integrate all clusters """
     ## consensus ID as key, original gene IDs as value
     consensus_to_origin_dict=defaultdict()    
-    for idict in glob.glob(output_path+"*_dict.cpk"):
+    for idict in glob.glob(clustering_path+"*_dict.cpk"):
         consensus_to_origin_dict.update(load_pickle(idict))
-    with open('%s%s'%(output_path,'subroblem_finalRound_cluster.output')) \
+    with open('%s%s'%(clustering_path,'subroblem_finalRound_cluster.output')) \
                                                     as finalRound_cluster,\
-        open('%s%s'%(output_path,'cluster.output'),'wb') as integrated_cluster:
+        open(cluster_fpath,'wb') as integrated_cluster:
             for iline in finalRound_cluster:
                 integrated_cluster.write('%s\n'%'\t'.join([geneID 
                                     for consensusID in iline.rstrip().split('\t') \
                                     for geneID in consensus_to_origin_dict[consensusID]
                                         ]))
 
-def clustering_divide_conquer(path, threads,
+def clustering_divide_conquer(path, folders_dict, threads,
     diamond_evalue, diamond_max_target_seqs, diamond_identity,
     diamond_query_cover, diamond_subject_cover, mcl_inflation, subset_size=50):
     """
@@ -128,10 +127,13 @@ def clustering_divide_conquer(path, threads,
     finish the last run. The final cluster includes then merged sets from each run.
     """
     threads=str(threads)
-    faa_path= '%s%s'%(path,'protein_faa/')
-    output_path = '%s%s'%(path,'protein_faa/diamond_matches/')
-    os.system('mkdir -p %ssubproblem_cluster_seqs'%output_path)
-    faa_list= [ifaa for ifaa in glob.glob(faa_path+"*.faa")]
+    protein_path= folders_dict['protein_path']
+    clustering_path= folders_dict['clustering_path']
+    cluster_fpath= '%s%s'%(clustering_path,'allclusters.tsv')
+    cluster_dt_cpk_fpath='%s%s'%(clustering_path,'allclusters.cpk')
+
+    os.system('mkdir -p %ssubproblem_cluster_seqs'%clustering_path)
+    faa_list= [ifaa for ifaa in glob.glob(protein_path+"*.faa")]
     #subset_size=50
     subproblems_count, leftover_count= divmod(len(faa_list),subset_size)
     all_faa_list=[]
@@ -142,8 +144,8 @@ def clustering_divide_conquer(path, threads,
         for i in range(0, subproblems_count):
             sub_list= faa_list[i*subset_size : (i+1)*subset_size]
             subproblem_merged_faa= 'subproblem_%s.faa'%str(i+1)
-            concatenate_faa_file(output_path, sub_list, subproblem_merged_faa)
-            clustering_subproblem(output_path, threads, subproblem_merged_faa,
+            concatenate_faa_file(clustering_path, sub_list, subproblem_merged_faa)
+            clustering_subproblem(clustering_path, threads, subproblem_merged_faa,
                                 diamond_evalue, diamond_max_target_seqs,diamond_identity,
                                 diamond_query_cover, diamond_subject_cover,
                                 mcl_inflation, last_run_flag=0)
@@ -151,8 +153,8 @@ def clustering_divide_conquer(path, threads,
             if i==subproblems_count-1 and leftover_count!=0: # the left-overs
                 sub_list= faa_list[(i+1)*subset_size : len(faa_list)]
                 subproblem_merged_faa= 'subproblem_%s.faa'%str(i+2)
-                concatenate_faa_file(output_path, sub_list, subproblem_merged_faa)
-                clustering_subproblem(output_path, threads, subproblem_merged_faa,
+                concatenate_faa_file(clustering_path, sub_list, subproblem_merged_faa)
+                clustering_subproblem(clustering_path, threads, subproblem_merged_faa,
                                     diamond_evalue, diamond_max_target_seqs,diamond_identity,
                                     diamond_query_cover, diamond_subject_cover,
                                     mcl_inflation, last_run_flag=0)
@@ -160,25 +162,13 @@ def clustering_divide_conquer(path, threads,
                 ## decide whether to distribute the leftover to each subproblem
                 ## if leftover_count/subproblems_count:
         ## final run
-        sub_list= glob.glob('%s%s'%(output_path, '*_consensus.faa'))
+        sub_list= glob.glob('%s%s'%(clustering_path, '*_consensus.faa'))
         subproblem_merged_faa= 'subroblem_finalRound.faa'
-        concatenate_faa_file(output_path, sub_list, subproblem_merged_faa)
-        clustering_subproblem(output_path, threads, subproblem_merged_faa,
+        concatenate_faa_file(clustering_path, sub_list, subproblem_merged_faa)
+        clustering_subproblem(clustering_path, threads, subproblem_merged_faa,
                             diamond_evalue,diamond_max_target_seqs, diamond_identity,
                             diamond_query_cover, diamond_subject_cover, mcl_inflation,
                             last_run_flag=1)
-    integrate_clusters(output_path)
-    cluster_file='allclusters.tsv'
-    os.system(''.join(['mv ',output_path,'cluster.output',\
-                            ' ',output_path,'allclusters.tsv']))
-    parse_geneCluster(output_path,cluster_file)
-
-#path='/ebio/ag-neher/share/users/wding/pan-genome-analysis/data/C_jejuni/'
-#path='/ebio/ag-neher/share/users/wding/pan-genome-analysis/data/S_ente/'
-if 0:
-    path='/ebio/ag-neher/share/users/wding/pan-genome-analysis/data/M_geni_divide_conquer/'
-    threads='64';diamond_max_target_seqs, diamond_identity, diamond_query_cover,mcl_inflation='200','0','0','2.0';
-    diamond_evalue='0.001';diamond_subject_cover='0'
-    clustering_divide_conquer(path, threads, 
-        diamond_evalue, diamond_max_target_seqs, diamond_identity,
-        diamond_query_cover, diamond_subject_cover, mcl_inflation,subset_size=2)
+    integrate_clusters(clustering_path,cluster_fpath)
+    cleanup_clustering(clustering_path)
+    parse_geneCluster(cluster_fpath,cluster_dt_cpk_fpath)

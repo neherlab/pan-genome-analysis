@@ -95,38 +95,34 @@ def mcl_run(output_path, threads, mcl_inflation, input_prefix=''):
         filtered_hits_filename='%s%s'%(input_prefix,'_filtered_hits.abc')
 
     command_mcl=''.join(['mcl ',output_path,filtered_hits_filename,' --abc ',\
-                        '-o ',output_path,'cluster.output -I ',str(mcl_inflation),\
+                        '-o ',output_path,'allclusters.tsv -I ',str(mcl_inflation),\
                         ' -te ',str(threads),' > ',output_path,'mcl.log 2>&1'])
     print 'command line mcl:', command_mcl
     print 'mcl runtime:', times(start),'\n'
     os.system(command_mcl)
 
-def parse_geneCluster(path,inputfile, cluster_log=False):
+def cleanup_clustering(clustering_path):
+    cwd = os.getcwd()
+    os.chdir(clustering_path)
+    os.system('rm -rf *.faa *.m8 *.abc *.output *dict.cpk ./subproblem_cluster_seqs/')
+    os.chdir(cwd)
+
+def parse_geneCluster(input_fpath, output_fpath, cluster_log=False):
     """ store clusters as dictionary in cpk file """
-    from operator import itemgetter
-    inputfile="%s%s"%(path,inputfile)
-    with open(inputfile, 'rb') as infile:
+    with open(input_fpath, 'rb') as infile:
         geneCluster_dt=defaultdict(list)
         for gid, iline in enumerate(infile): ##format: NC_022226|1-1956082:1956435
             col=iline.rstrip().split('\t')
-            clusterID="GC_%08d"%gid
-            geneCluster_dt[clusterID]=[0,[],0]
-            ## num_stains
-            geneCluster_dt[clusterID][0]=len(dict(Counter([ ivg.split('|')[0] for ivg in col])).keys())
-            ## num_genes
-            geneCluster_dt[clusterID][2]=len(dict(Counter([ ivg for ivg in col])).keys())
-            ## gene members
-            geneCluster_dt[clusterID][1]=[ icol for icol in col ]
-    write_pickle(path+'allclusters.cpk',geneCluster_dt)
+            clusterID="gc%08d"%gid
+            num_stains=len(dict(Counter([ ivg.split('|')[0] for ivg in col])).keys())
+            num_genes=len(dict(Counter([ ivg for ivg in col])).keys())
+            gene_mem=[ icol for icol in col ]
+            geneCluster_dt[clusterID]=[num_stains,gene_mem,num_genes]
+    write_pickle(output_fpath,geneCluster_dt)
+    return geneCluster_dt
 
-    if cluster_log==True:
-        with open(path+'clusters.log', 'wb') as write_fn_lst:
-            geneCount_lst=sorted( geneCluster_dt.iteritems(), key=itemgetter(1), reverse=True);
-            for kd, vd in geneCount_lst:
-                write_fn_lst.write('%s%s\n'%(kd, vd));
-
-def clustering_protein_sequences(path, threads,
-    blast_cluster_file_path, roary_cluster_file_path,
+def clustering_protein(path, folders_dict, threads,
+    blast_fpath, roary_fpath,
     diamond_evalue, diamond_max_target_seqs, diamond_identity,
     diamond_query_cover, diamond_subject_cover, mcl_inflation):
     '''
@@ -138,61 +134,44 @@ def clustering_protein_sequences(path, threads,
     params:
         path:                    path to directory including data and output
         threads:                 number of parallel threads used to run diamond
-        blast_cluster_file_path: gene clusters by all-vs-all blast 
+        blast_fpath: gene clusters by all-vs-all blast 
                                  comparison and other clusterings methods
-        roary_cluster_file_path: gene clusters by roary
+        roary_fpath: gene clusters by roary
         diamond_max_target_seqs: Diamond setting: the maximum number of target sequences 
                                   per query to keep alignments for. Defalut: 
                                   #strain * #max_duplication= 40*15= 600 
     '''
-    input_path=path+'protein_faa/';
-    output_path=input_path+'diamond_matches/';
     threads=str(threads)
-    ## using standard pipeline (roary_cluster_file_path=='none')
-    if roary_cluster_file_path=='none':
-        if blast_cluster_file_path=='none':
-            dmd_ref_file='reference.faa'#dmd_query_file='query.faa'
-            ## prepare dmd_query_file
-            os.system('mkdir '+output_path)
-            os.system('cat '+input_path+'*faa > '+output_path+dmd_ref_file)
-            ## dmd_query_file is dmd_ref_file
-            #os.system('cp '+output_path+dmd_ref_filedmd_query_file+' '+output_path+dmd_query_file)
-            ## run diamond
-            diamond_run(output_path, dmd_ref_file, threads, diamond_evalue,
-                diamond_max_target_seqs, diamond_identity, diamond_query_cover, diamond_subject_cover)
+    protein_path= folders_dict['protein_path']
+    clustering_path= folders_dict['clustering_path']
+    cluster_fpath= '%s%s'%(clustering_path,'allclusters.tsv')
+    cluster_dt_cpk_fpath='%s%s'%(clustering_path,'allclusters.cpk')
+    
+    ## using standard pipeline (roary_fpath=='none')
+    if blast_fpath=='none' and roary_fpath=='none':
+        dmd_ref_file='reference.faa'
+        ## prepare dmd_query_file (dmd_query_file is dmd_ref_file)
+        os.system(''.join(['cat ',protein_path,'*faa > ',clustering_path,dmd_ref_file]))
+        ## run diamond
+        diamond_run(clustering_path, dmd_ref_file, threads, diamond_evalue,
+            diamond_max_target_seqs, diamond_identity, diamond_query_cover, diamond_subject_cover)
+        ## filtering hits via BS score
+        filter_hits_single(clustering_path, threads)
+        ## running mcl
+        mcl_run(clustering_path, threads, mcl_inflation)
+        ## clean up diamond_query_file
+        os.system(''.join(['rm ',clustering_path,'*faa']))
+    elif blast_file_path!='none': ## using user-given cluster file based on blast
+            os.system(''.join(['cp ',blast_fpath,' ',clustering_path,'blastp.m8']))
             ## filtering hits via BS score
-            filter_hits_single(output_path, threads)
+            filter_hits_single(clustering_path, threads, input_prefix='blastp')
             ## running mcl
-            mcl_run(output_path, threads, mcl_inflation)
-            cluster_file='allclusters.tsv'
-            os.system(''.join(['mv ',output_path,'cluster.output',\
-                            ' ',output_path,'allclusters.tsv']))
-            ## clean up diamond_query_file
-            os.system(''.join(['rm ',output_path,'*faa']))
-            parse_geneCluster(output_path,cluster_file)
-        else: ## using user-given cluster file based on blast
-            os.system('mkdir %s'%output_path)
-            os.system('cp %s %sblastp.m8'%(blast_cluster_file_path, output_path))
-            ## filtering hits via BS score
-            filter_hits_single(output_path, threads, input_prefix='blastp')
-            ## running mcl
-            mcl_run(output_path, threads, mcl_inflation, input_prefix='blastp')
-            cluster_file='allclusters.tsv'
-            os.system(''.join(['mv ',output_path,'cluster.output',\
-                            ' ',output_path,'allclusters.tsv']))
-            ## clean up diamond_query_file
-            os.system(''.join(['rm ',output_path,'*faa']))
-            parse_geneCluster(output_path,cluster_file)
-    else: ## using cluster files from roary
-        os.system('mkdir %s'%output_path)
-        os.system('ln -sf %s %sclustered_proteins'%(roary_cluster_file_path, output_path))
-        with open(roary_cluster_file_path, 'rb') as cluster_external_file:
-            with open(output_path+'allclusters.tsv', 'wb') as cluster_final_file:
+            mcl_run(clustering_path, threads, mcl_inflation, input_prefix='blastp')
+    elif roary_file_path!='none': ## using cluster files from roary
+        os.system('ln -sf %s %sclustered_proteins'%(roary_fpath, clustering_path))
+        with open(roary_fpath, 'rb') as cluster_external_file:
+            with open(cluster_fpath, 'wb') as cluster_final_file:
                 for cluster_line in cluster_external_file:
                      cluster_final_file.write( '%s\n'%'\t'.join([ gene_tag.replace('_','|') if '|' not in gene_tag else gene_tag for gene_tag in cluster_line.rstrip().split(': ')[1].split('\t')]) )
-        all_cluster_file='allclusters.tsv';
-        parse_geneCluster(output_path,all_cluster_file)
-
-
-#path='/ebio/ag-neher/share/users/wding/pan-genome-analysis/data/M_geni/'
-#control(path)
+    cleanup_clustering(clustering_path)
+    return parse_geneCluster(cluster_fpath, cluster_dt_cpk_fpath)

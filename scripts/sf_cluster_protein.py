@@ -1,4 +1,3 @@
-import operator
 import os, sys, time, glob
 from collections import defaultdict, Counter
 from SF00_miscellaneous import times, read_fasta, write_pickle
@@ -88,8 +87,7 @@ def filter_hits_single(output_path, threads,
 def mcl_run(output_path, threads, mcl_inflation, input_prefix=''):
     """ """
     start = time.time()
-    if input_prefix=='':
-        ## default empty for abc file from all-vs.-all m8 file
+    if input_prefix=='': ## default empty for abc file from all-vs.-all m8 file
         filtered_hits_filename='filtered_hits.abc'
     else:
         filtered_hits_filename='%s%s'%(input_prefix,'_filtered_hits.abc')
@@ -113,7 +111,7 @@ def parse_geneCluster(input_fpath, output_fpath, cluster_log=False):
         geneCluster_dt=defaultdict(list)
         for gid, iline in enumerate(infile): ##format: NC_022226|1-1956082:1956435
             col=iline.rstrip().split('\t')
-            clusterID="gc%08d"%gid
+            clusterID="GC%08d"%gid
             num_stains=len(dict(Counter([ ivg.split('|')[0] for ivg in col])).keys())
             num_genes=len(dict(Counter([ ivg for ivg in col])).keys())
             gene_mem=[ icol for icol in col ]
@@ -121,15 +119,14 @@ def parse_geneCluster(input_fpath, output_fpath, cluster_log=False):
     write_pickle(output_fpath,geneCluster_dt)
     return geneCluster_dt
 
-def clustering_protein(path, folders_dict, threads,
-    blast_fpath, roary_fpath,
+def clustering_protein(path, folders_dict, threads, blast_fpath, roary_fpath,
     diamond_evalue, diamond_max_target_seqs, diamond_identity,
     diamond_query_cover, diamond_subject_cover, mcl_inflation):
     '''
     Procedure: all-against-all protein comparison + hits filtering + mcl clustering
-    By default: DIAMOND -> BSAL -> MCL
+    By default: DIAMOND -> BS -> MCL
     Alternatives: 
-    1. Blastp (user-provided) -> BSAL -> MCL
+    1. Blastp (user-provided) -> BS -> MCL
     2. Roary
     params:
         path:                    path to directory including data and output

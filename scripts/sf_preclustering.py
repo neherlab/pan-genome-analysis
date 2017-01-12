@@ -33,15 +33,7 @@ def cleanup_preclustering(preclustering_path):
 def preclustering_protein(path, folders_dict, threads,
     diamond_evalue, diamond_max_target_seqs, diamond_identity,
     diamond_query_cover, diamond_subject_cover):
-    ''' TODO
-    Procedure: preclustering
-    params:
-        path:                    path to directory including data and output
-        threads:                 number of parallel threads used to run diamond
-        diamond_max_target_seqs: Diamond setting: the maximum number of target sequences 
-                                  per query to keep alignments for. Defalut: 
-                                  #strain * #max_duplication= 40*15= 600 
-    '''
+    ''' preclustering for finding highly similar genes (duplicates) '''
     threads=str(threads)
     protein_path= folders_dict['protein_path']
     

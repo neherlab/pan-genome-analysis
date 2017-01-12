@@ -1,7 +1,7 @@
 import os, sys, time, glob
 import numpy as np
 from collections import defaultdict
-from SF00_miscellaneous import times, load_pickle, write_pickle, read_fasta, write_in_fa
+from sf_miscellaneous import times, load_pickle, write_pickle, read_fasta, write_in_fa
 from sf_cluster_protein import diamond_run, filter_hits_single, parse_geneCluster, cleanup_clustering #mcl_run
 
 def mcl_run(clustering_path, threads, input_prefix, mcl_inflation):

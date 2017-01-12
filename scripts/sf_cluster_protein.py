@@ -1,6 +1,6 @@
 import os, sys, time, glob
 from collections import defaultdict, Counter
-from SF00_miscellaneous import times, read_fasta, write_pickle
+from sf_miscellaneous import times, read_fasta, write_pickle
 
 def diamond_run(output_path, dmd_ref_file, threads,
     diamond_evalue, diamond_max_target_seqs,diamond_identity,
@@ -109,13 +109,13 @@ def parse_geneCluster(input_fpath, output_fpath, cluster_log=False):
     """ store clusters as dictionary in cpk file """
     with open(input_fpath, 'rb') as infile:
         geneCluster_dt=defaultdict(list)
-        for gid, iline in enumerate(infile): ##format: NC_022226|1-1956082:1956435
+        for gid, iline in enumerate(infile,1): ##format: NC_022226|1-1956082:1956435
             col=iline.rstrip().split('\t')
             clusterID="GC%08d"%gid
-            num_stains=len(dict(Counter([ ivg.split('|')[0] for ivg in col])).keys())
+            num_strains=len(dict(Counter([ ivg.split('|')[0] for ivg in col])).keys())
             num_genes=len(dict(Counter([ ivg for ivg in col])).keys())
             gene_mem=[ icol for icol in col ]
-            geneCluster_dt[clusterID]=[num_stains,gene_mem,num_genes]
+            geneCluster_dt[clusterID]=[num_strains,gene_mem,num_genes]
     write_pickle(output_fpath,geneCluster_dt)
     return geneCluster_dt
 

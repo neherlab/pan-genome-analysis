@@ -1,9 +1,8 @@
 import os, sys, glob, time, shutil
 import numpy as np
-from SF00_miscellaneous import times, read_fasta, load_pickle, write_pickle, write_in_fa, write_json
-from SF06_geneCluster_align_makeTree import mpm_tree, multips, align_and_makeTree, load_sorted_clusters, update_diversity_cpk
+from sf_miscellaneous import times, read_fasta, load_pickle, write_pickle, write_in_fa, write_json
+from sf_geneCluster_align_makeTree import mpm_tree, multips, align_and_makeTree, load_sorted_clusters, update_diversity_cpk
 
-#sys.path.append('./scripts/')
 sys.setrecursionlimit(2000)
 
 def update_gene_cluster_with_RNA(path, diamond_RNACluster_dt, diamond_geneCluster_dt ):

@@ -1,7 +1,7 @@
 import os, sys, time
 from collections import defaultdict, Counter
-from SF00_miscellaneous import times, load_pickle, read_fasta, write_pickle
-from SF05_cluster_protein import diamond_run
+from sf_miscellaneous import times, load_pickle, read_fasta, write_pickle
+from sf_cluster_protein import diamond_run
 
 def ortha_mcl_run(output_path, threads, mcl_inflation):
     """ run orthAgogue and MCL """

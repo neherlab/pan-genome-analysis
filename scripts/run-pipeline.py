@@ -1,27 +1,25 @@
 import argparse
-import os, sys, time, glob
-from collections import Counter
-from SF00_miscellaneous import times,load_pickle, write_pickle, load_strains
-from SF02_get_acc_single_serverDown import accessionID_single
-from SF03_diamond_input import diamond_input
-from SF04_gbk_metainfo import gbk_To_Metainfo
-from SF05_cluster_protein import clustering_protein_sequences
-from SF05_preclustering import preclustering_protein_sequences
-from SF05_cluster_protein_divide_conquer import clustering_divide_conquer
-from SF05_diamond_orthamcl import diamond_orthamcl_cluster
-from SF05_2_blastRNA import RNA_cluster
-from SF06_x_geneCluster_correl_stats import cluster_align_makeTree_correl_stats 
-from SF06_geneCluster_align_makeTree import cluster_align_makeTree, postprocess_paralogs_iterative
-from SF06_0_core_diversity import estimate_core_gene_diversity
-from SF06_1_split_overclusters import postprocess_split_overclusters
-from SF06_2_unclustered_genes import postprocess_unclustered_genes
-from SF06_3_clusterRNA import RNAclusters_align_makeTree
-from SF07_core_SNP_matrix import create_core_SNP_matrix
-from SF08_core_tree_build import aln_to_Newick
-from SF09_1_gene_presence import make_genepresence_alignment
-from SF09_2_gain_loss import process_gain_loss
-from SF10_geneCluster_export import geneCluster_to_json
-from SF11_tree_metadata_export import json_parser
+import os, sys, time
+from sf_miscellaneous import times, load_pickle, write_pickle, organize_folder, load_strains
+from sf_extract_sequences import extract_sequences
+from sf_extract_metadata import extract_metadata
+from sf_cluster_protein import clustering_protein
+from sf_preclustering import preclustering_protein
+from sf_cluster_protein_divide_conquer import clustering_divide_conquer
+from sf_cluster_orthamcl import diamond_orthamcl_cluster
+from sf_cluster_RNA import RNA_cluster
+from sf_geneCluster_align_makeTree import cluster_align_makeTree
+from sf_core_diversity import estimate_core_gene_diversity
+from sf_split_paralogy import postprocess_paralogs_iterative
+from sf_split_long_branch import postprocess_split_overclusters
+from sf_unclustered_genes import postprocess_unclustered_genes
+from sf_RNAcluster_align_makeTree import RNAclusters_align_makeTree
+from sf_core_SNP_matrix import create_core_SNP_matrix
+from sf_core_tree_build import aln_to_Newick
+from sf_gene_presence import make_genepresence_alignment
+from sf_gain_loss import process_gain_loss
+from sf_geneCluster_json import geneCluster_to_json
+from sf_coreTree_json import json_parser
 #command line example
 #python run-pipeline.py -fn data/Pat3 -sl Pat3-RefSeq.txt -st 1 3 4 5 6 7 8 9 10 > Pat3.log 2>&1
 
@@ -132,26 +130,27 @@ parser.add_argument('-cg', '--core_genome_threshold', type = float, default = 1.
     help='percentage of strains used to decide whether a gene is core.\
     Default: 1.0 for strictly core gene; customized instance: 0.9 for soft core genes',
     metavar='')
+parser.add_argument('-gl', '--enable_gain_loss', type = int, default = 1,
+    help='default: not enable gene gain and loss inference', metavar='')
 
-parser.add_argument('-kt', '--keep_temporary_file', type = str, default = True,
-    help='default keep_temporary_file', metavar='')
+parser.add_argument('-kt', '--keep_temporary_file', type = int, default = 1,
+    help='default: keep temporary files', metavar='')
 
 params = parser.parse_args()
 path = params.folder_name
-strain_list_file= params.strain_list
 ## run all steps
 if params.steps[0]=='all':
     params.steps=range(1,12)
 
 if path[:-1]!='/':
-    path=path+'/'
-print path
-species=strain_list_file.split('-RefSeq')[0]
+    path='%s/'%path
+print 'Running panX in main folder: %s'%path
+species=params.strain_list.split('-RefSeq')[0]
+folders_dict=organize_folder(path)
 
 if 1 in params.steps: #step 01:
-    load_strains(path, params.gbk_present)
+    load_strains(path, params.gbk_present,folders_dict)
     print '======  step01: refSeq strain list successfully found.'
-
 ## load strain_list.cpk file and give the total number of strains
 if os.path.isfile(path+'strain_list.cpk'):
     strain_list= load_pickle(path+'strain_list.cpk')
@@ -166,38 +165,39 @@ if '2' in params.steps:# step02:
     print times(start),'\n'
 
 if 3 in params.steps:# step03:
-    print '======  starting step03: create input file for Diamond from GenBank file (.gb)'
+    print '======  extract sequences from GenBank file'
     start = time.time()
-    diamond_input(path, strain_list,
-        params.gbk_present, params.disable_RNA_clustering)
-    print '======  time for step03: create input file for Diamond from GenBank file (.gb)'
+    gene_aa_dict, gene_na_dict= extract_sequences(path, strain_list, folders_dict, params.gbk_present,
+        params.disable_RNA_clustering)
+    print '======  extract sequences from GenBank file'
     print times(start),'\n'
 
 if 4 in params.steps:# step04:
-    print '======  starting step04: extra meta_info (country,date, host...) from GenBank file'
+    print '======  extract metadata from GenBank file'
     start = time.time()
-    gbk_To_Metainfo(path, params.gbk_present)
-    print '======  time for step04: extra meta_info (country,date, host...) from GenBank file'
+    extract_metadata(path, strain_list, folders_dict, params.gbk_present)
+    print '======  extract metadata from GenBank file'
     print times(start),'\n'
 
 if 5 in params.steps:# step05:
-    print '======  starting step05: cluster genes'
+    print '======  cluster proteins'
     start = time.time()
     if params.diamond_divide_conquer==1:
         ## clustering with divide_and_conquer method for large dataset
-        clustering_divide_conquer(path, params.threads,
+        clustering_divide_conquer(path, folders_dict, params.threads,
              params.diamond_evalue, params.diamond_max_target_seqs,
             params.diamond_identity, params.diamond_query_cover,
             params.diamond_subject_cover, params.mcl_inflation, params.subset_size)
     elif params.orthAgogue_used==0:
         ## pre-clustering
         if 0:
-            preclustering_protein_sequences(path, params.threads,
+            preclustering_protein(path, folders_dict, params.threads,
                 params.diamond_evalue, params.diamond_max_target_seqs,
-                params.diamond_identity_precluster, params.diamond_query_cover_precluster, params.diamond_subject_cover_precluster)
+                params.diamond_identity_precluster, params.diamond_query_cover_precluster,
+                params.diamond_subject_cover_precluster)
         ## clustering
         if 1:
-            clustering_protein_sequences(path, params.threads,
+            clustering_protein(path, folders_dict, params.threads,
                 params.blast_file_path, params.roary_file_path,
                 params.diamond_evalue, params.diamond_max_target_seqs,
                 params.diamond_identity, params.diamond_query_cover, params.diamond_subject_cover,
@@ -213,7 +213,7 @@ if 5 in params.steps:# step05:
     ## clustering RNA when option activated
     if params.disable_RNA_clustering==0:
         RNA_cluster(path, params.threads, params.blastn_RNA_max_target_seqs, params.mcl_inflation)
-    print '======  time for step05: cluster genes'
+    print '======  cluster proteins'
     print times(start),'\n'
 
 if 6 in params.steps:# step06:
@@ -225,25 +225,28 @@ if 6 in params.steps:# step06:
     #cut_branch_threshold= params.cut_branch_threshold
     if 1: #or params.cut_branch_threshold_customized==False:
         cut_branch_threshold=\
-            estimate_core_gene_diversity(path, params.threads, params.core_genome_threshold)
+            estimate_core_gene_diversity(path, folders_dict, strain_list, params.threads, params.core_genome_threshold)
         #cut_branch_threshold= params.cut_branch_threshold
     #else:
     #    cut_branch_threshold= params.cut_branch_threshold
 
-    ## align and make tree
-    if params.enable_cluster_correl_stats==1:
-        cluster_align_makeTree_correl_stats(path, params.threads, params.disable_cluster_postprocessing)
-    else:
-        cluster_align_makeTree(path, params.threads, params.disable_cluster_postprocessing)
+    if 1:
+        ## align and make tree
+        if params.enable_cluster_correl_stats==1:
+            cluster_align_makeTree_correl_stats(path, params.threads, params.disable_cluster_postprocessing)
+        else:
+            cluster_align_makeTree(path, folders_dict, params.threads, params.disable_cluster_postprocessing)
 
     ## with/without post-processing
     if params.disable_cluster_postprocessing==0:
-        postprocess_split_overclusters(params.threads, path, cut_branch_threshold)
+        if 1:
+            postprocess_split_overclusters(params.threads, path, cut_branch_threshold)
         if 1:
             postprocess_paralogs_iterative(params.threads, path, nstrains,\
                 params.paralog_cutoff, params.paralog_branch_length_cutoff,\
                 params.explore_paralog_plot)
-        postprocess_unclustered_genes(params.threads, path, nstrains,\
+        if 1:
+            postprocess_unclustered_genes(params.threads, path, nstrains,\
             params.window_size_smoothed, params.strain_proportion, params.sigma_scale )
     if params.disable_RNA_clustering==0:
         RNAclusters_align_makeTree(path, params.threads)
@@ -267,8 +270,9 @@ if 8 in params.steps:# step08:
 if 9 in params.steps:# step09:
     print '======  starting step09: infer presence/absence and gain/loss patterns of all genes'
     start = time.time()
-    make_genepresence_alignment(path)
-    process_gain_loss(path)
+    make_genepresence_alignment(path, params.enable_gain_loss)
+    if params.enable_gain_loss==1:
+        process_gain_loss(path)
     print '======  time for step09: infer presence/absence and gain/loss patterns of all genes'
     print times(start),'\n'
 

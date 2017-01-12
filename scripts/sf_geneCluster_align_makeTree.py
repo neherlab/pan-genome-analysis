@@ -146,7 +146,7 @@ def polytomies_midpointRooting(infileName, outfileName):
     tree = Tree(newickString,format=1);
     tree.resolve_polytomy(recursive=True)
     try:
-        tree.set_outgroup( tree.get_midpoint_outgroup() );
+        tree.set_outgroup( tree.get_midpoint_outgroup() )
     except:
         print 'can not conduct midpoint rooting'
     tree.ladderize()
@@ -305,12 +305,20 @@ class mpm_tree(object):
             # load the resulting tree as a treetime instance
             from treetime.treetime import TreeAnc
             self.tt = TreeAnc(tree=out_fname, aln=self.aln, gtr='Jukes-Cantor', verbose=0)
-
             # provide short cut to tree and revert names that conflicted with newick format
             self.tree = self.tt.tree
-            self.tree.root.branch_length=0.0001
-            restore_strain_name(name_translation, self.aln)
-            restore_strain_name(name_translation, self.tree.get_terminals())
+        else:
+            self.tree = Phylo.read(out_fname,'newick')
+        self.tree.root.branch_length=0.0001
+        restore_strain_name(name_translation, self.aln)
+        restore_strain_name(name_translation, self.tree.get_terminals())
+
+        for node in self.tree.find_clades():
+            if node.name is not None:
+                if node.name.startswith('NODE_')==False:
+                    node.ann=node.name
+            else:
+                node.name='NODE_0'
 
         os.chdir('..')
         remove_dir(self.run_dir)
@@ -336,8 +344,6 @@ class mpm_tree(object):
         determine mutations on each branch and attach as string to the branches
         '''
         for node in self.tree.find_clades():
-            if node.name.startswith('NODE_')==False:
-                node.ann=node.name
 
             if node.up is not None:
                 node.muts = ",".join(["".join(map(str, x)) for x in node.mutations if '-' not in x])
@@ -501,14 +507,13 @@ def multips(function_in_use, parallel, file_path , fa_files, *args):
     for p in procs:
         p.join()
 
-def align_and_makeTree(alignFile_path, fa_files_list):
+def align_and_makeTree(alignFile_path, fa_files_list, simple_tree):
     for gene_cluster_nu_filename in fa_files_list:
-        if 1:#try:
+        try:
             # extract GC_00002 from path/GC_00002.aln
             clusterID = gene_cluster_nu_filename.split('/')[-1].split('.')[0]
             start = time.time();
             geneDiversity_file = open(alignFile_path+'gene_diversity.txt', 'a')
-            cluster_correl_stats_file = open(alignFile_path+'cluster_correl_stats.txt', 'a')
             if len( read_fasta(gene_cluster_nu_filename) )==1: # nothing to do for singletons
                 ## na.aln
                 gene_cluster_nu_aln_filename= gene_cluster_nu_filename.replace('.fna','_na.aln')
@@ -526,30 +531,34 @@ def align_and_makeTree(alignFile_path, fa_files_list):
                         write_in_fa(write_file, SeqID.replace('|','-'), Sequence)
 
                 geneDiversity_file.write('%s\t%s\n'%(clusterID,'0.0'))
-            else: # align and build tree
+            else: # align and build tree                    
                 print gene_cluster_nu_filename
                 myTree = mpm_tree(gene_cluster_nu_filename)
                 myTree.codon_align()
                 myTree.translate()
-                myTree.build(raxml=False)
-                myTree.ancestral(translate_tree=True)
-                myTree.refine()
+                if simple_tree==0:
+                    myTree.build(raxml=False,treetime_used=True)
+                    myTree.ancestral(translate_tree=True)
+                    myTree.refine()
+                else:
+                    myTree.build(raxml=False,treetime_used=False)
                 myTree.export(path=alignFile_path)
-                myTree.diversity_statistics_nuc()
-                #myTree.diversity_statistics_aa()
-                random_alnID=myTree.seqs.keys()[0].split('-')[0]
+                myTree.diversity_statistics_nuc()#myTree.diversity_statistics_aa()
+                #random_alnID=myTree.seqs.keys()[0].split('-')[0]
                 diversity_nuc= round(myTree.diversity_nuc,3)#diversity_aa=round(myTree.diversity_aa,3)
-                bestSplit_paraNodes,bestSplit_branchLen = myTree.paralogy_statistics()
-                mean_seqLen, std_seqLen=  myTree.mean_std_seqLen()
-                mean_seqLen, std_seqLen= [ round(i,3) for i in mean_seqLen, std_seqLen ]
+                #bestSplit_paraNodes,bestSplit_branchLen = myTree.paralogy_statistics()
+                #mean_seqLen, std_seqLen=  myTree.mean_std_seqLen()
+                #mean_seqLen, std_seqLen= [ round(i,3) for i in mean_seqLen, std_seqLen ]
                 geneDiversity_file.write('%s\t%s\n'%(clusterID,diversity_nuc))
-                cluster_correl_stats_file.write('%s\n'%'\t'.join([
+                if 0:
+                    cluster_correl_stats_file = open(alignFile_path+'cluster_correl_stats.txt', 'a')
+                    cluster_correl_stats_file.write('%s\n'%'\t'.join([
                      str(i) for i in [clusterID, random_alnID, diversity_nuc, \
                         mean_seqLen, std_seqLen, bestSplit_paraNodes, bestSplit_branchLen ] ]))
-        if 0:#except:
+        except:
             print("Aligning and tree building of %s failed"%gene_cluster_nu_filename)
 
-def cluster_align_makeTree( path, folders_dict, parallel, disable_cluster_postprocessing ):
+def cluster_align_makeTree( path, folders_dict, parallel, disable_cluster_postprocessing, simple_tree ):
     """
     create gene clusters as nucleotide/ amino_acid fasta files
     and build individual gene trees based on fna files
@@ -585,14 +594,14 @@ def cluster_align_makeTree( path, folders_dict, parallel, disable_cluster_postpr
     if os.path.exists(cluster_seqs_path+'gene_diversity.txt'):
         os.system('rm '+cluster_seqs_path+'gene_diversity.txt')
     fa_files=glob.glob(cluster_seqs_path+"*.fna")
-
-    with open(cluster_seqs_path+'cluster_correl_stats.txt', 'wb') as cluster_correl_stats_file:
-        cluster_correl_stats_file.write('%s\n'%'\t'.join(
+    if 0:
+        with open(cluster_seqs_path+'cluster_correl_stats.txt', 'wb') as cluster_correl_stats_file:
+            cluster_correl_stats_file.write('%s\n'%'\t'.join(
                         ['clusterID', 'random_alnID', 'diversity_nuc', \
                         'mean_seqLen', 'std_seqLen', 'bestSplit_paraNodes', 'bestSplit_branchLen'
                         ]))
 
-    multips(align_and_makeTree, parallel, cluster_seqs_path, fa_files)
+    multips(align_and_makeTree, parallel, cluster_seqs_path, fa_files, simple_tree)
 
     ## if cluster_postprocessing skipped, rename allclusters.cpk as the final cluster file
     if disable_cluster_postprocessing==1:

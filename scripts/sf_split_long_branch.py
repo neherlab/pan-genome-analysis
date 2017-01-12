@@ -239,7 +239,7 @@ def cutTree_outputCluster(file_path, files_list, geneCluster_dt, treefile_used,c
                             cut_branch_threshold,
                             treefile_used=False, cut_leftover=False)
 
-def postprocess_split_overclusters(parallel, path, cut_branch_threshold=0.3):
+def postprocess_split_long_branch(parallel, path, simple_tree, cut_branch_threshold=0.3):
     """
     Split tree via breaking up long branches.
     Remote homology leads to over-clustering. This yields tree with long branches.
@@ -283,7 +283,7 @@ def postprocess_split_overclusters(parallel, path, cut_branch_threshold=0.3):
             new_fa_files_list=[ clus.rstrip() for clus in refined_clusters ]
 
         ## parallelization of "align and make tree on new cluster"
-        multips(align_and_makeTree, parallel, file_path, new_fa_files_list)
+        multips(align_and_makeTree, parallel, file_path, new_fa_files_list, simple_tree)
         # =============================================
 
         ## delete original clusters which are split

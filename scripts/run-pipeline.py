@@ -12,7 +12,7 @@ from sf_cluster_RNA import RNA_cluster
 from sf_geneCluster_align_makeTree import cluster_align_makeTree
 from sf_core_diversity import estimate_core_gene_diversity
 from sf_split_paralogy import postprocess_paralogs_iterative
-from sf_split_long_branch import postprocess_split_overclusters
+from sf_split_long_branch import postprocess_split_long_branch
 from sf_unclustered_genes import postprocess_unclustered_genes
 from sf_RNAcluster_align_makeTree import RNAclusters_align_makeTree
 from sf_core_SNP_matrix import create_core_SNP_matrix
@@ -134,6 +134,9 @@ parser.add_argument('-cg', '--core_genome_threshold', type = float, default = 1.
 parser.add_argument('-gl', '--enable_gain_loss', type = int, default = 1,
     help='default: not enable gene gain and loss inference', metavar='')
 
+parser.add_argument('-sitr', '--simple_tree', type = int, default = 0,
+    help='default: enable rich tree annotation; setting simple to 1 does not conduct ancestral inference via treetime.', metavar='')
+
 parser.add_argument('-kt', '--keep_temporary_file', type = int, default = 1,
     help='default: keep temporary files', metavar='')
 
@@ -236,18 +239,18 @@ if 6 in params.steps:# step06:
         if params.enable_cluster_correl_stats==1:
             cluster_align_makeTree_correl_stats(path, params.threads, params.disable_cluster_postprocessing)
         else:
-            cluster_align_makeTree(path, folders_dict, params.threads, params.disable_cluster_postprocessing)
+            cluster_align_makeTree(path, folders_dict, params.threads, params.disable_cluster_postprocessing, params.simple_tree)
 
     ## with/without post-processing
     if params.disable_cluster_postprocessing==0:
         if 1:
-            postprocess_split_overclusters(params.threads, path, cut_branch_threshold)
+            postprocess_split_long_branch(params.threads, path, params.simple_tree, cut_branch_threshold)
         if 1:
-            postprocess_paralogs_iterative(params.threads, path, nstrains,\
+            postprocess_paralogs_iterative(params.threads, path, nstrains, params.simple_tree,\
                 params.paralog_cutoff, params.paralog_branch_length_cutoff,\
                 params.explore_paralog_plot)
         if 1:
-            postprocess_unclustered_genes(params.threads, path, nstrains,\
+            postprocess_unclustered_genes(params.threads, path, nstrains, params.simple_tree,\
             params.window_size_smoothed, params.strain_proportion, params.sigma_scale )
     if params.disable_RNA_clustering==0:
         RNAclusters_align_makeTree(path, params.threads)

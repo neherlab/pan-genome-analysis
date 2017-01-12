@@ -94,7 +94,7 @@ def delete_old_merged_clusters(file_path, geneCluster_dt, merged_clusters_dict):
             print("can't delete"," mis-clusterd genes gathered in ",uncluster_filename)
     return geneCluster_dt
 
-def cut_all_trees_from_merged_clusters(parallel, path, geneCluster_dt,cut_branch_threshold):
+def cut_all_trees_from_merged_clusters(parallel, path, geneCluster_dt,cut_branch_threshold, simple_tree):
     """
     split tree from the unclustered genes and create new cluster files
     params:
@@ -112,9 +112,9 @@ def cut_all_trees_from_merged_clusters(parallel, path, geneCluster_dt,cut_branch
         new_fa_files_list=[ clus.rstrip() for clus in refined_clusters ]
 
     ## parallelization of "align and make tree on new cluster"
-    multips(align_and_makeTree, parallel, file_path, new_fa_files_list)
+    multips(align_and_makeTree, parallel, file_path, new_fa_files_list, simple_tree)
 
-def postprocess_unclustered_genes(parallel, path, nstrains, window_size_smoothed=5, strain_proportion=0.3 , sigma_scale=3):
+def postprocess_unclustered_genes(parallel, path, nstrains, simple_tree, window_size_smoothed=5, strain_proportion=0.3 , sigma_scale=3):
     """
         1) detect suspicious peaks in the distribution of average length of genes in gene cluster (aa count)
            np.bincount([1,2,3,34,3]) -> how often each entry is found
@@ -158,7 +158,8 @@ def postprocess_unclustered_genes(parallel, path, nstrains, window_size_smoothed
 
         cut_branch_threshold=0.3
         ## cut tree and make new clusters
-        cut_all_trees_from_merged_clusters(parallel,path,geneCluster_dt,cut_branch_threshold)
+        cut_all_trees_from_merged_clusters(parallel,path,geneCluster_dt,
+            cut_branch_threshold, simple_tree)
 
         ## update clusters in allclusters_final.cpk
         #os.system('cp %sallclusters_final.cpk %s/allclusters_final.cpk.bk '%(ClusterPath,ClusterPath))

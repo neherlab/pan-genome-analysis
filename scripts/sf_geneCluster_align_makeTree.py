@@ -7,7 +7,7 @@ from Bio import Phylo, SeqIO, AlignIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.Align import MultipleSeqAlignment
-from SF00_miscellaneous import times, read_fasta, \
+from sf_miscellaneous import times, read_fasta, \
     load_pickle, write_pickle, write_in_fa, write_json
 
 sys.setrecursionlimit(2000)
@@ -165,13 +165,13 @@ class mpm_tree(object):
     class that aligns a set of sequences and infers a tree
     '''
 
-    def __init__(self, alignment_fname, **kwarks):
-        self.fname_prefix=alignment_fname.split('geneCluster/')[1].split('.fna')[0]
-        temp_prefix=alignment_fname.split('/geneCluster/')[0].split('/')[-1]
-        self.seqs = {x.id:x for x in SeqIO.parse(alignment_fname, 'fasta')}
+    def __init__(self, cluster_seq_fpath, **kwarks):
+        self.clusterID= cluster_seq_fpath.split('/')[-1].split('.fna')[0]
+        speciesID= cluster_seq_fpath.split('/data/')[1].split('/')[0]
+        self.seqs = {x.id:x for x in SeqIO.parse(cluster_seq_fpath, 'fasta')}
         if 'run_dir' not in kwarks:
             import random
-            self.run_dir = '_'.join([temp_prefix, 'temp', time.strftime('%Y%m%d-%H%M%S',time.gmtime()), str(random.randint(0,100000000))])
+            self.run_dir = '_'.join([speciesID, 'tempCore', time.strftime('%Y%m%d-%H%M%S',time.gmtime()), str(random.randint(0,100000000))])
         else:
             self.run_dir = kwarks['run_dir']
         self.nuc=True
@@ -359,10 +359,8 @@ class mpm_tree(object):
             tmp_seq = Seq(str(Seq(str_seq.replace('---', 'NNN')).translate(table="Bacterial")).replace('X','-'))
         except:
             tmp_seq = Seq(str(Seq(str_seq.replace('-', 'N')).translate(table="Bacterial")).replace('X','-'))
-            #print("Trouble translating",seq)
-            print("Trouble translating", self.fname_prefix)
+            print("Trouble translating", self.clusterID)#print("Trouble translating",seq)
         return tmp_seq
-
 
     def translate(self):
         '''
@@ -374,19 +372,38 @@ class mpm_tree(object):
                                      name=seq.name, description=seq.description))
         self.aa_aln = MultipleSeqAlignment(aa_seqs)
 
+    def mean_std_seqLen(self):
+        """ returen mean and standard deviation of sequence lengths """
+        seqLen_arr = np.array([ len(seq) for seq in self.seqs.values()])
+        return np.mean(seqLen_arr, axis=0), np.std(seqLen_arr, axis=0)
 
-    def diversity_statistics(self):
+    def paralogy_statistics(self):
+        best_split = find_best_split(self.tree)
+        return len(best_split.para_nodes), best_split.branch_length 
+
+    def diversity_statistics_nuc(self):
         ''' calculate alignment entropy of nucleotide alignments '''
         TINY = 1e-10
         if not hasattr(self, "aln"):
             print("calculate alignment first")
             return
-        self.af = calc_af(self.aln, nuc_alpha)
-        is_valid = self.af[:-2].sum(axis=0)>0.5
-        tmp_af = self.af[:-2,is_valid]/self.af[:-2,is_valid].sum(axis=0)
-        self.entropy = np.mean(-(tmp_af*np.log(tmp_af+TINY)).sum(axis=0))
-        self.diversity = np.mean(1.0-(tmp_af**2).sum(axis=0))
+        self.af_nuc = calc_af(self.aln, nuc_alpha)
+        is_valid = self.af_nuc[:-2].sum(axis=0)>0.5
+        tmp_af = self.af_nuc[:-2,is_valid]/self.af_nuc[:-2,is_valid].sum(axis=0)
+        #self.entropy_nuc = np.mean(-(tmp_af*np.log(tmp_af+TINY)).sum(axis=0))
+        self.diversity_nuc = np.mean(1.0-(tmp_af**2).sum(axis=0))
 
+    def diversity_statistics_aa(self):
+        ''' calculate alignment entropy of nucleotide alignments '''
+        TINY = 1e-10
+        if not hasattr(self, "aln"):
+            print("calculate alignment first")
+            return
+        self.af_aa = calc_af(self.aa_aln, aa_alpha)
+        is_valid = self.af_aa[:-2].sum(axis=0)>0.5
+        tmp_af = self.af_aa[:-2,is_valid]/self.af_aa[:-2,is_valid].sum(axis=0)
+        #self.entropy_aa = np.mean(-(tmp_af*np.log(tmp_af+TINY)).sum(axis=0))
+        self.diversity_aa = np.mean(1.0-(tmp_af**2).sum(axis=0))
 
     def mutations_to_branch(self):
         self.mut_to_branch = defaultdict(list)
@@ -395,10 +412,9 @@ class mpm_tree(object):
                 for mut in node.mutations:
                     self.mut_to_branch[mut].append(node)
 
-
     def export(self, path = '', extra_attr = ['aa_muts','ann','branch_length','name','longName'], RNA_specific=False):
         ## write tree
-        Phylo.write(self.tree, path+self.fname_prefix+'.nwk', 'newick')
+        Phylo.write(self.tree, path+self.clusterID+'.nwk', 'newick')
 
         ## processing node name
         for node in self.tree.get_terminals():
@@ -409,7 +425,7 @@ class mpm_tree(object):
         for n in self.tree.root.find_clades():
             if n.branch_length<1e-6:
                 n.branch_length = 1e-6
-        timetree_fname = path+self.fname_prefix+'_tree.json'
+        timetree_fname = path+self.clusterID+'_tree.json'
         tree_json = tree_to_json(self.tree.root, extra_attr=extra_attr)
         write_json(tree_json, timetree_fname, indent=None)
 
@@ -417,37 +433,40 @@ class mpm_tree(object):
         for i_aln in self.aln:
             i_aln.id=i_aln.id.replace('|','-',1)
         
-        AlignIO.write(self.aln, path+self.fname_prefix+'_na.aln', 'fasta')
+        AlignIO.write(self.aln, path+self.clusterID+'_na.aln', 'fasta')
 
         if RNA_specific==False:
             for i_aa_aln in self.aa_aln:
                 i_aa_aln.id=i_aa_aln.id.replace('|','-',1)
 
-            AlignIO.write(self.aa_aln, path+self.fname_prefix+'_aa.aln', 'fasta')
+            AlignIO.write(self.aa_aln, path+self.clusterID+'_aa.aln', 'fasta')
 
         ## write seq json
-        elems = {}
-        for node in self.tree.find_clades():
-            if hasattr(node, "sequence"):
-                if hasattr(node, "longName")==False:
-                    node.longName=node.name
-                elems[node.longName] = {}
-                nuc_dt= {pos:state for pos, (state, ancstate) in
-                                enumerate(izip(node.sequence.tostring(), self.tree.root.sequence.tostring())) if state!=ancstate}
-                nodeseq=node.sequence.tostring();nodeseq_len=len(nodeseq)
-                elems[node.longName]['nuc']=nuc_dt
+        write_seq_json=0
+        if write_seq_json:
+            elems = {}
+            for node in self.tree.find_clades():
+                if hasattr(node, "sequence"):
+                    if hasattr(node, "longName")==False:
+                        node.longName=node.name
+                    elems[node.longName] = {}
+                    nuc_dt= {pos:state for pos, (state, ancstate) in
+                                    enumerate(izip(node.sequence.tostring(), self.tree.root.sequence.tostring())) if state!=ancstate}
+                    nodeseq=node.sequence.tostring();nodeseq_len=len(nodeseq)
+                    elems[node.longName]['nuc']=nuc_dt
 
-        elems['root'] = {}
-        elems['root']['nuc'] = self.tree.root.sequence.tostring()
+            elems['root'] = {}
+            elems['root']['nuc'] = self.tree.root.sequence.tostring()
 
-        self.sequences_fname=path+self.fname_prefix+'_seq.json'
-        write_json(elems, self.sequences_fname, indent=None)
+            self.sequences_fname=path+self.clusterID+'_seq.json'
+            write_json(elems, self.sequences_fname, indent=None)
 
 
 ################################################################################
 ### functions to run the tree building and alignment routines
 ################################################################################
-def prepare_cluster_seq(cluster_seqs_path, geneCluster_dt,strain_nuc_seq_cpk, geneID_to_geneSeqID_dict, gene_aa_dict):
+def prepare_cluster_seq(cluster_seqs_path, geneCluster_dt,
+    geneID_to_geneSeqID_dict, gene_na_dict, gene_aa_dict):
     """ write nuc/aa sequences for each cluster  """
     for clusterID, gene in geneCluster_dt.iteritems():
         ## geneCluster file name
@@ -459,10 +478,9 @@ def prepare_cluster_seq(cluster_seqs_path, geneCluster_dt,strain_nuc_seq_cpk, ge
             for gene_memb in gene[1]:
                 ## gene_name format: strain_1|locusTag
                 strain_name= gene_memb.split('|')[0]
-                gene_memb_seq=str(strain_nuc_seq_cpk[strain_name][gene_memb])
                 geneSeqID=geneID_to_geneSeqID_dict[gene_memb]
-                write_in_fa(gene_cluster_nu_write, geneSeqID, gene_memb_seq )
-                write_in_fa(gene_cluster_aa_write, geneSeqID, gene_aa_dict[gene_memb])
+                write_in_fa(gene_cluster_nu_write, geneSeqID, gene_na_dict[strain_name][gene_memb] )
+                write_in_fa(gene_cluster_aa_write, geneSeqID, gene_aa_dict[strain_name][gene_memb])
 
 def multips(function_in_use, parallel, file_path , fa_files, *args):
     """ running multiple threads """
@@ -485,11 +503,12 @@ def multips(function_in_use, parallel, file_path , fa_files, *args):
 
 def align_and_makeTree(alignFile_path, fa_files_list):
     for gene_cluster_nu_filename in fa_files_list:
-        try:
+        if 1:#try:
             # extract GC_00002 from path/GC_00002.aln
             clusterID = gene_cluster_nu_filename.split('/')[-1].split('.')[0]
             start = time.time();
             geneDiversity_file = open(alignFile_path+'gene_diversity.txt', 'a')
+            cluster_correl_stats_file = open(alignFile_path+'cluster_correl_stats.txt', 'a')
             if len( read_fasta(gene_cluster_nu_filename) )==1: # nothing to do for singletons
                 ## na.aln
                 gene_cluster_nu_aln_filename= gene_cluster_nu_filename.replace('.fna','_na.aln')
@@ -507,7 +526,6 @@ def align_and_makeTree(alignFile_path, fa_files_list):
                         write_in_fa(write_file, SeqID.replace('|','-'), Sequence)
 
                 geneDiversity_file.write('%s\t%s\n'%(clusterID,'0.0'))
-
             else: # align and build tree
                 print gene_cluster_nu_filename
                 myTree = mpm_tree(gene_cluster_nu_filename)
@@ -517,87 +535,70 @@ def align_and_makeTree(alignFile_path, fa_files_list):
                 myTree.ancestral(translate_tree=True)
                 myTree.refine()
                 myTree.export(path=alignFile_path)
-                myTree.diversity_statistics()
-                diversity=myTree.diversity
-                gene_diversity_values='{0:.3f}'.format(diversity)
-                geneDiversity_file.write('%s\t%s\n'%(clusterID,gene_diversity_values))
-        except:
+                myTree.diversity_statistics_nuc()
+                #myTree.diversity_statistics_aa()
+                random_alnID=myTree.seqs.keys()[0].split('-')[0]
+                diversity_nuc= round(myTree.diversity_nuc,3)#diversity_aa=round(myTree.diversity_aa,3)
+                bestSplit_paraNodes,bestSplit_branchLen = myTree.paralogy_statistics()
+                mean_seqLen, std_seqLen=  myTree.mean_std_seqLen()
+                mean_seqLen, std_seqLen= [ round(i,3) for i in mean_seqLen, std_seqLen ]
+                geneDiversity_file.write('%s\t%s\n'%(clusterID,diversity_nuc))
+                cluster_correl_stats_file.write('%s\n'%'\t'.join([
+                     str(i) for i in [clusterID, random_alnID, diversity_nuc, \
+                        mean_seqLen, std_seqLen, bestSplit_paraNodes, bestSplit_branchLen ] ]))
+        if 0:#except:
             print("Aligning and tree building of %s failed"%gene_cluster_nu_filename)
-            #print(myTree.tree)
 
-
-def cluster_align_makeTree( path, parallel, disable_cluster_postprocessing ):
+def cluster_align_makeTree( path, folders_dict, parallel, disable_cluster_postprocessing ):
     """
     create gene clusters as nucleotide/ amino_acid fasta files
     and build individual gene trees based on fna files
     """
-    def create_geneCluster_fa():
+    def create_geneCluster_fa(folders_dict):
         """ dict storing amino_acid Id/Seq from '.faa' files
             input: '.faa', '_gene_nuc_dict.cpk', 'allclusters.cpk'
             output:
         """
         ## make sure the geneCluster folder is empty
-        if os.path.isdir(path+'geneCluster/')==True:
-            print 'remove previous folder: ',path+'geneCluster/'
-            os.system('rm -rf %s'%(path+'geneCluster/'))
+        os.system('rm -rf %s'%(path+'geneCluster/'))
 
-        faa_path=path+'protein_faa/'
-        ## dict storing all genes' translation
-        gene_aa_dict=defaultdict(list)
-        for ifaa in glob.glob(faa_path+"*.faa"):
-            gene_aa_dict.update(read_fasta(ifaa))
+        clustering_path= folders_dict['clustering_path']
+        geneCluster_dt= load_pickle(clustering_path+'allclusters.cpk')
+        protein_path= folders_dict['protein_path']
+        nucleotide_path= folders_dict['nucleotide_path']
 
-        ## dict storing nucleotide Id/Seq from '_gene_nuc_dict.cpk' files
-        strain_nuc_seq_cpk={}; strain_list= load_pickle(path+'strain_list.cpk');
-        nucleotide_dict_path= '%s%s'%(path,'nucleotide_fna/')
-        for istrain in strain_list:
-            strain_nuc_seq_cpk[istrain]=load_pickle(nucleotide_dict_path+istrain+'_gene_nuc_dict.cpk')
-
-        ## load gene cluster cpk file
-        geneCluster_path=faa_path+'diamond_matches/'
-        geneCluster_dt=load_pickle(geneCluster_path+'allclusters.cpk')
-
-        ## load geneID_to_geneSeqID geneSeqID cpk file
         geneID_to_geneSeqID_dict=load_pickle(path+'geneID_to_geneSeqID.cpk')
+        gene_aa_dict= load_pickle('%s%s'%(protein_path,'all_protein_seq.cpk'))
+        gene_na_dict= load_pickle('%s%s'%(nucleotide_path,'all_nucleotide_seq.cpk'))
 
         ## create cluster-genes fasta files
-        cluster_seqs_path=path+'geneCluster/'; os.system('mkdir '+cluster_seqs_path)
-        ## data structure: 
-        ## geneCluster_dt: {clusterID:[ count_strains,[memb1,...],count_genes }
-        prepare_cluster_seq(cluster_seqs_path, geneCluster_dt,strain_nuc_seq_cpk, geneID_to_geneSeqID_dict, gene_aa_dict)
+        cluster_seqs_path=path+'geneCluster/'
+        os.system('mkdir '+cluster_seqs_path)
 
-    create_geneCluster_fa()
+        prepare_cluster_seq(cluster_seqs_path, geneCluster_dt, geneID_to_geneSeqID_dict,
+        gene_na_dict, gene_aa_dict)
+
+    create_geneCluster_fa(folders_dict)
 
     ## align, build_tree, make_geneTree_json
     cluster_seqs_path = path+'geneCluster/'
     if os.path.exists(cluster_seqs_path+'gene_diversity.txt'):
         os.system('rm '+cluster_seqs_path+'gene_diversity.txt')
     fa_files=glob.glob(cluster_seqs_path+"*.fna")
+
+    with open(cluster_seqs_path+'cluster_correl_stats.txt', 'wb') as cluster_correl_stats_file:
+        cluster_correl_stats_file.write('%s\n'%'\t'.join(
+                        ['clusterID', 'random_alnID', 'diversity_nuc', \
+                        'mean_seqLen', 'std_seqLen', 'bestSplit_paraNodes', 'bestSplit_branchLen'
+                        ]))
+
     multips(align_and_makeTree, parallel, cluster_seqs_path, fa_files)
 
     ## if cluster_postprocessing skipped, rename allclusters.cpk as the final cluster file
     if disable_cluster_postprocessing==1:
-        ## write gene_diversity_Dt cpk file
         update_diversity_cpk(path)
-        geneCluster_path=path+'protein_faa/diamond_matches/'
-        os.system('mv %sallclusters.cpk %sallclusters_final.cpk'%(geneCluster_path,geneCluster_path))
-        write_final_cluster(path)
-
-
-################################################################################
-#### cluster post processing and paralog splitting
-################################################################################
-
-def split_cluster(tree, max_branch_length=0.5, max_paralogs=30):
-    '''
-    linear regression to determine which clusters to split
-    return tree/false depending on whether the cluster should be split or not
-    '''
-    # determine the optimal split
-    best_split = find_best_split(tree)
-    # evaluate linear discriminator
-    return best_split.branch_length/max_branch_length + float(len(best_split.para_nodes))/max_paralogs > 1.0
-
+        clustering_path= '%s%s'%(path,'protein_faa/diamond_matches/')
+        os.system('cp %sallclusters.tsv %sallclusters_final.tsv'%(clustering_path,clustering_path))
 
 def find_best_split(tree):
     '''
@@ -626,232 +627,36 @@ def find_best_split(tree):
                 best_split = [child, len(child.para_nodes), child.branch_length]
     return best_split[0]
 
-
-def explore_paralogs(path, nstrains, branch_length_cutoff=500, paralog_cutoff=0.30, plot=False):
-    '''
-    gather paralog statistics for all trees and plot if desired
-    parameters:
-    branch_length_cutoff -- cutoff used to determined whether or not to split cluster
-                            measured in units of median branch length in the tree (at least 0.01).
-                            (defaults to large value 500, i.e. 500 times the median branch length)
-    paralog_cutoff       -- cutoff for paralog splitting as fraction of total strains.
-                            (default 0.3 -- that is 30%)
-    '''
-    fname_list = glob.glob(data_path+'geneCluster/*nwk')
-    paralog_stat = []; paralog_split_list = [];
-    for fi,fname in enumerate(fname_list):
-        #if fi%10==0: print('paralog check:', fname.split('/')[-1], fi, 'out of', len(fname_list))
-        tree = Phylo.read(fname, 'newick')
-        best_split = find_best_split(tree)
-        try:
-            median_branch_length = np.maximum(0.01, np.median([n.branch_length for n in tree.find_clades()]))
-        except:
-            print 'error in getting median_branch_length :',fname, np.median([n.branch_length for n in tree.find_clades()])
-        if best_split is None:
-            pass;#paralog_stat.append([fname, 0, 0])
-        else:
-            paralog_stat.append([fname, best_split.branch_length/median_branch_length, len(best_split.para_nodes)])
-            do_split = split_cluster(tree,
-                                     max_branch_length = branch_length_cutoff*median_branch_length,
-                                     max_paralogs = paralog_cutoff*nstrains)
-            if do_split:
-                print('will split:', fname, tree.count_terminals(),
-                      len(best_split.para_nodes), best_split.branch_length)
-                paralog_split_list.append( fname, best_split )
-
-    def plot_paralogs():
-        '''
-        plot branch length against # of paralogs across trees
-        '''
-        import matplotlib.pyplot as plt
-        plt.ion()
-        plt.figure()
-        plt.scatter([x[1] for x in paralog_stat], [x[2] for x in paralog_stat])
-        plt.ylabel('# paralogs')
-        plt.xlabel('branch length')
-        plt.savefig(data_path+'explore_paralogs.pdf')
-
-    if plot: plot_paralogs()
-
-    return paralog_split_list
-
-
-def create_split_cluster_files(file_path, fname,
-                               gene_list1, gene_list2, geneCluster_dt):
-    """
-    delete the old cluster and create two new clusters
-    params:
-        new_fa_files: list to which new file names are appeneded
-        gene_list1/2: lists containing the genes in the new split clusters
-        geneCluster_dt: cluster dictionary to be updated
-    """
-    orgin_nwk_name = fname.split('/')[-1]
-    clusterID = orgin_nwk_name.replace('.nwk','')
-    origin_cluster_nu_fa = orgin_nwk_name.replace('nwk','fna')
-    origin_cluster_aa_fa = orgin_nwk_name.replace('nwk','faa')
-
-    split_fa_files_set=set()
-    try:
-        print('deleting:',orgin_nwk_name,gene_list1,gene_list2, clusterID)
-        del geneCluster_dt[clusterID]
-    except:
-        print("can't delete",orgin_nwk_name,gene_list1,gene_list2, clusterID)
-
-    ## write new cluster fa files
-    origin_nu_fa_dt = read_fasta(file_path+origin_cluster_nu_fa)
-    origin_aa_fa_dt = read_fasta(file_path+origin_cluster_aa_fa)
-    sgs_index=0
-
-    ## split_gene_list has geneSeqID instead of geneID
-    for split_gene_list in (list(gene_list1), list(gene_list2)):
-        sgs_index+=1
-        newClusterId="%s_%s"%(clusterID,sgs_index)
-        gene_cluster_nu_filename="%s%s"%(newClusterId,'.fna')
-        gene_cluster_aa_filename="%s%s"%(newClusterId,'.faa')
-        gene_cluster_nu_write=open( file_path+gene_cluster_nu_filename, 'wb')
-        gene_cluster_aa_write=open( file_path+gene_cluster_aa_filename, 'wb')
-
-        split_fa_files_set |=  set([file_path+gene_cluster_nu_filename])
-
-        ## write new split cluster files
-        for gene_memb in split_gene_list:
-            write_in_fa(gene_cluster_nu_write, gene_memb, origin_nu_fa_dt[gene_memb])
-            write_in_fa(gene_cluster_aa_write, gene_memb, origin_aa_fa_dt[gene_memb])
-        gene_cluster_nu_write.close(); gene_cluster_aa_write.close();
-
-        geneCluster_dt[ newClusterId ] = [0,[],0]
-        ## num_stains
-        geneCluster_dt[ newClusterId ][0]=len(dict(Counter([ ig.split('|')[0] for ig in split_gene_list])).keys())
-        ## num_genes
-        geneCluster_dt[ newClusterId ][2]=len(dict(Counter([ ig for ig in split_gene_list])).keys())
-        ## gene members
-        geneCluster_dt[ newClusterId ][1]=[ ig.split('-')[0] for ig in split_gene_list ]
-    return split_fa_files_set
-
-def write_final_cluster(path):
-    clusters=load_sorted_clusters(path)
-    outfileName='allclusters_final.tsv'
-    with open(path+'protein_faa/diamond_matches/'+outfileName, 'wb') as outfile:
-        for cluster_id, cluster in enumerate(clusters):
-            cluster_stat=cluster[1]
-            outfile.write('\t'.join([gene for gene in cluster_stat[1]]))
-            outfile.write('\n')
-
-def update_geneCluster_cpk(path, geneCluster_dt ):
-    ## update gene cluster pickled file
-    cluster_path = path+'protein_faa/diamond_matches/'
-    write_pickle(cluster_path+'allclusters_final.cpk',geneCluster_dt)
-    write_final_cluster(path)
-
 def update_diversity_cpk(path):
     ## write gene_diversity_Dt cpk file
     output_path = path+'geneCluster/'
     with open(output_path+'gene_diversity.txt', 'rb') as infile:
         write_pickle(output_path+'gene_diversity.cpk',{ i.rstrip().split('\t')[0]:i.rstrip().split('\t')[1] for i in infile})
 
-def postprocess_paralogs_iterative(parallel, path, nstrains,
-                         branch_length_cutoff=500, paralog_cutoff=0.5, plot=False):
+def update_geneCluster_cpk(path, geneCluster_dt):
+    ## update gene cluster pickled file
+    cluster_path = path+'protein_faa/diamond_matches/'
+    write_pickle(cluster_path+'allclusters_postprocessed.cpk',geneCluster_dt)
+    #write_final_cluster(path, geneCluster_dt)
 
-    cluster_path= path+'protein_faa/diamond_matches/'
-    geneCluster_dt=load_pickle(cluster_path+'allclusters.cpk')
-
-    split_result= postprocess_paralogs( parallel, path, nstrains,
-                                            geneCluster_dt,
-                                            set(),
-                                            branch_length_cutoff=branch_length_cutoff,
-                                            paralog_cutoff=paralog_cutoff,
-                                            plot=plot)
-    n_split_clusters, new_fa_files_set = split_result
-    iteration=0
-    while(n_split_clusters):
-        print('---- split a total of ',n_split_clusters, 'in iteration', iteration)
-        split_result= postprocess_paralogs( parallel, path, nstrains,
-                                                geneCluster_dt,
-                                                new_fa_files_set,
-                                                branch_length_cutoff=branch_length_cutoff,
-                                                paralog_cutoff=paralog_cutoff,
-                                                plot=plot)
-        n_split_clusters, new_fa_files_set = split_result
-        iteration+=1
-    
-    ## write gene_diversity_Dt cpk file
-    update_diversity_cpk(path)
-
-    ## remove old gene cluster and create new split cluster
-    update_geneCluster_cpk(path, geneCluster_dt )
-
-
-def postprocess_paralogs(parallel, path, nstrains, geneCluster_dt,
-                        new_fa_files_set, branch_length_cutoff=500, paralog_cutoff=0.5,
-                        plot=False):
-    """
-    splitting paralogs, discarding old gene clusters and creating new clusters of split paralogs
-    params:
-        parallel: number of threads to use
-        path:     path to data
-        nstrains: total number of strains
-        branch_length_cutoff: multiple of median branch length to split
-                              (contribution in linear classifier, parameters to split_cluster)
-        paralog_cutoff: fraction of nstrains required for splitting
-        plot:      save figure with paralog statistics
-    """
-
-    ## exploring paralogs, default: False (not explore and plot), otherwise figure with statistics will saved
-    if plot==True:
-        explore_paralogs(path, nstrains, branch_length_cutoff=branch_length_cutoff,
-                         paralog_cutoff=paralog_cutoff, plot=plot)
-
-    file_path = path+'geneCluster/'
-
-    if len(new_fa_files_set)==0:
-        fname_list = glob.glob(file_path+'*nwk')
-    else:
-        fname_list = [ new_fa.replace('.fna','.nwk') for new_fa in new_fa_files_set ]
-        print fname_list
-
-    new_fa_files_set= set()
-    n_split_clusters = 0
-
-    for fname in fname_list:
-        tree = Phylo.read(fname, 'newick')
-        best_split = find_best_split(tree)
-
-        # determine median branch length used as scale for the paralog splitting criterion.
-        try:
-            median_branch_length = np.maximum(0.01, np.median([n.branch_length for n in tree.find_clades()]))
-        except:
-            print 'error in getting median_branch_length:',fname, np.median([n.branch_length for n in tree.find_clades()])
-        if best_split is not None:
-            do_split = split_cluster(tree,
-                                     max_branch_length = branch_length_cutoff*median_branch_length,
-                                     max_paralogs = paralog_cutoff*nstrains)
-            if do_split:
-                print('will split:', fname, tree.count_terminals(), len(best_split.para_nodes), best_split.branch_length)
-
-                all_genes = set([n.name for n in tree.get_terminals()])
-                gene_list1 = set([n.name for n in best_split.get_terminals()])
-                gene_list2 = all_genes.difference(gene_list1)
-                #print all_genes, gene_list1, gene_list2
-
-                new_fa_files = create_split_cluster_files(file_path, fname, gene_list1, gene_list2, geneCluster_dt)
-                new_fa_files_set |= new_fa_files
-                n_split_clusters+=1
-
-    print 'new_split_fasta_files', time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()), new_fa_files_set
-    ## make new aln and tree
-    multips(align_and_makeTree, parallel, file_path, list(new_fa_files_set))
-
-    return n_split_clusters, new_fa_files_set
-
+def write_final_cluster(path):
+    geneCluster_dt=load_sorted_clusters(path)
+    outfileName='allclusters_final.tsv'
+    with open(path+'protein_faa/diamond_matches/'+outfileName, 'wb') as outfile:
+        for clusterID, cluster_stat in geneCluster_dt:
+            outfile.write('\t'.join([gene for gene in cluster_stat[1]]))
+            outfile.write('\n')
 
 def load_sorted_clusters(path):
     '''
     load gene clusters and sort 1st by abundance and then by clusterID
     '''
     geneClusterPath='%s%s'%(path,'protein_faa/diamond_matches/')
-    geneCluster_dt=load_pickle(geneClusterPath+'allclusters_final.cpk')
+    geneCluster_dt=load_pickle(geneClusterPath+'allclusters_postprocessed.cpk')
     from operator import itemgetter
     # sort by decreasing abundance (-v[0], minus to achieve decreasing)
-    # followed by increasing clusterID GC_00001
+    # followed by increasing strain count
     return sorted(geneCluster_dt.iteritems(),
-                   key=lambda (k,v): (-itemgetter(0)(v),k), reverse=False)
+                key=lambda (k,v): (-itemgetter(0)(v),itemgetter(2)(v)), reverse=False)
+    #return sorted(geneCluster_dt.iteritems(),
+    #            key=lambda (k,v): (-itemgetter(0)(v),itemgetter(2)(v)), reverse=False)

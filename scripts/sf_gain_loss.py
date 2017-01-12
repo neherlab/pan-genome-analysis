@@ -6,7 +6,7 @@ from treetime.treetime.gtr import GTR
 from treetime.treetime import io
 from treetime.treetime import seq_utils
 from Bio import Phylo, AlignIO
-from SF00_miscellaneous import write_json, write_pickle
+from sf_miscellaneous import write_json, write_pickle
 
 def infer_gene_gain_loss(path, rates = [1.0, 1.0]):
     # initialize GTR model with default parameters

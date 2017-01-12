@@ -1,19 +1,18 @@
 import os, sys, csv, json
-from SF00_miscellaneous import load_pickle
+from collections import defaultdict, Counter
+from itertools import izip
+from sf_miscellaneous import load_pickle
 def id_separation(species, path, infile):
     """ extract meta-info from meta-info file 
-        input:  metainfo_curated.tsv
+        input:  metainfo.tsv
         return: id_dict as dictionary storing meta-info 
     """
-    from collections import Counter
-    id_dict={}; gene_dict={}
+    id_dict=defaultdict()
     with open(infile) as csvfile:
         csv_reader = csv.reader(csvfile, delimiter='\t')
         headers = csv_reader.next()
-        meta_dict = {}; meta_display_dict = {}
-        for h in headers:
-            meta_dict[h] = []
-            meta_display_dict[h]=h
+        meta_dict = defaultdict(list)
+        meta_display_dict = { h:h for h in headers }
         for icsv_line in csv_reader:
             #capitalize host string to consolidate GenBank meta-data
             host_raw= icsv_line[4]
@@ -21,7 +20,7 @@ def id_separation(species, path, infile):
             if host_raw!='unknown':
                 icsv_line[4]='%s%s'%(host_raw[0].upper(), host_raw[1:])
             id_dict[ icsv_line[0] ] = icsv_line
-            for h, v in zip(headers, icsv_line):
+            for h, v in izip(headers, icsv_line):
                 if len(v)==0:
                     v= "unknown" 
                 meta_dict[h].append(v)
@@ -33,7 +32,7 @@ def id_separation(species, path, infile):
         del meta_display_dict[headers[0]]
 
         ## write meta-dict.js
-        with open(path+'meta-dict-'+species+'.js','wb') as meta_js_out:
+        with open(''.join([path,'meta-dict-',species,'.js']),'wb') as meta_js_out:
             meta_js_out.write('var meta_set = ')
             meta_js_out.write('%s;'%json.dumps(meta_dict))
             meta_js_out.write('var meta_display_set = ')
@@ -88,36 +87,34 @@ def create_json_addLabel( species, dt_genePresence, node, flag, path, metaFile):
 
 def json_tnt_parser():
     read_json=open('coreGenomeTree-noBranch.json', 'rb')
-    jsonString='';
+    jsonString=''
     for ir in read_json: 
         jsonString=ir.split('\n')[0]
     jsonString1=jsonString.replace('{"name": "", "children": [', '').replace(']}', '');
     jsonString_out1='[%s]'%jsonString1.replace('"name"','"accession"')
-    tmp_meta_dict=json.loads(jsonString_out1);
-    tmp_meta_list= [item_dict for item_dict in tmp_meta_dict ]
+    tmp_meta_dict=json.loads(jsonString_out1)
+    tmp_meta_list= [item_dict for item_dict in tmp_meta_dict]
     jsonString_out1= json.dumps(tmp_meta_list)
     jsonString_out1='{ "data": %s }'%jsonString_out1
-    tmp_meta_dict=json.loads(jsonString_out1);
+    tmp_meta_dict=json.loads(jsonString_out1)
     with open('strainMetainfo.json', 'wb') as write_json:
         write_json.write(jsonString_out1)
 
 def json_parser( path, species, meta_info_file_path ):
     """ create json file for web-visualiaztion
-        input: tree_result.newick, *metainfo_curated.tsv
+        input: tree_result.newick, *metainfo.tsv
         output: json files for gene cluster table and core gene SNP tree
     """
-    from ete2 import Tree;
-    metaFile= path+'metainfo_curated.tsv'
-    if meta_info_file_path =='none':
-        metaFile= path+'metainfo_curated.tsv'
-    else: ## create a link of user meta_info_file
-        os.system('pwd')
+    from ete2 import Tree
+    metaFile= '%s%s'%(path,'metainfo.tsv')
+    if meta_info_file_path !='none':
+        ## create a link of user-provided meta_info_file
         os.system('cp %s %s'%(meta_info_file_path, metaFile))
 
     output_path='%s%s'%(path,'geneCluster/')
-    visualzition_path='%s%s'%(path,'Vis/')
-    tree = Tree(output_path+'tree_result.newick',format=1)
-    dt_genePresence=load_pickle(path+'geneCluster/dt_genePresence.cpk')
+    #visualzition_path='%s%s'%(path,'vis/')
+    tree = Tree('%s%s'%(output_path,'tree_result.newick'),format=1)
+    dt_genePresence=load_pickle('%s%s'%(path,'geneCluster/dt_genePresence.cpk'))
     ## create tree json files
     jsonString=json.dumps(create_json_addLabel(species, dt_genePresence, tree, 0, path, metaFile))
     jsonString1=json.dumps(create_json_addLabel(species, dt_genePresence, tree, 1, path, metaFile))
@@ -133,8 +130,19 @@ def json_parser( path, species, meta_info_file_path ):
     ## move all *.cpk file to ./data/YourSpecies/ folder
     ##      coreGenomeTree.json and strainMetainfo.json file to ./data/YourSpecies/vis/ folder
     ##      GC*json file to ./data/YourSpecies/vis/geneCluster/ folder
-    current_path=os.getcwd()
-    os.system('ln -sf %s/*.cpk %s/../'%(current_path,current_path))
+    os.system('ln -sf %s/*.cpk %s/../'%(output_path,output_path))
     os.system('mv coreGenomeTree.json strainMetainfo.json geneGainLossEvent.json ../vis/;')
     os.system('mv GC*.aln GC*_tree.json ../vis/geneCluster/;')
+
+    keep_temporary_file=0
+    if keep_temporary_file:
+        strain_protein_fa='./protein_faa/'
+        strain_nucleotide_fa='./nucleotide_fna/'
+
+        os.system('rm %s'%strain_protein_fa)
+        os.system('rm %s'%strain_nucleotide_fa)
+        # os.system('rm ')
+        # os.system('rm ')
+        # os.system('rm ')
+
     print('Pan-genome analysis is finished, your data can be transfered to the local server for data visualization and exploration via link-to-server.py in the main folder.')

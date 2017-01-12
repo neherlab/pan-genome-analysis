@@ -1,6 +1,7 @@
 import argparse
 import os, sys, time
 from sf_miscellaneous import times, load_pickle, write_pickle, organize_folder, load_strains
+from sf_fetch_refseq import fetch_refseq
 from sf_extract_sequences import extract_sequences
 from sf_extract_metadata import extract_metadata
 from sf_cluster_protein import clustering_protein
@@ -160,7 +161,7 @@ nstrains =len([ istrain for istrain in strain_list ])
 if '2' in params.steps:# step02:
     print '======  starting step02: download NCBI refseq GenBank file from strain list'
     start = time.time()
-    accessionID_single(path, strain_list)
+    fetch_refseq(path, strain_list)
     print '======  time for step02: download NCBI refseq GenBank file from strain list'
     print times(start),'\n'
 

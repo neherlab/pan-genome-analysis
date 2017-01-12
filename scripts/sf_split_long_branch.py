@@ -2,9 +2,9 @@ import os, sys, glob, time, shutil
 import numpy as np
 from collections import defaultdict, Counter
 from Bio import Phylo, SeqIO, AlignIO
-from SF00_miscellaneous import times, read_fasta, write_in_fa, load_pickle, write_pickle 
-from SF06_geneCluster_align_makeTree import multips,\
-    mpm_tree, align_and_makeTree, update_geneCluster_cpk, update_diversity_cpk
+from sf_miscellaneous import times, read_fasta, write_in_fa, load_pickle, write_pickle 
+from sf_geneCluster_align_makeTree import multips,\
+    mpm_tree, align_and_makeTree, write_final_cluster, update_geneCluster_cpk, update_diversity_cpk
 
 def update_geneCluster_dt(path,geneCluster_dt):
     """
@@ -76,7 +76,7 @@ def delete_original_clusters(file_path, geneCluster_dt):
     """
     with open(file_path+'delete_misclusters.txt', 'rb') as delete_cluster_file:
         uncluster_filename_list= [ uncluster_filename.split('.fna')[0] for  uncluster_filename in delete_cluster_file]
-        geneCluster_dt.keys()[0]
+        #geneCluster_dt.keys()[0]
         for uncluster_filename in uncluster_filename_list:
             if uncluster_filename in geneCluster_dt:
                 del geneCluster_dt[uncluster_filename]
@@ -191,7 +191,10 @@ def cutTree_outputCluster(file_path, files_list, geneCluster_dt, treefile_used,c
         if treefile_used==True:
             ## read tree
             input_cluster_filename=input_filepath.split('/')[-1].replace('.nwk','.fna')
-            tree= Phylo.read(input_filepath, 'newick')
+            try:
+                tree= Phylo.read(input_filepath, 'newick')
+            except:
+                print 'xyz ',input_filepath
         else:
             ## make tree
             input_cluster_filename=input_filepath.split('/')[-1]
@@ -273,19 +276,21 @@ def postprocess_split_overclusters(parallel, path, cut_branch_threshold=0.3):
     treefile_used=True
     multips(cutTree_outputCluster, parallel, file_path, tree_fname_list, geneCluster_dt,treefile_used,cut_branch_threshold)
 
-    ## gather new clusters from refined_clusters.txt
-    with open(file_path+'refined_clusters.txt', 'rb') as refined_clusters:
-        new_fa_files_list=[ clus.rstrip() for clus in refined_clusters ]
+    ## If refined_clusters.txt (over_split records) exists,
+    ## then gather new clusters from refined_clusters.txt
+    if os.path.exists(''.join([file_path,'refined_clusters.txt'])):
+        with open(file_path+'refined_clusters.txt', 'rb') as refined_clusters:
+            new_fa_files_list=[ clus.rstrip() for clus in refined_clusters ]
 
-    ## parallelization of "align and make tree on new cluster"
-    multips(align_and_makeTree, parallel, file_path, new_fa_files_list)
-    # =============================================
+        ## parallelization of "align and make tree on new cluster"
+        multips(align_and_makeTree, parallel, file_path, new_fa_files_list)
+        # =============================================
 
-    ## delete original clusters which are split
-    delete_original_clusters(file_path, geneCluster_dt)
-    ## add newly split clusters
-    update_geneCluster_dt(path,geneCluster_dt)
-    ## write updated gene clusters in cpk file
-    update_geneCluster_cpk(path, geneCluster_dt )
-    ## write gene_diversity_Dt cpk file
-    update_diversity_cpk(path)
+        ## delete original clusters which are split
+        delete_original_clusters(file_path, geneCluster_dt)
+        ## add newly split clusters
+        update_geneCluster_dt(path,geneCluster_dt)
+        ## write updated gene clusters in cpk file
+        update_geneCluster_cpk(path, geneCluster_dt)
+        ## write gene_diversity_Dt cpk file
+        update_diversity_cpk(path)

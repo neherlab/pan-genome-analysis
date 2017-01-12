@@ -1,6 +1,6 @@
 import os, sys, glob, time
-from SF00_miscellaneous import load_pickle, write_pickle, read_fasta, write_in_fa ,times
-from SF06_geneCluster_align_makeTree import load_sorted_clusters
+from sf_miscellaneous import load_pickle, write_pickle, read_fasta, write_in_fa ,times
+from sf_geneCluster_align_makeTree import load_sorted_clusters
 from operator import itemgetter
 from collections import defaultdict, Counter
 
@@ -40,7 +40,8 @@ def consolidate_geneName(path,all_gene_names, geneID_to_description_dict):
     if majority=='':
         if len(geneNames)!=1:
             majority=geneNames_sorted[1][0]
-        else: majority='None'
+        else: 
+            majority='None'
 
     # "#" to delimit key/count ; "@" to seperate various geneNames
     all_geneName=''.join(['%s#%s@'%(i_ann,j_ann) if i_ann!='' else 'None#%s@'%j_ann  for i_ann,j_ann in geneNames_sorted ])[:-1]
@@ -75,37 +76,33 @@ def geneCluster_to_json(path, disable_RNA_clustering):
     ## load gain/loss event count dictionary
     dt_geneEvents= load_pickle(output_path+'dt_geneEvents.cpk')
 
-    write_file_lst_json.write('['); begin=0
+    write_file_lst_json.write('[')
     ## sorted_genelist: [(clusterID, [ count_strains,[memb1,...],count_genes]),...]
     for gid, (clusterID, gene) in enumerate(sorted_genelist):
         strain_count, gene_list, gene_count = gene
-        if begin==0:
-            begin=1
-        else:
+        if gid!=0: ## begin
             write_file_lst_json.write(',\n')
 
         ## annotation majority
-        allAnn,majority_annotation = consolidate_annotation(path, gene_list, geneID_to_description_dict)
+        allAnn, majority_annotation = consolidate_annotation(path, gene_list, geneID_to_description_dict)
 
         ## geneName majority
         all_geneName, majority_geneName =  consolidate_geneName(path,gene_list, geneID_to_description_dict)
-        #break
+
         ## extract gain/loss event count
         gene_event= dt_geneEvents[gid]
 
         ## average length
-        #start = time.time()
         geneLength_list= [ len(igene) for igene in read_fasta(output_path+'%s%s'%(clusterID,'.fna')).values() ]
         geneClusterLength = sum(geneLength_list) // len(geneLength_list)
         #print geneLength_list,geneClusterLength
-        #print 'average length:', times(start)
 
         ## msa
         geneCluster_aln='%s%s'%(clusterID,'_aa.aln')
 
         ## check for duplicates
         if gene_count>strain_count:
-            duplicated_state='yes';
+            duplicated_state='yes'
             dup_list=[ ig.split('|')[0] for ig in gene_list]
             # "#" to delimit (gene/gene_count)key/value ; "@" to seperate genes
             # Counter({'g1': 2, 'g2': 1})

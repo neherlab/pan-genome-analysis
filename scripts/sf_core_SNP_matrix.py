@@ -1,4 +1,4 @@
-from SF06_geneCluster_align_makeTree import load_sorted_clusters
+from sf_geneCluster_align_makeTree import load_sorted_clusters
 
 def create_core_SNP_matrix(path, core_cutoff=1.0):#1.0
     """ create SNP matrix using core gene SNPs
@@ -12,7 +12,7 @@ def create_core_SNP_matrix(path, core_cutoff=1.0):#1.0
     import numpy as np
     import numpy.ma as ma
     from collections import defaultdict
-    from SF00_miscellaneous import read_fasta, write_pickle, load_pickle, write_in_fa
+    from sf_miscellaneous import read_fasta, write_pickle, load_pickle, write_in_fa
 
     alnFilePath='%s%s'%(path,'geneCluster/')
     output_path= alnFilePath

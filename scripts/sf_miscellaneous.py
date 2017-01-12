@@ -1,5 +1,5 @@
-import os, glob
-import numpy as np, gzip, cPickle
+import os, glob, cPickle
+import numpy as np
 from collections import defaultdict
 from Bio import SeqIO
 from Bio.Seq import Seq
@@ -51,30 +51,58 @@ def write_json(data, file_name, indent=1):
         json.dump(data, handle, indent=indent)
         handle.close()
 
-def load_strains(path,gbk_present):
+def organize_folder(main_path):
+    """ create folders for pangenome analysis """
+    ## Genbank folder
+    command_mkdir='mkdir -p '
+    folders_dict=defaultdict( str,
+        gbk_path='input_GenBank/', RNA_path='RNA_fna/',
+        protein_path='protein_faa/', nucleotide_path='nucleotide_fna/',
+        clustering_path='protein_faa/diamond_matches/',
+        cluster_seq_path='geneCluster/', tmp_core_seq_path='tmp_core/'
+        )
+    for k,v in folders_dict.iteritems():
+        folders_dict[k]='%s%s'%(main_path,v)
+    for key, folder_path in folders_dict.iteritems():
+        os.system(''.join([command_mkdir,folder_path]))
+    return folders_dict
+
+def harmonize_filename(path,glob_list):
+    """ """
+    for fpath in glob_list:
+        gbk_fname=fpath.split('/')[-1]
+        if '-' in gbk_fname:
+            ## force to replace '-' with '_' in GenBank filename
+            gbk_fname= gbk_fname.replace('-','_')
+            print ''.join(['filename harmonized: ',fpath,' -> ',gbk_fname]) 
+            os.system(''.join(['mv ',fpath,' ',path,gbk_fname]))
+
+def load_strains(path,gbk_present,folders_dict):
     """ load input strains in strain_list """
     if gbk_present==1:
-        gbk_path='%s%s'%(path,'input_GenBank/')
-        ## move gbk files in folder input_GenBank
-        os.system('mkdir %s;mv %s*gbk %s'%(gbk_path,path,gbk_path))
-        strain_list=[]
-        for gbk_filepath in glob.glob(gbk_path+'*gbk'):
-            gbk_filename=gbk_filepath.split('/')[-1]
-            ## harmonize GenBank file name 
-            ## force '-' to be replaced as '_' in GenBank filename
-            if '-' in gbk_filename:
-                new_gbk_filename=gbk_filename.replace('-','_')
-                print('Filename harmonized: ',\
-                    gbk_filename,' -> ', new_gbk_filename.split('.gbk')[0]) 
-                strain_list.append(new_gbk_filename.split('.gbk')[0])
-                os.system('mv %s %s%s'%(gbk_filepath,gbk_path,new_gbk_filename))
-            else:
-                strain_list.append(gbk_filename.split('.gbk')[0])
-        write_pickle(path+'strain_list.cpk', strain_list )
-    else:
-        if len(glob.glob(path+'*.faa'))!=0:
-            strain_list= [ faa_filepath.split('/')[-1].replace('.faa','').replace('-','_') for faa_filepath in glob.glob(path+'*.faa')]
+        glob_item='.gbk'
+        gbk_path=folders_dict['gbk_path']
+        glob_list=glob.glob('%s*%s'%(path,glob_item))
+        if len(glob_list)!=0:
+            harmonize_filename(path,glob_list)
+            strain_list= [i.split('/')[-1].split(glob_item)[0] for i in glob.glob('%s*%s'%(path,glob_item))]
+            ## move gbk files in folder input_GenBank
+            command_organize_gbk_input=''.join(['mv ',path,'*gbk ',gbk_path])
+            os.system(command_organize_gbk_input)
         else:
-            strain_list= [ faa_filepath.split('/')[-1].replace('.faa','').replace('-','_') for faa_filepath in glob.glob(path+'protein_faa/'+'*.faa')]
-        write_pickle(path+'strain_list.cpk', strain_list)
-
+            glob_list=glob.glob('%s*%s'%(gbk_path,glob_item))
+            strain_list= [i.split('/')[-1].split(glob_item)[0] for i in glob_list]
+    else:
+        glob_item='.faa'
+        glob_list=glob.glob('%s*%s'%(path,glob_item))
+        if len(glob_list)!=0:
+            harmonize_filename(path,glob_list)
+            strain_list=[i.split(glob_item)[0] for i in glob.glob('%s*%s'%(path,glob_item))]
+        else:
+            glob_list=glob.glob('%s*%s'%(folders_dict['protein_path'],glob_item))
+            strain_list= [i.split('/')[-1].split(glob_item)[0] for i in glob_list]
+        command_organize_aa_input= 'mv %s*.faa %s'%(path,folders_dict['protein_path'])
+        command_organize_nuc_input='mv %s*.fna %s'%(path,folders_dict['nucleotide_path'])
+        os.system(command_organize_nuc_input)
+        os.system(command_organize_aa_input)
+    write_pickle(path+'strain_list.cpk', strain_list)

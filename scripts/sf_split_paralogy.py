@@ -7,23 +7,21 @@ from sf_geneCluster_align_makeTree import multips, align_and_makeTree, find_best
  
 def split_cluster(tree, max_branch_length, max_paralogs):
     '''
-    linear regression to determine which clusters to split
+    determine which clusters to split
     return tree/false depending on whether the cluster should be split or not
     '''
     # determine the optimal split
     best_split = find_best_split(tree)
-    # evaluate linear discriminator
+    # explore linear discriminator
     #return best_split.branch_length/max_branch_length + float(len(best_split.para_nodes))/max_paralogs > 1.0 and len(best_split.para_nodes) > 1
-    return best_split.branch_length/max_branch_length > 1.0 and float(len(best_split.para_nodes))/max_paralogs >= 1.0 #and len(best_split.para_nodes) > 1
+    return best_split.branch_length/max_branch_length > 1.0 and float(len(best_split.para_nodes))/max_paralogs >= 1.0
 
-def explore_paralogs(path, nstrains, branch_length_cutoff=1, paralog_cutoff=0.3, plot=0):
+def explore_paralogs(path, nstrains, paralog_branch_cutoff, paralog_frac_cutoff=0.3, plot=0):
     '''
     gather paralog statistics for all trees and plot if desired
     parameters:
-    branch_length_cutoff -- cutoff used to determined whether or not to split cluster
-                            measured in units of mean branch length in the tree (at least 0.01).
-                            (defaults to large value 500, i.e. 500 times the mean branch length)
-    paralog_cutoff       -- cutoff for paralog splitting as fraction of total strains.
+    paralog_branch_cutoff -- cutoff used to determined whether or not to split cluster.
+    paralog_frac_cutoff  -- cutoff for paralog splitting as fraction of total strains.
                             (default 0.3 -- that is 30%)
     '''
     cluster_seqs_path=path+'geneCluster/'
@@ -35,14 +33,7 @@ def explore_paralogs(path, nstrains, branch_length_cutoff=1, paralog_cutoff=0.3,
         except:
             print 'abc ', fname
         best_split = find_best_split(tree)
-        try:
-            #mean_branch_length = np.maximum(0.01, np.mean([n.branch_length for n in tree.find_clades()]))
-            mean_branch_length = 1.5
-        except:
-            print 'error in getting mean_branch_length :',fname, np.mean([n.branch_length for n in tree.find_clades()])
-        if best_split is None:
-            pass;#paralog_stat.append([fname, 0, 0])
-        else:
+        if best_split is not None:
             paralog_stat.append([fname, best_split.branch_length, len(best_split.para_nodes)])
             #paralog_stat.append([fname, best_split.branch_length/mean_branch_length, len(best_split.para_nodes)])
     with open(cluster_seqs_path+'paralogy_statistics.txt','wb') as paralogy_statistics:
@@ -62,7 +53,6 @@ def explore_paralogs(path, nstrains, branch_length_cutoff=1, paralog_cutoff=0.3,
         plt.savefig(path+'explore_paralogs.pdf')
 
     if plot: plot_paralogs(cluster_seqs_path)
-
     #return paralog_split_list
 
 def create_split_cluster_files(file_path, fname,
@@ -128,27 +118,23 @@ def create_split_cluster_files(file_path, fname,
     return split_fa_files_set
 
 def postprocess_paralogs_iterative(parallel, path, nstrains, simple_tree,
-   	branch_length_cutoff=1, paralog_cutoff=0.3, plot=0):
+   	paralog_branch_cutoff, paralog_frac_cutoff=0.3, plot=0):
 
     cluster_path= path+'protein_faa/diamond_matches/'
     geneCluster_dt=load_pickle(cluster_path+'allclusters_postprocessed.cpk')
 
     split_result= postprocess_paralogs( parallel, path, nstrains, simple_tree,
-                                            geneCluster_dt,
-                                            set(),
-                                            branch_length_cutoff=branch_length_cutoff,
-                                            paralog_cutoff=paralog_cutoff,
-                                            plot=plot)
+                                            geneCluster_dt, set(),
+                                            paralog_branch_cutoff=paralog_branch_cutoff,
+                                            paralog_frac_cutoff=paralog_frac_cutoff, plot=plot)
     n_split_clusters, new_fa_files_set = split_result
     iteration=0
     while(n_split_clusters):
         print('---- split a total of ',n_split_clusters, 'in iteration', iteration)
         split_result= postprocess_paralogs( parallel, path, nstrains, simple_tree,
-                                                geneCluster_dt,
-                                                new_fa_files_set,
-                                                branch_length_cutoff=branch_length_cutoff,
-                                                paralog_cutoff=paralog_cutoff,
-                                                plot=plot)
+                                                geneCluster_dt, new_fa_files_set,
+                                                paralog_branch_cutoff=paralog_branch_cutoff,
+                                                paralog_frac_cutoff=paralog_frac_cutoff, plot=plot)
         n_split_clusters, new_fa_files_set = split_result
         iteration+=1
     
@@ -159,23 +145,21 @@ def postprocess_paralogs_iterative(parallel, path, nstrains, simple_tree,
     update_geneCluster_cpk(path, geneCluster_dt)
 
 def postprocess_paralogs(parallel, path, nstrains, simple_tree, geneCluster_dt,
-    new_fa_files_set,  branch_length_cutoff=1, paralog_cutoff=0.3, plot=0):
+    new_fa_files_set,  paralog_branch_cutoff, paralog_frac_cutoff=0.3, plot=0):
     """
     splitting paralogs, discarding old gene clusters and creating new clusters of split paralogs
     params:
         parallel: number of threads to use
-        path:     path to data
         nstrains: total number of strains
-        branch_length_cutoff: multiple of mean branch length to split
-                              (contribution in linear classifier, parameters to split_cluster)
-        paralog_cutoff: fraction of nstrains required for splitting
+        paralog_branch_cutoff: branch length to split (E.g.: core gene diversity as cutoff)
+        paralog_frac_cutoff:  fraction of nstrains required for splitting
         plot:      save figure with paralog statistics
     """
 
     ## exploring paralogs, default: False (not explore and plot), otherwise figure with statistics will saved
     if plot==1:
-        explore_paralogs(path, nstrains, branch_length_cutoff=branch_length_cutoff,
-                         paralog_cutoff=paralog_cutoff, plot=plot)
+        explore_paralogs(path, nstrains, paralog_branch_cutoff=paralog_branch_cutoff,
+                         paralog_frac_cutoff=paralog_frac_cutoff, plot=plot)
 
     file_path = path+'geneCluster/'
 
@@ -192,15 +176,11 @@ def postprocess_paralogs(parallel, path, nstrains, simple_tree, geneCluster_dt,
         tree = Phylo.read(fname, 'newick')
         best_split = find_best_split(tree)
 
-        # determine mean branch length used as scale for the paralog splitting criterion.
-        try:
-            mean_branch_length = np.maximum(0.01, np.mean([n.branch_length for n in tree.find_clades()]))
-        except:
-            print 'error in getting mean_branch_length:',fname, np.mean([n.branch_length for n in tree.find_clades()])
         if best_split is not None:
             do_split = split_cluster(tree,
-                                     max_branch_length = branch_length_cutoff*mean_branch_length,
-                                     max_paralogs = paralog_cutoff*nstrains)
+                                     max_branch_length = paralog_branch_cutoff,
+                                     #max_branch_length = paralog_branch_cutoff*mean_branch_length,
+                                     max_paralogs = paralog_frac_cutoff*nstrains)
             if do_split:
                 print('will split:', fname,
                     '#leaves:', tree.count_terminals(),

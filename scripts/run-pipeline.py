@@ -101,22 +101,17 @@ parser.add_argument('-np', '--disable_cluster_postprocessing', type = int, defau
     help='default: run post-processing procedure for splitting overclustered genes and paralogs,\
     and clustering un-clustered genes', metavar='')
 parser.add_argument('-nrna', '--disable_RNA_clustering', type = int, default = 1,
-    help='default:  disabled, not cluster rRNAs and tRNAs', metavar='')
+    help='default: disabled, not cluster rRNAs and tRNAs', metavar='')
 ## split tree via breaking up long branches (resolving over-clustering)
-parser.add_argument('-cbc', '--cut_branch_threshold_customized', type = str, default = False,
-    help='[Resolving over-clustering]\
-    default: use cut_tree branch_length threshold calculated from core gene diversity;\
-    if this is set to True: use the threshold provided by user', metavar='')
-parser.add_argument('-cb', '--cut_branch_threshold', type = float, default = 0.3,
-    help='[Resolving over-clustering]\
-    branch_length threshold to indicate whether to cut sub-trees:',metavar='')
+parser.add_argument('-cb', '--split_long_branch_cutoff', type = float, default = 0.0,
+    help='split long branch cutoff provided by user (by default: 0.0 as not given):',metavar='')
 ## split paralogy
 parser.add_argument('-pep', '--explore_paralog_plot', type = int, default = 0,
     help='default: not plot paralog statistics', metavar='')
-parser.add_argument('-pc', '--paralog_cutoff', type = float, default = 0.3,
-    help='Fraction of strains required for splitting paralogy. Default: 0.3', metavar='')
-parser.add_argument('-pbc', '--paralog_branch_length_cutoff', type = float, default = 1,
-    help='Branch_length cutoff used in paralogy splitting', metavar='')
+parser.add_argument('-pfc', '--paralog_frac_cutoff', type = float, default = 0.3,
+    help='fraction of strains required for splitting paralogy. Default: 0.3', metavar='')
+parser.add_argument('-pbc', '--paralog_branch_cutoff', type = float, default = 0.0,
+    help='branch_length cutoff used in paralogy splitting', metavar='')
 ## resolve peaks (unclustered records)
 parser.add_argument('-ws', '--window_size_smoothed', type = int, default = 5,
     help='postprocess_unclustered_genes: window_size for smoothed cluster length distribution',
@@ -137,6 +132,9 @@ parser.add_argument('-gl', '--enable_gain_loss', type = int, default = 1,
 parser.add_argument('-sitr', '--simple_tree', type = int, default = 0,
     help='default: enable rich tree annotation; setting simple to 1 does not conduct ancestral inference via treetime.', metavar='')
 
+parser.add_argument('-sp', '--species_name', type = str, default = '',
+    help='default:', metavar='')
+
 parser.add_argument('-kt', '--keep_temporary_file', type = int, default = 1,
     help='default: keep temporary files', metavar='')
 
@@ -150,6 +148,7 @@ if path[:-1]!='/':
     path='%s/'%path
 print 'Running panX in main folder: %s'%path
 species=params.strain_list.split('-RefSeq')[0]
+#species=params.species_name TODO
 folders_dict=organize_folder(path)
 
 if 1 in params.steps: #step 01:
@@ -225,15 +224,10 @@ if 6 in params.steps:# step06:
     start = time.time()
 
     ## core gene diveristy
-    # tmp (should be uncommented)
-    #cut_branch_threshold= params.cut_branch_threshold
-    if 1: #or params.cut_branch_threshold_customized==False:
-        cut_branch_threshold=\
+    if 1:
+        if params.split_long_branch_cutoff==0.0:
+            params.split_long_branch_cutoff=\
             estimate_core_gene_diversity(path, folders_dict, strain_list, params.threads, params.core_genome_threshold)
-        #cut_branch_threshold= params.cut_branch_threshold
-    #else:
-    #    cut_branch_threshold= params.cut_branch_threshold
-
     if 1:
         ## align and make tree
         if params.enable_cluster_correl_stats==1:
@@ -244,11 +238,12 @@ if 6 in params.steps:# step06:
     ## with/without post-processing
     if params.disable_cluster_postprocessing==0:
         if 1:
-            postprocess_split_long_branch(params.threads, path, params.simple_tree, cut_branch_threshold)
+            postprocess_split_long_branch(params.threads, path, params.simple_tree, params.split_long_branch_cutoff)
         if 1:
+            if params.paralog_branch_cutoff==0.0: ## using default setting (core gene diverstiy)
+                params.paralog_branch_cutoff=params.split_long_branch_cutoff
             postprocess_paralogs_iterative(params.threads, path, nstrains, params.simple_tree,\
-                params.paralog_cutoff, params.paralog_branch_length_cutoff,\
-                params.explore_paralog_plot)
+                params.paralog_branch_cutoff, params.paralog_frac_cutoff, params.explore_paralog_plot)
         if 1:
             postprocess_unclustered_genes(params.threads, path, nstrains, params.simple_tree,\
             params.window_size_smoothed, params.strain_proportion, params.sigma_scale )

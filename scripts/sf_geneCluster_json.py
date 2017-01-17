@@ -80,6 +80,7 @@ def geneCluster_to_json(path, disable_RNA_clustering):
     ## sorted_genelist: [(clusterID, [ count_strains,[memb1,...],count_genes]),...]
     for gid, (clusterID, gene) in enumerate(sorted_genelist):
         strain_count, gene_list, gene_count = gene
+        #print strain_count, gene_count
         if gid!=0: ## begin
             write_file_lst_json.write(',\n')
 
@@ -112,10 +113,12 @@ def geneCluster_to_json(path, disable_RNA_clustering):
 
         ## locus_tag
         locus_tag_strain=' '.join([ igl for igl in gene_list ])
+        #locus_tag_strain=' ' # reduce table size
         #locus_tag_strain=' '.join([ '%s_%s'%(igl.split('|')[0],geneId_Dt_to_locusTag[igl]) for igl in gene[1][1] ])
 
         ## write json
         newline='{"geneId":%d,"geneLen":%d,"count": %d,"dupli":"%s","dup_detail": "%s","ann":"%s","msa":"%s","divers":"%s","event":"%s","allAnn":"%s", "GName":"%s", "allGName":"%s", "locus":"%s"}'
+        #'{"Id":%d,"len":%d,"cou": %d,"dup":"%s","allDup": "%s","ann":"%s","msa":"%s","div":"%s","eve":"%s","allAnn":"%s", "GName":"%s", "allGName":"%s", "loc":"%s"}'
         write_file_lst_json.write(newline%(gid+1, geneClusterLength, strain_count, duplicated_state,
                                            dup_detail,majority_annotation, geneCluster_aln,
                                            gene_diversity_Dt[clusterID],gene_event, allAnn, majority_geneName, all_geneName, locus_tag_strain))

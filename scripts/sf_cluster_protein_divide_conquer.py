@@ -67,11 +67,12 @@ def build_consensus_cluster_multmode(cluster_input, subproblem_seqs_path,
         with open(consensus_outputfile, 'a') as consensus_output:
             write_in_fa(consensus_output, clusterID, consensus_seq)
         ## write subproblem_geneCluster_dt
-        #write_pickle(''.join([clustering_path,input_prefix,'_',clusterID_start,'_dict.cpk']),\
+        #write_pickle(''.join([clustering_path,input_prefix,'_',str(index),'_dict.cpk']),\
         #                subproblem_geneCluster_dt)
 
 def build_consensus_cluster(clustering_path, threads, input_prefix):
     """ build consensus cluster """
+    start = time.time()
     cluster_file= ''.join([clustering_path,input_prefix,'_cluster.output'])
     consensus_outputfile= ''.join([clustering_path,input_prefix,'_consensus','.faa'])
     subproblem_seqs_path= '%ssubproblem_cluster_seqs/'%clustering_path
@@ -80,14 +81,21 @@ def build_consensus_cluster(clustering_path, threads, input_prefix):
     with open(cluster_file, 'rb') as cluster_input:
         subproblem_geneCluster_dt= defaultdict(list)
         cluster_input_lines= (iline for iline in cluster_input)
+        ## use multiprocessing Manager
         subproblem_geneCluster_dt= multips(build_consensus_cluster_multmode, threads, cluster_input_lines, 
             subproblem_seqs_path, clustering_path, consensus_outputfile, input_prefix, subproblem_faa_dict,
             manager_needed_dicts=[{}], index_needed=True)
         subproblem_geneCluster_dt=dict(subproblem_geneCluster_dt[0])
 
         write_pickle(''.join([clustering_path,input_prefix,'_dict.cpk']), subproblem_geneCluster_dt)
-        #for sub_dict in glob.iglob(''.join([clustering_path,input_prefix,'*_dict.cpk'])):
-        #    load_pickle(sub_dict)
+    print 'build consensus clusters for', input_prefix,': ', times(start), '\n'
+        ## alternative (workable!): write to each cpk and then merge
+        # multips(build_consensus_cluster_multmode, threads, cluster_input_lines, 
+        #     subproblem_seqs_path, clustering_path, consensus_outputfile, input_prefix, subproblem_faa_dict, index_needed=True)
+        # merged_dt={}
+        # for sub_dict in glob.iglob(''.join([clustering_path,input_prefix,'*_dict.cpk'])):
+        #     merged_dt.update(load_pickle(sub_dict))
+        # write_pickle(''.join([clustering_path,input_prefix,'_dict.cpk']), merged_dt)
 
 def clustering_subproblem(clustering_path, threads, subproblem_merged_faa,
         diamond_evalue, diamond_max_target_seqs, diamond_identity,

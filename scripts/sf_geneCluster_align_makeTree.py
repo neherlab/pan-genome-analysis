@@ -8,7 +8,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.Align import MultipleSeqAlignment
 from sf_miscellaneous import times, read_fasta, \
-    load_pickle, write_pickle, write_in_fa, write_json
+    load_pickle, write_pickle, write_in_fa, write_json, multips
 
 sys.setrecursionlimit(2000)
 
@@ -488,27 +488,8 @@ def prepare_cluster_seq(cluster_seqs_path, geneCluster_dt,
                 write_in_fa(gene_cluster_nu_write, geneSeqID, gene_na_dict[strain_name][gene_memb] )
                 write_in_fa(gene_cluster_aa_write, geneSeqID, gene_aa_dict[strain_name][gene_memb])
 
-def multips(function_in_use, parallel, file_path , fa_files, *args):
-    """ running multiple threads """
-    from multiprocessing import Process
-    fa_files_len_part=len(fa_files)/parallel
-    start = time.time(); procs = []
-
-    for i in range(0, parallel):
-        if i!=parallel-1:
-            args_content= [file_path, fa_files[ i*fa_files_len_part : (i+1)*fa_files_len_part ]], [ i for i in args]
-            args_content= (element for sub_list in args_content for element in sub_list)
-            p = Process( target=function_in_use, args=args_content )
-        else: # the left-overs
-            args_content= [file_path, fa_files[ i*fa_files_len_part : len(fa_files) ]], [ i for i in args]
-            args_content= (element for sub_list in args_content for element in sub_list)
-            p = Process( target=function_in_use, args=args_content )
-        p.Daemon = True;p.start();procs.append(p)
-    for p in procs:
-        p.join()
-
-def align_and_makeTree(alignFile_path, fa_files_list, simple_tree):
-    for gene_cluster_nu_filename in fa_files_list:
+def align_and_makeTree( fna_file_list, alignFile_path, simple_tree):
+    for gene_cluster_nu_filename in fna_file_list:
         try:
             # extract GC_00002 from path/GC_00002.aln
             clusterID = gene_cluster_nu_filename.split('/')[-1].split('.')[0]
@@ -593,15 +574,15 @@ def cluster_align_makeTree( path, folders_dict, parallel, disable_cluster_postpr
     cluster_seqs_path = path+'geneCluster/'
     if os.path.exists(cluster_seqs_path+'gene_diversity.txt'):
         os.system('rm '+cluster_seqs_path+'gene_diversity.txt')
-    fa_files=glob.glob(cluster_seqs_path+"*.fna")
+    fna_file_list=glob.glob(cluster_seqs_path+"*.fna")
     if 0:
         with open(cluster_seqs_path+'cluster_correl_stats.txt', 'wb') as cluster_correl_stats_file:
             cluster_correl_stats_file.write('%s\n'%'\t'.join(
                         ['clusterID', 'random_alnID', 'diversity_nuc', \
                         'mean_seqLen', 'std_seqLen', 'bestSplit_paraNodes', 'bestSplit_branchLen'
                         ]))
-
-    multips(align_and_makeTree, parallel, cluster_seqs_path, fa_files, simple_tree)
+    multips(align_and_makeTree, parallel, fna_file_list,
+        cluster_seqs_path, simple_tree)
 
     ## if cluster_postprocessing skipped, rename allclusters.cpk as the final cluster file
     if disable_cluster_postprocessing==1:

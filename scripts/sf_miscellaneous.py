@@ -1,12 +1,13 @@
-import os, glob, cPickle
+import os, glob, time, cPickle
 import numpy as np
 from collections import defaultdict
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord  
+from itertools import izip_longest
 
 def times(start): 
-    import time
+    
     t = int(time.time()-start)
     time_record=' %d minutes %d seconds (%d s)'%(t/60, t%60, t)
     return time_record
@@ -106,3 +107,41 @@ def load_strains(path,gbk_present,folders_dict):
         os.system(command_organize_nuc_input)
         os.system(command_organize_aa_input)
     write_pickle(path+'strain_list.cpk', strain_list)
+
+def build_sublist_multithread(threads, full_list, pad_val=None):
+    """ divide a list into sub_list for multi-threading """
+    return izip_longest(*[iter(full_list)]*threads, fillvalue=pad_val)
+
+def multips(function_in_use, threads, full_list, *args, **kwargs):
+    """ running multiple threads """
+    from multiprocessing import Process
+    procs = []
+    kwargs_dict= kwargs.copy()
+    managed_dict_return=0
+    index_used=0
+    if 'manager_needed_dicts' in kwargs_dict:
+        from multiprocessing import Manager
+        managed_dicts=tuple(Manager().dict() for i in range(len(kwargs_dict['manager_needed_dicts'])))
+        managed_dict_return=1
+        del kwargs_dict['manager_needed_dicts']
+    if 'index_needed' in kwargs_dict:
+        index_used=1
+        del kwargs_dict['index_needed']
+
+    for ind, sublist in enumerate(build_sublist_multithread(threads, full_list)):
+        if sublist[-1] is None:
+            sublist=(i for i in sublist if i is not None)
+        args_content= (sublist,)+ args
+        if index_used==1:
+            kwargs_dict['index']= ind*threads
+        if managed_dict_return==1:
+            args_content+= managed_dicts
+        print 'aaa0 ', args_content, 'aaa1 ',kwargs_dict
+        p= Process(target=function_in_use, args=args_content, kwargs=kwargs_dict)
+        p.Daemon = True; p.start(); procs.append(p)
+
+    for p in procs:
+        p.join()
+
+    if managed_dict_return==1:
+        return managed_dicts

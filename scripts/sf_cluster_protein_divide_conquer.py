@@ -1,7 +1,7 @@
 import os, sys, time, glob
 import numpy as np
 from collections import defaultdict
-from sf_miscellaneous import times, load_pickle, write_pickle, read_fasta, write_in_fa
+from sf_miscellaneous import times, load_pickle, write_pickle, read_fasta, write_in_fa, multips
 from sf_cluster_protein import diamond_run, filter_hits_single, parse_geneCluster, cleanup_clustering #mcl_run
 
 def mcl_run(clustering_path, threads, input_prefix, mcl_inflation):
@@ -39,42 +39,55 @@ def calculate_aln_consensus(aln_file):
             print 'errors in calculating consensus seq: ', aln_file
     return consensus_arr_seq
 
-def calculate_consensus_cluster(clustering_path, threads, input_prefix):
+def build_consensus_cluster_multmode(cluster_input, subproblem_seqs_path,
+    clustering_path, consensus_outputfile, input_prefix, subproblem_faa_dict,
+    subproblem_geneCluster_dt, index=None):
     """ """
-    cluster_file= ''.join([clustering_path,input_prefix,'_cluster.output'])
+    #subproblem_geneCluster_dt=defaultdict()
     subproblem_run_number= input_prefix.split('subproblem_')[1]
-    consensus_strain_outputfile= ''.join([clustering_path,input_prefix,'_consensus','.faa'])
+    for gid, iline in enumerate(cluster_input,index):#cluster_input
+        clusterID= "GCs%s_%07d"%(subproblem_run_number, gid)
+        gene_ids= iline.rstrip().split('\t')
+        subproblem_geneCluster_dt[clusterID]= gene_ids
+        ## write amino-acid sequences
+        faa_file= ''.join([subproblem_seqs_path,clusterID,'.faa'])
+        with open(faa_file, 'wb') as cluster_aa_write:
+            for gene_id in gene_ids:
+                write_in_fa(cluster_aa_write, gene_id, subproblem_faa_dict[gene_id])
+        ## align amino-acid sequences with mafft
+        aln_file= ''.join([subproblem_seqs_path,clusterID,'.aln'])
+        if len(read_fasta(faa_file))!=1:
+            command_mafft= ''.join(['mafft --amino --anysymbol --quiet ',faa_file,' > ',aln_file])
+            os.system(command_mafft)
+        else:
+            os.system('cp %s %s'%(faa_file,aln_file))
+        ## calculate consensus of aligned sequences
+        consensus_seq= calculate_aln_consensus(aln_file)
+        ## write in consensus strain
+        with open(consensus_outputfile, 'a') as consensus_output:
+            write_in_fa(consensus_output, clusterID, consensus_seq)
+        ## write subproblem_geneCluster_dt
+        #write_pickle(''.join([clustering_path,input_prefix,'_',clusterID_start,'_dict.cpk']),\
+        #                subproblem_geneCluster_dt)
+
+def build_consensus_cluster(clustering_path, threads, input_prefix):
+    """ build consensus cluster """
+    cluster_file= ''.join([clustering_path,input_prefix,'_cluster.output'])
+    consensus_outputfile= ''.join([clustering_path,input_prefix,'_consensus','.faa'])
     subproblem_seqs_path= '%ssubproblem_cluster_seqs/'%clustering_path
     subproblem_merged_faa= ''.join([clustering_path,input_prefix,'.faa'])
     subproblem_faa_dict= read_fasta(subproblem_merged_faa)
-    with open(consensus_strain_outputfile, 'wb') as consensus_strain_output:
-        with open(cluster_file, 'rb') as cluster_input:
-            subproblem_geneCluster_dt= defaultdict(list)
-            for gid, iline in enumerate(cluster_input):
-                clusterID= "GCs%s_%07d"%(subproblem_run_number, gid)
-                gene_ids= iline.rstrip().split('\t')
-                subproblem_geneCluster_dt[clusterID]= gene_ids
-                ## write amino-acid sequences
-                faa_file= ''.join([subproblem_seqs_path,clusterID,'.faa'])
-                with open(faa_file, 'wb') as cluster_aa_write:
-                    for gene_id in gene_ids:
-                        write_in_fa(cluster_aa_write, gene_id, subproblem_faa_dict[gene_id])
-                ## align amino-acid sequences with mafft
-                aln_file= ''.join([subproblem_seqs_path,clusterID,'.aln'])
-                if len(read_fasta(faa_file))!=1:
-                    command_mafft= ''.join(['mafft --amino  --anysymbol --quiet ',faa_file,' > ',aln_file])
-                    os.system(command_mafft)
-                else:
-                    os.system('cp %s %s'%(faa_file,aln_file))
-                ## calculate consensus of aligned sequences
-                consensus_seq= calculate_aln_consensus(aln_file)
-                ## write in consensus strain
-                write_in_fa(consensus_strain_output, clusterID, consensus_seq)
-            write_pickle(''.join([clustering_path,input_prefix,'_dict.cpk']),\
-                        subproblem_geneCluster_dt)
-            with open(''.join([clustering_path,input_prefix,'cluster_dt.log']),'wb') as clust_log:
-                for k,v in subproblem_geneCluster_dt.iteritems():
-                    clust_log.write('%s\t%s\n'%(k,v))
+    with open(cluster_file, 'rb') as cluster_input:
+        subproblem_geneCluster_dt= defaultdict(list)
+        cluster_input_lines= (iline for iline in cluster_input)
+        subproblem_geneCluster_dt= multips(build_consensus_cluster_multmode, threads, cluster_input_lines, 
+            subproblem_seqs_path, clustering_path, consensus_outputfile, input_prefix, subproblem_faa_dict,
+            manager_needed_dicts=[{}], index_needed=True)
+        subproblem_geneCluster_dt=dict(subproblem_geneCluster_dt[0])
+
+        write_pickle(''.join([clustering_path,input_prefix,'_dict.cpk']), subproblem_geneCluster_dt)
+        #for sub_dict in glob.iglob(''.join([clustering_path,input_prefix,'*_dict.cpk'])):
+        #    load_pickle(sub_dict)
 
 def clustering_subproblem(clustering_path, threads, subproblem_merged_faa,
         diamond_evalue, diamond_max_target_seqs, diamond_identity,
@@ -93,7 +106,7 @@ def clustering_subproblem(clustering_path, threads, subproblem_merged_faa,
     filter_hits_single(clustering_path, threads, input_prefix=input_prefix)
     mcl_run(clustering_path, threads, input_prefix, mcl_inflation)
     if last_run_flag==0:
-        calculate_consensus_cluster(clustering_path, threads, input_prefix)
+        build_consensus_cluster(clustering_path, int(threads), input_prefix)
 
 def concatenate_faa_file(clustering_path, sub_list, subproblem_merged_faa):
     """ """

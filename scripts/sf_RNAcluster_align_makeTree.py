@@ -1,7 +1,7 @@
 import os, sys, glob, time, shutil
 import numpy as np
-from sf_miscellaneous import times, read_fasta, load_pickle, write_pickle, write_in_fa, write_json
-from sf_geneCluster_align_makeTree import mpm_tree, multips, align_and_makeTree, load_sorted_clusters, update_diversity_cpk
+from sf_miscellaneous import times, read_fasta, load_pickle, write_pickle, write_in_fa, write_json, multips
+from sf_geneCluster_align_makeTree import mpm_tree, align_and_makeTree, load_sorted_clusters, update_diversity_cpk
 
 sys.setrecursionlimit(2000)
 
@@ -54,7 +54,7 @@ def create_RNACluster_fa(path):
         RNA_cluster_nu_write.close()
     return diamond_RNACluster_dt
 
-def single_RNACluster_align_and_makeTree(thread, alignFile_path, fa_files_list):
+def single_RNACluster_align_and_makeTree(thread, fa_files_list, alignFile_path):
     for RNA_cluster_nu_filename in fa_files_list:
         try:
             # extract GC_RNA002 from path/GC_RNA002.aln
@@ -96,7 +96,7 @@ def RNAclusters_align_makeTree( path, parallel ):
     ## align, build_tree, make_RNATree_json
     fasta_path = path+'geneCluster/'
     fa_files=glob.glob(fasta_path+"*RNA*.fna")
-    multips(single_RNACluster_align_and_makeTree, fasta_path, parallel, fa_files)
+    multips(single_RNACluster_align_and_makeTree, parallel, fa_files, fasta_path)
     ## add RNA cluster in diamond_geneCluster_dt
     ### load gene cluster
     geneClusterPath='%s%s'%(path,'protein_faa/diamond_matches/')

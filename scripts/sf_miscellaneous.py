@@ -136,7 +136,7 @@ def multips(function_in_use, threads, full_list, *args, **kwargs):
             kwargs_dict['index']= ind*threads
         if managed_dict_return==1:
             args_content+= managed_dicts
-        print 'aaa0 ', args_content, 'aaa1 ',kwargs_dict
+        #print 'args_content: ', args_content, 'kwargs_dict: ',kwargs_dict
         p= Process(target=function_in_use, args=args_content, kwargs=kwargs_dict)
         p.Daemon = True; p.start(); procs.append(p)
 

@@ -4,9 +4,12 @@ from collections import defaultdict, Counter
 from Bio import Phylo, SeqIO, AlignIO
 from Bio.Seq import Seq; from Bio.SeqRecord import SeqRecord
 from Bio.Align import MultipleSeqAlignment
-from sf_miscellaneous import times, read_fasta, load_pickle, write_pickle, write_in_fa, write_json
-from sf_geneCluster_align_makeTree import multips, align_and_makeTree, update_geneCluster_cpk, update_diversity_cpk, mpm_tree, load_sorted_clusters, write_final_cluster
-from sf_split_long_branch import update_geneCluster_dt, cut_tree_gather_clades, output_cutted_clusters, quick_align_makeTree, cutTree_outputCluster
+from sf_miscellaneous import times, read_fasta, write_in_fa, load_pickle, write_pickle,\
+ write_json, multips
+from sf_geneCluster_align_makeTree import align_and_makeTree, update_geneCluster_cpk,\
+ update_diversity_cpk, mpm_tree, load_sorted_clusters, write_final_cluster
+from sf_split_long_branch import update_geneCluster_dt, cut_tree_gather_clades, \
+ output_cutted_clusters, quick_align_makeTree, cutTree_outputCluster
 
 sys.setrecursionlimit(2000)
 
@@ -94,25 +97,24 @@ def delete_old_merged_clusters(file_path, geneCluster_dt, merged_clusters_dict):
             print("can't delete"," mis-clusterd genes gathered in ",uncluster_filename)
     return geneCluster_dt
 
-def cut_all_trees_from_merged_clusters(parallel, path, geneCluster_dt,cut_branch_threshold, simple_tree):
+def cut_all_trees_from_merged_clusters(parallel, path, cut_branch_threshold, simple_tree):
     """
     split tree from the unclustered genes and create new cluster files
     params:
         gene_list: lists containing the genes in the new split clusters
-        geneCluster_dt: cluster dictionary to be updated
     """
     file_path='%s%s'%(path,'geneCluster/')
     merged_cluster_filelist=glob.glob(file_path+'GC_unclust*.fna')
     ## parallelization of "post-clustering workflow for merged unclustered records"
-    treefile_used=False
-    multips(cutTree_outputCluster, parallel, file_path, merged_cluster_filelist,geneCluster_dt,treefile_used,cut_branch_threshold)
+    multips(cutTree_outputCluster, parallel, merged_cluster_filelist, file_path,
+        cut_branch_threshold, treefile_used=False)
 
     ## gather new clusters from refined_clusters.txt
     with open(file_path+'refined_clusters.txt', 'rb') as refined_clusters:
         new_fa_files_list=[ clus.rstrip() for clus in refined_clusters ]
 
     ## parallelization of "align and make tree on new cluster"
-    multips(align_and_makeTree, parallel, file_path, new_fa_files_list, simple_tree)
+    multips(align_and_makeTree, parallel, new_fa_files_list, file_path, simple_tree)
 
 def postprocess_unclustered_genes(parallel, path, nstrains, simple_tree, window_size_smoothed=5, strain_proportion=0.3 , sigma_scale=3):
     """
@@ -158,8 +160,7 @@ def postprocess_unclustered_genes(parallel, path, nstrains, simple_tree, window_
 
         cut_branch_threshold=0.3
         ## cut tree and make new clusters
-        cut_all_trees_from_merged_clusters(parallel,path,geneCluster_dt,
-            cut_branch_threshold, simple_tree)
+        cut_all_trees_from_merged_clusters(parallel, path, cut_branch_threshold, simple_tree)
 
         ## update clusters in allclusters_final.cpk
         #os.system('cp %sallclusters_final.cpk %s/allclusters_final.cpk.bk '%(ClusterPath,ClusterPath))

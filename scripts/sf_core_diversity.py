@@ -2,8 +2,8 @@ import os, sys, glob, time, shutil
 import numpy as np
 from collections import defaultdict, Counter
 from Bio import Phylo, SeqIO, AlignIO
-from sf_miscellaneous import times, read_fasta, write_in_fa, load_pickle, write_pickle
-from sf_geneCluster_align_makeTree import multips, mpm_tree#, prepare_cluster_seq
+from sf_miscellaneous import times, read_fasta, write_in_fa, load_pickle, write_pickle, multips
+from sf_geneCluster_align_makeTree import mpm_tree#, prepare_cluster_seq
 
 def export_cluster_seq_tmp(cluster_seqs_path, geneCluster_dt,
     geneID_to_geneSeqID_dict, gene_na_dict, gene_aa_dict):
@@ -19,7 +19,7 @@ def export_cluster_seq_tmp(cluster_seqs_path, geneCluster_dt,
                 geneSeqID=geneID_to_geneSeqID_dict[gene_memb]
                 write_in_fa(gene_cluster_nu_write, geneSeqID, gene_na_dict[strain_name][gene_memb] )
 
-def calculate_diversity(file_path, files_list):
+def calculate_diversity( files_list, file_path):
     """ calculate_diversity
     """
     diversity_dict=defaultdict()
@@ -97,7 +97,7 @@ def estimate_core_gene_diversity(path, folders_dict, strain_list, parallel, core
         gene_na_dict, gene_aa_dict)
 
     tmp_fa_files=glob.glob(tmp_core_seq_path+"*.fna")
-    multips(calculate_diversity, parallel, tmp_core_seq_path, tmp_fa_files)
+    multips(calculate_diversity, parallel, tmp_fa_files, tmp_core_seq_path)
 
     calculated_core_diversity=tmp_average_core_diversity(tmp_core_seq_path)
     refined_core_diversity= (0.1+3*calculated_core_diversity)/(1+3*calculated_core_diversity)

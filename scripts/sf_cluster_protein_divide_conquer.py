@@ -86,7 +86,6 @@ def build_consensus_cluster(clustering_path, threads, input_prefix):
             subproblem_seqs_path, clustering_path, consensus_outputfile, input_prefix, subproblem_faa_dict,
             manager_needed_dicts=[{}], index_needed=True)
         subproblem_geneCluster_dt=dict(subproblem_geneCluster_dt[0])
-
         write_pickle(''.join([clustering_path,input_prefix,'_dict.cpk']), subproblem_geneCluster_dt)
     print 'build consensus clusters for', input_prefix,': ', times(start), '\n'
         ## alternative (workable!): write to each cpk and then merge

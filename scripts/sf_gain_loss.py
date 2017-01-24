@@ -145,7 +145,8 @@ def create_visible_pattern_dictionary(tree):
     tree.tree.pattern_abundance = [tree.tree.clusterdict[key][0] for key in sorted(tree.tree.clusterdict.keys())]
     tree.tree.pattern_include = [tree.tree.clusterdict[key][1] for key in sorted(tree.tree.clusterdict.keys())]
     #save the index of the first core pattern
-    tree.tree.corepattern_index = sorted(tree.tree.clusterdict.keys()).index(tree.tree.patterndict[corepattern][0])
+    if corepattern in tree.tree.patterndict:
+        tree.tree.corepattern_index = sorted(tree.tree.clusterdict.keys()).index(tree.tree.patterndict[corepattern][0])
 
 def index2pattern(index,numstrains):
     """

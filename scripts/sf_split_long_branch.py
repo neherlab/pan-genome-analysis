@@ -12,7 +12,7 @@ def update_geneCluster_dt(path,geneCluster_dt):
     geneCluster_dt: geneCluster dict to be updated
     """
     update_uncluster_splits=''.join([path,'geneCluster/update_uncluster_splits/'])
-    for ifile in glob.glob(update_uncluster_splits+'*.cpk'):
+    for ifile in glob.iglob(update_uncluster_splits+'*.cpk'):
         for k,v in load_pickle(ifile).iteritems():
             print('adding newly split clusters %s'%k)
             geneCluster_dt[k] = v
@@ -85,7 +85,7 @@ def delete_original_clusters(file_path, geneCluster_dt):
                 os.system(command_move_deleted_clusters)
     return geneCluster_dt
 
-def output_cutted_clusters(file_path, uncluster_filename, gene_list, cut_branch_threshold, treefile_used=None, cut_leftover=None):
+def output_cutted_clusters(file_path, uncluster_filename, gene_list, cut_branch_threshold, parallel, treefile_used=None, cut_leftover=None):
     """
     delete the unclustered file and create new clusters
     params:
@@ -123,8 +123,7 @@ def output_cutted_clusters(file_path, uncluster_filename, gene_list, cut_branch_
         gene_cluster_aa_write=open( file_path+gene_cluster_aa_filename, 'wb')
 
         for gene_memb in split_gene_list:
-            if "\\'" in gene_memb:
-                # Replace '\' in node name:
+            if "\\'" in gene_memb: # Replace '\' in node name:
                 ## NC_018495|CM9_RS01675-1-guanosine-3',5'-... in fasta ID
                 ## 'NC_018495|CM9_RS01675-1-guanosine-3\',5\'-...' in nwk node name
                 ## Use origin_nu_fa_dt[gene_memb] will throw the KeyError:
@@ -138,7 +137,7 @@ def output_cutted_clusters(file_path, uncluster_filename, gene_list, cut_branch_
 
         if cut_leftover==True:
             ## align the rest genes, build tree, cut long branches till nothing can be cutted.
-            cutTree_outputCluster([gene_cluster_nu_filepath],file_path, cut_branch_threshold, treefile_used)
+            cutTree_outputCluster([gene_cluster_nu_filepath],file_path, cut_branch_threshold, parallel, treefile_used)
         else:
             ## record the misclusters to be deleted
             with open(file_path+'delete_misclusters.txt', 'a') as delete_cluster_file:
@@ -164,7 +163,7 @@ def output_cutted_clusters(file_path, uncluster_filename, gene_list, cut_branch_
         for i in new_fa_files:
             refined_cluster_file.write('%s\n'%i)
 
-def quick_align_makeTree(input_cluster_filepath):
+def quick_align_makeTree(input_cluster_filepath,parallel):
     """
     make a quick alignment and tree-building on post-processed clusters,
     cut the tree and create new clusters for the cutted clades
@@ -173,7 +172,7 @@ def quick_align_makeTree(input_cluster_filepath):
     ## (different from creating a concrete tree via function align_and_makeTree)
 
     try:
-        myTree = mpm_tree(input_cluster_filepath)
+        myTree = mpm_tree(input_cluster_filepath,threads=parallel)
         myTree.codon_align()
         myTree.translate()
         myTree.build(raxml=False)
@@ -181,7 +180,7 @@ def quick_align_makeTree(input_cluster_filepath):
         print('tree problem in', input_cluster_filepath)
     return myTree.tree
 
-def cutTree_outputCluster(file_list, file_path, cut_branch_threshold, treefile_used):
+def cutTree_outputCluster( file_list, file_path, cut_branch_threshold, parallel, treefile_used):
     """
     process flow for parallelization to cut the tree and output the clades in new clusters
     """
@@ -198,7 +197,7 @@ def cutTree_outputCluster(file_list, file_path, cut_branch_threshold, treefile_u
         else:
             ## make tree
             input_cluster_filename=input_filepath.split('/')[-1]
-            tree= quick_align_makeTree(input_filepath)
+            tree= quick_align_makeTree(input_filepath,parallel)
 
         ## attempt to cut the tree
         gene_list, rest_genes = cut_tree_gather_clades(tree,cut_branch_threshold)
@@ -229,12 +228,12 @@ def cutTree_outputCluster(file_list, file_path, cut_branch_threshold, treefile_u
             ## further process on left-over genes
             if len(rest_genes)!=0:
                 output_cutted_clusters(file_path, input_cluster_filename,
-                                    rest_genes, cut_branch_threshold,
+                                    rest_genes, cut_branch_threshold, parallel,
                                     treefile_used=False, cut_leftover=True)
 
         ## write clades in gene_list into clusters
         output_cutted_clusters(file_path, input_cluster_filename,
-                            gene_list, cut_branch_threshold,
+                            gene_list, cut_branch_threshold, parallel,
                             treefile_used=False, cut_leftover=False)
 
 def postprocess_split_long_branch(parallel, path, simple_tree, cut_branch_threshold=0.3):
@@ -260,7 +259,7 @@ def postprocess_split_long_branch(parallel, path, simple_tree, cut_branch_thresh
 
     ## gather all trees generated before postprocessing
     tree_path = file_path
-    tree_fname_list = glob.glob(tree_path+'*nwk')
+    tree_fname_list =glob.glob(tree_path+'*nwk')
 
     ## ensure that writing to refined_clusters starts at the beginning (for re-running)
     if os.path.exists(''.join([file_path,'refined_clusters.txt'])):
@@ -272,7 +271,7 @@ def postprocess_split_long_branch(parallel, path, simple_tree, cut_branch_thresh
     # parallelization: 
     # "post-clustering workflow for splitting trees on over-clustered records"
     treefile_used=True
-    multips(cutTree_outputCluster, parallel, tree_fname_list, file_path, cut_branch_threshold, treefile_used)
+    multips(cutTree_outputCluster, parallel, tree_fname_list, file_path, cut_branch_threshold, parallel, treefile_used)
 
     ## If refined_clusters.txt (over_split records) exists,
     ## then gather new clusters from refined_clusters.txt
@@ -281,7 +280,7 @@ def postprocess_split_long_branch(parallel, path, simple_tree, cut_branch_thresh
             new_fa_files_list=[ clus.rstrip() for clus in refined_clusters ]
 
         ## parallelization of "align and make tree on new cluster"
-        multips(align_and_makeTree, parallel, new_fa_files_list, file_path, simple_tree)
+        multips(align_and_makeTree, parallel, new_fa_files_list, file_path, parallel, simple_tree)
         # =============================================
 
         ## delete original clusters which are split

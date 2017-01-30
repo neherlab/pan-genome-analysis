@@ -48,7 +48,10 @@ def gbk_translation(strainID, gbk_fname, protein_fname, nucleotide_fname, RNA_fn
                     product=feature.qualifiers['product'][0]
                     annotation= '_'.join(product.split(' '))
                     trans_seq=feature.qualifiers['translation'][0]
-                    locus_tag=feature.qualifiers['locus_tag'][0]
+                    if 'locus_tag' in feature.qualifiers:
+                        locus_tag=feature.qualifiers['locus_tag'][0]
+                    else:
+                        locus_tag=feature.qualifiers['db_xref'][0].split(':')[1]
                     ## force to replace '-' with '_' in locus_tag
                     if '-' in locus_tag:
                         locus_tag=locus_tag.replace('-','_')
@@ -138,14 +141,18 @@ def extract_sequences(path, strain_list, folders_dict, gbk_present, disable_RNA_
         ## process fna/faa files if gbk files are not given.
         for strainID in strain_list:
             ## amino acid sequences
-            protein_fname=''.join([protein_path,strain_name,'.faa'])
+            protein_fname=''.join([protein_path,strainID,'.faa'])
+            nucleotide_fname=''.join([nucleotide_path,strainID,'.fna'])
             aa_sequence_dt=read_fasta(protein_fname)
+            na_sequence_dt=read_fasta(nucleotide_fname)
             ## prepare geneSeqID and description
             for geneID in aa_sequence_dt.keys():
                 geneName, annotation= '',''
                 geneID_to_geneSeqID_dict[geneID]=geneID
                 geneID_to_description_dict[geneID]={'geneName': geneName,
                                                     'annotation': annotation}
+                gene_aa_dict[strainID][geneID]=aa_sequence_dt[geneID]
+                gene_na_dict[strainID][geneID]=na_sequence_dt[geneID]
     write_pickle(geneID_to_geneSeqID_file, geneID_to_geneSeqID_dict)
     write_pickle(geneID_to_description_file, geneID_to_description_dict)
     write_pickle(protein_dict_path,gene_aa_dict)

@@ -85,7 +85,7 @@ def load_strains(path,gbk_present,folders_dict):
     if gbk_present==1:
         glob_item='.gbk'
         gbk_path=folders_dict['gbk_path']
-        glob_list=glob.iglob('%s*%s'%(path,glob_item))
+        glob_list=glob.glob('%s*%s'%(path,glob_item))
         if len(glob_list)!=0:
             harmonize_filename(path,glob_list)
             strain_list= [i.split('/')[-1].split(glob_item)[0] for i in glob.iglob('%s*%s'%(path,glob_item))]
@@ -93,22 +93,22 @@ def load_strains(path,gbk_present,folders_dict):
             command_organize_gbk_input=''.join(['mv ',path,'*gbk ',gbk_path])
             os.system(command_organize_gbk_input)
         else:
-            glob_list=glob.iglob('%s*%s'%(gbk_path,glob_item))
-            strain_list= [i.split('/')[-1].split(glob_item)[0] for i in glob_list]
+            gbk_glob=glob.iglob('%s*%s'%(gbk_path,glob_item))
+            strain_list= [i.split('/')[-1].split(glob_item)[0] for i in gbk_glob]
     else:
         glob_item='.faa'
-        glob_list=glob.iglob('%s*%s'%(path,glob_item))
+        glob_list=glob.glob('%s*%s'%(path,glob_item))
         if len(glob_list)!=0:
             harmonize_filename(path,glob_list)
-            strain_list=[i.split(glob_item)[0] for i in glob.iglob('%s*%s'%(path,glob_item))]
+            strain_list=[i.split('/')[-1].split(glob_item)[0] for i in glob.iglob('%s*%s'%(path,glob_item))]
         else:
-            glob_list=glob.iglob('%s*%s'%(folders_dict['protein_path'],glob_item))
-            strain_list= [i.split('/')[-1].split(glob_item)[0] for i in glob_list]
+            protein_glob=glob.iglob('%s*%s'%(folders_dict['protein_path'],glob_item))
+            strain_list= [i.split('/')[-1].split(glob_item)[0] for i in protein_glob]
         command_organize_aa_input= 'mv %s*.faa %s'%(path,folders_dict['protein_path'])
         command_organize_nuc_input='mv %s*.fna %s'%(path,folders_dict['nucleotide_path'])
         os.system(command_organize_nuc_input)
         os.system(command_organize_aa_input)
-    write_pickle(path+'strain_list.cpk', strain_list)
+    write_pickle('%s%s'%(path,'strain_list.cpk'), strain_list)
 
 def build_sublist_multithread(threads, full_list, pad_val=None):
     """ divide a list into sub_list for multi-threading """

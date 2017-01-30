@@ -1,19 +1,21 @@
 import os, glob, time, cPickle
+import multiprocessing
 import numpy as np
 from collections import defaultdict
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord  
 from itertools import izip_longest
+import math
 
-def times(start): 
-    
+def times(start):
     t = int(time.time()-start)
     time_record=' %d minutes %d seconds (%d s)'%(t/60, t%60, t)
     return time_record
 
 def read_fasta(filename):
     fa_dt={}
+    #print filename
     for record in SeqIO.parse(filename, "fasta"):
         fa_dt[record.id]=str(record.seq)
     return fa_dt
@@ -83,24 +85,24 @@ def load_strains(path,gbk_present,folders_dict):
     if gbk_present==1:
         glob_item='.gbk'
         gbk_path=folders_dict['gbk_path']
-        glob_list=glob.glob('%s*%s'%(path,glob_item))
+        glob_list=glob.iglob('%s*%s'%(path,glob_item))
         if len(glob_list)!=0:
             harmonize_filename(path,glob_list)
-            strain_list= [i.split('/')[-1].split(glob_item)[0] for i in glob.glob('%s*%s'%(path,glob_item))]
+            strain_list= [i.split('/')[-1].split(glob_item)[0] for i in glob.iglob('%s*%s'%(path,glob_item))]
             ## move gbk files in folder input_GenBank
             command_organize_gbk_input=''.join(['mv ',path,'*gbk ',gbk_path])
             os.system(command_organize_gbk_input)
         else:
-            glob_list=glob.glob('%s*%s'%(gbk_path,glob_item))
+            glob_list=glob.iglob('%s*%s'%(gbk_path,glob_item))
             strain_list= [i.split('/')[-1].split(glob_item)[0] for i in glob_list]
     else:
         glob_item='.faa'
-        glob_list=glob.glob('%s*%s'%(path,glob_item))
+        glob_list=glob.iglob('%s*%s'%(path,glob_item))
         if len(glob_list)!=0:
             harmonize_filename(path,glob_list)
-            strain_list=[i.split(glob_item)[0] for i in glob.glob('%s*%s'%(path,glob_item))]
+            strain_list=[i.split(glob_item)[0] for i in glob.iglob('%s*%s'%(path,glob_item))]
         else:
-            glob_list=glob.glob('%s*%s'%(folders_dict['protein_path'],glob_item))
+            glob_list=glob.iglob('%s*%s'%(folders_dict['protein_path'],glob_item))
             strain_list= [i.split('/')[-1].split(glob_item)[0] for i in glob_list]
         command_organize_aa_input= 'mv %s*.faa %s'%(path,folders_dict['protein_path'])
         command_organize_nuc_input='mv %s*.fna %s'%(path,folders_dict['nucleotide_path'])
@@ -110,24 +112,23 @@ def load_strains(path,gbk_present,folders_dict):
 
 def build_sublist_multithread(threads, full_list, pad_val=None):
     """ divide a list into sub_list for multi-threading """
-    return izip_longest(*[iter(full_list)]*threads, fillvalue=pad_val)
+    #return izip_longest(*[iter(full_list)]*threads, fillvalue=pad_val)
+    chunk_size= int(math.ceil(len(full_list)/float(threads)))
+    return izip_longest(*[iter(full_list)]*chunk_size, fillvalue=pad_val)
 
 def multips(function_in_use, threads, full_list, *args, **kwargs):
     """ running multiple threads """
-    from multiprocessing import Process
     procs = []
     kwargs_dict= kwargs.copy()
     managed_dict_return=0
     index_used=0
     if 'manager_needed_dicts' in kwargs_dict:
-        from multiprocessing import Manager
-        managed_dicts=tuple(Manager().dict() for i in range(len(kwargs_dict['manager_needed_dicts'])))
+        managed_dicts=tuple(multiprocessing.Manager().dict() for i in range(len(kwargs_dict['manager_needed_dicts'])))
         managed_dict_return=1
         del kwargs_dict['manager_needed_dicts']
     if 'index_needed' in kwargs_dict:
         index_used=1
         del kwargs_dict['index_needed']
-
     for ind, sublist in enumerate(build_sublist_multithread(threads, full_list)):
         if sublist[-1] is None:
             sublist=(i for i in sublist if i is not None)
@@ -137,7 +138,7 @@ def multips(function_in_use, threads, full_list, *args, **kwargs):
         if managed_dict_return==1:
             args_content+= managed_dicts
         #print 'args_content: ', args_content, 'kwargs_dict: ',kwargs_dict
-        p= Process(target=function_in_use, args=args_content, kwargs=kwargs_dict)
+        p= multiprocessing.Process(target=function_in_use, args=args_content, kwargs=kwargs_dict)
         p.Daemon = True; p.start(); procs.append(p)
 
     for p in procs:

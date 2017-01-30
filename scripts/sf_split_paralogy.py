@@ -25,7 +25,7 @@ def explore_paralogs(path, nstrains, paralog_branch_cutoff, paralog_frac_cutoff=
                             (default 0.3 -- that is 30%)
     '''
     cluster_seqs_path=path+'geneCluster/'
-    fname_list = glob.glob(cluster_seqs_path+'*nwk')
+    fname_list =glob.iglob(cluster_seqs_path+'*nwk')
     paralog_stat = []
     for fi,fname in enumerate(fname_list):
         try:
@@ -164,7 +164,7 @@ def postprocess_paralogs(parallel, path, nstrains, simple_tree, geneCluster_dt,
     file_path = path+'geneCluster/'
 
     if len(new_fa_files_set)==0:
-        fname_list = glob.glob(file_path+'*nwk')
+        fname_list =glob.iglob(file_path+'*nwk')
     else:
         fname_list = [ new_fa.replace('.fna','.nwk') for new_fa in new_fa_files_set ]
         print fname_list
@@ -173,7 +173,11 @@ def postprocess_paralogs(parallel, path, nstrains, simple_tree, geneCluster_dt,
     n_split_clusters = 0
 
     for fname in fname_list:
-        tree = Phylo.read(fname, 'newick')
+        try:
+            tree = Phylo.read(fname, 'newick')
+        except:
+            print 'debug: ',fname, ' ', os.getcwd()
+
         best_split = find_best_split(tree)
 
         if best_split is not None:

@@ -53,7 +53,7 @@ def diamond_run(output_path, dmd_ref_file, threads,
 def gather_seq_length(faa_path):
     """ """
     seq_length_dt=defaultdict()
-    for faa_file in glob.glob(''.join([faa_path,'*faa'])):
+    for faa_file in glob.iglob(''.join([faa_path,'*faa'])):
         for gene_tag, seq in read_fasta(faa_file).iteritems():
             seq_length_dt[gene_tag]=len(seq)
     return seq_length_dt

@@ -22,7 +22,7 @@ def fetch_refseq(path, strain_lst, species_to_search='Mycoplasma genitalium'):
     os.system(command_download)
     command_gunzip='gunzip %s*.gz'%gbk_path
     os.system(command_gunzip)
-    for each_gbk_path in glob.glob('%s*gbff*'%gbk_path):
+    for each_gbk_path in glob.iglob('%s*gbff*'%gbk_path):
         with open(each_gbk_path) as gbk_file:
             for record in GenBank.parse(gbk_file):
                 print(each_gbk_path,record.accession[0])
@@ -37,14 +37,14 @@ def fetch_refseq(path, strain_lst, species_to_search='Mycoplasma genitalium'):
         while len(glob.glob('*.gz'))!=0:
             time.sleep(5)
         # rename gbk file
-        for each_gbk_path in glob.glob('*gbff*'):
+        for each_gbk_path in glob.iglob('*gbff*'):
             with open(each_gbk_path) as handle:
                 print handle
                 for record in GenBank.parse(handle):
                     print(each_gbk_path,record.accession[0])
                     break
             os.system('mv %s %s'%(each_gbk_path, record.accession[0]))
-        for each_gbk_path in glob.glob('*'):
+        for each_gbk_path in glob.iglob('*'):
             os.system('mv %s %s.gbk'%(each_gbk_path, each_gbk_path))
             #os.system('mv %s %s'%(each_gbk_path, each_gbk_path.split('.')[0]))
         os.system('ls *gbk > %s-RefSeq.txt; sed -i -- "s/.gbk//g" *txt'%species)

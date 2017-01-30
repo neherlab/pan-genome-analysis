@@ -26,7 +26,7 @@ def cleanup_preclustering(preclustering_path):
     cwd = os.getcwd()
     os.chdir(preclustering_path)
     os.system('rm -rf *.m8 diamond*.log')
-    empty_list= [preclust for preclust in glob.glob('*.preclust') if os.stat(preclust).st_size==0]
+    empty_list= [preclust for preclust in glob.iglob('*.preclust') if os.stat(preclust).st_size==0]
     os.system('rm -rf %s'%(' '.join(empty_list)))
     os.chdir(cwd)
 
@@ -37,7 +37,7 @@ def preclustering_protein(path, folders_dict, threads,
     threads=str(threads)
     protein_path= folders_dict['protein_path']
     
-    for faa_file in glob.glob('%s%s'%(protein_path,'*.faa')):
+    for faa_file in glob.iglob('%s%s'%(protein_path,'*.faa')):
         dmd_ref_file=faa_file.split('/')[-1]
         ## run diamond
         diamond_run(protein_path, dmd_ref_file, threads, diamond_evalue, diamond_max_target_seqs,

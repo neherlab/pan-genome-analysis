@@ -1,12 +1,14 @@
 from __future__ import print_function, division
 import os,sys,copy;import numpy as np
 from collections import defaultdict
+sys.path.append('./')
 from treetime.treetime import treeanc as ta
 from treetime.treetime.gtr import GTR
 from treetime.treetime import io
 from treetime.treetime import seq_utils
 from Bio import Phylo, AlignIO
 from sf_miscellaneous import write_json, write_pickle
+from sf_geneCluster_align_makeTree import load_sorted_clusters
 
 def infer_gene_gain_loss(path, rates = [1.0, 1.0]):
     # initialize GTR model with default parameters
@@ -41,7 +43,7 @@ def infer_gene_gain_loss(path, rates = [1.0, 1.0]):
     return t
 
 
-def export_gain_loss(tree, path):
+def export_gain_loss(tree, path, large_output):
     '''
     '''
     # write final tree with internal node names as assigned by treetime
@@ -66,13 +68,23 @@ def export_gain_loss(tree, path):
     events_dict =  { index:event for index, event in enumerate(events_array) }
     events_dict_path= sep.join([ output_path, 'dt_geneEvents.cpk'])
     write_pickle(events_dict_path, events_dict)
+    
+    if large_output==0:
+        ## export gene loss dict to json for visualization
+        gene_loss_fname = sep.join([ output_path, 'geneGainLossEvent.json'])
+        write_json(gene_gain_loss_dict, gene_loss_fname, indent=1)
+    else:
+        ## strainID as key, presence pattern as value (converted into np.array)
+        sorted_genelist = load_sorted_clusters(path)
+        keylist= gene_gain_loss_dict.keys(); keylist.sort()
+        strainID_keymap= {ind:k for ind, k in enumerate(keylist)} # dict(zip(keylist, range(3)))
+        presence_arr= np.array([ np.fromstring(gene_gain_loss_dict[k], np.int8)-48 for k in keylist])
+        for ind, (clusterID, gene) in enumerate(sorted_genelist):
+            pattern_dt= { strainID_keymap[strain_ind]:str(patt) for strain_ind, patt in enumerate(presence_arr[:, ind])}
+            pattern_fname='%s%s_patterns.json'%(output_path,clusterID)
+            write_json(pattern_dt, pattern_fname, indent=1)
 
-    # export gene loss dict to json for visualization
-    gene_loss_fname = sep.join([ output_path, 'geneGainLossEvent.json'])
-    write_json(gene_gain_loss_dict, gene_loss_fname, indent=1)
-
-
-def process_gain_loss(path):
+def process_gain_loss(path, large_output):
     ##  infer gain/loss event
     tree = infer_gene_gain_loss(path)
     create_visible_pattern_dictionary(tree)
@@ -92,13 +104,13 @@ def process_gain_loss(path):
         print('successfully estimated the gtr parameters. Reconstructing ancestral states...')
         change_gtr_parameters_forgainloss(tree,res.x[0],res.x[1])
         tree.reconstruct_anc(method='ml')
-        export_gain_loss(tree,path)
+        export_gain_loss(tree,path,large_output)
     else:
         print('Warning: failed to estimated the gtr parameters by ML.')
         #import ipdb;ipdb.set_trace()
         change_gtr_parameters_forgainloss(tree,0.5,1.0)
         tree.reconstruct_anc(method='ml')
-        export_gain_loss(tree,path)
+        export_gain_loss(tree,path,large_output)
 
 
 def create_visible_pattern_dictionary(tree):

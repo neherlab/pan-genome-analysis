@@ -172,8 +172,9 @@ class mpm_tree(object):
         self.seqs = {x.id:x for x in SeqIO.parse(cluster_seq_filepath, 'fasta')}
         if 'run_dir' not in kwarks:
             import random
-            self.run_dir = '_'.join([speciesID, 'tmp', self.clusterID])
+            #self.run_dir = '_'.join([speciesID, 'tmp', self.clusterID])
             #self.run_dir = '_'.join([speciesID, 'temp', time.strftime('%Y%m%d-%H%M%S',time.gmtime()), str(random.randint(0,100000000))])
+            self.run_dir = '_'.join([speciesID, 'temp', time.strftime('%H%M%S',time.gmtime()), str(random.randint(0,100000000))])
         else:
             self.run_dir = kwarks['run_dir']
         self.nuc=True
@@ -203,8 +204,8 @@ class mpm_tree(object):
         SeqIO.write(aa_seqs.values(), tmpfname,'fasta')
 
         if alignment_tool=='mafft':
-            os.system(''.join(['mafft --thread ', str(self.threads),' --amino temp_in.fasta 1> temp_out.fasta 2> mafft.log']))
-            #os.system('mafft --amino temp_in.fasta 1> temp_out.fasta 2> mafft.log')
+            #os.system(''.join(['mafft --thread ', str(self.threads),' --amino temp_in.fasta 1> temp_out.fasta 2> mafft.log']))
+            os.system('mafft --amino temp_in.fasta 1> temp_out.fasta 2> mafft.log')
             aln_aa = AlignIO.read('temp_out.fasta', "fasta")
         elif alignment_tool=='muscle':
             from Bio.Align.Applications import MuscleCommandline
@@ -467,80 +468,58 @@ class mpm_tree(object):
 ################################################################################
 ### functions to run the tree building and alignment routines
 ################################################################################
-def prepare_cluster_seq(cluster_seqs_path, geneCluster_dt,
-    geneID_to_geneSeqID_dict, gene_na_dict, gene_aa_dict):
-    """ write nuc/aa sequences for each cluster  """
-    for clusterID, gene in geneCluster_dt.iteritems():
-        ## geneCluster file name
-        gene_cluster_nu_filename="%s%s"%(clusterID,'.fna')
-        gene_cluster_aa_filename="%s%s"%(clusterID,'.faa')
-        with open( cluster_seqs_path+gene_cluster_nu_filename, 'wb') as gene_cluster_nu_write, \
-            open( cluster_seqs_path+gene_cluster_aa_filename, 'wb') as gene_cluster_aa_write:
-            ## write nucleotide/amino_acid sequences into geneCluster files
-            for gene_memb in gene[1]:
-                ## gene_name format: strain_1|locusTag
-                strain_name= gene_memb.split('|')[0]
-                geneSeqID=geneID_to_geneSeqID_dict[gene_memb]
-                write_in_fa(gene_cluster_nu_write, geneSeqID, gene_na_dict[strain_name][gene_memb] )
-                write_in_fa(gene_cluster_aa_write, geneSeqID, gene_aa_dict[strain_name][gene_memb])
 
-def align_and_makeTree_single(gene_cluster_nu_filename, cluster_seqs_path, clusterID, parallel,  simple_tree):
-    """ """
-    geneDiversity_file = open('%s%s'%(cluster_seqs_path,'gene_diversity.txt'), 'a')
-    myTree = mpm_tree(gene_cluster_nu_filename, threads=parallel)
-    myTree.codon_align()
-    myTree.translate()
-    if simple_tree==0:
-        myTree.build(raxml=False,treetime_used=True)
-        myTree.ancestral(translate_tree=True)
-        myTree.refine()
-    else:
-        myTree.build(raxml=False,treetime_used=False)
-    myTree.export(path=cluster_seqs_path)
-    myTree.diversity_statistics_nuc()#myTree.diversity_statistics_aa()
-    #random_alnID=myTree.seqs.keys()[0].split('-')[0]
-    diversity_nuc= round(myTree.diversity_nuc,3)#diversity_aa=round(myTree.diversity_aa,3)
-    #bestSplit_paraNodes,bestSplit_branchLen = myTree.paralogy_statistics()
-    #mean_seqLen, std_seqLen=  myTree.mean_std_seqLen()
-    #mean_seqLen, std_seqLen= [ round(i,3) for i in mean_seqLen, std_seqLen ]
-    geneDiversity_file.write('%s\t%s\n'%(clusterID,diversity_nuc))
-    if 0:
-        cluster_correl_stats_file = open(cluster_seqs_path+'cluster_correl_stats.txt', 'a')
-        cluster_correl_stats_file.write('%s\n'%'\t'.join([
-         str(i) for i in [clusterID, random_alnID, diversity_nuc, \
-            mean_seqLen, std_seqLen, bestSplit_paraNodes, bestSplit_branchLen ] ]))
-    mem_check('inside align_and_makeTree_single')
-
-def align_and_makeTree( fna_file_list, cluster_seqs_path, parallel, simple_tree):
+def align_and_makeTree( fna_file_list, alignFile_path, parallel, simple_tree):
     for gene_cluster_nu_filename in fna_file_list:
-        # extract GC_00002 from path/GC_00002.aln
-        clusterID = gene_cluster_nu_filename.split('/')[-1].split('.')[0]
-        start = time.time();
-        geneDiversity_file = open(cluster_seqs_path+'gene_diversity.txt', 'a')
-        if len( read_fasta(gene_cluster_nu_filename) )==1: # nothing to do for singletons
-            ## na.aln
-            gene_cluster_nu_aln_filename= gene_cluster_nu_filename.replace('.fna','_na.aln')
-            ## geneSeqID separator '|' is replaced by '-' for msa viewer compatibility
-            with open(gene_cluster_nu_aln_filename,'wb') as write_file:
-                for SeqID, Sequence in read_fasta(gene_cluster_nu_filename).iteritems():
-                    write_in_fa(write_file, SeqID.replace('|','-'), Sequence)
-            ## aa.aln
-            gene_cluster_aa_filename= gene_cluster_nu_filename.replace('.fna','.faa')
-            gene_cluster_aa_aln_filename= gene_cluster_nu_filename.replace('.fna','_aa.aln')
-            ## geneSeqID separator '|' is replaced by '-' for msa viewer compatibility
-            with open(gene_cluster_aa_aln_filename,'wb') as write_file:
-                for SeqID, Sequence in read_fasta(gene_cluster_aa_filename).iteritems():
-                    write_in_fa(write_file, SeqID.replace('|','-'), Sequence)
+        try:
+            # extract GC_00002 from path/GC_00002.aln
+            clusterID = gene_cluster_nu_filename.split('/')[-1].split('.')[0]
+            start = time.time();
+            geneDiversity_file = open(alignFile_path+'gene_diversity.txt', 'a')
+            if len( read_fasta(gene_cluster_nu_filename) )==1: # nothing to do for singletons
+                ## na.aln
+                gene_cluster_nu_aln_filename= gene_cluster_nu_filename.replace('.fna','_na.aln')
+                ## geneSeqID separator '|' is replaced by '-' for msa viewer compatibility
+                with open(gene_cluster_nu_aln_filename,'wb') as write_file:
+                    for SeqID, Sequence in read_fasta(gene_cluster_nu_filename).iteritems():
+                        write_in_fa(write_file, SeqID.replace('|','-'), Sequence)
 
-            geneDiversity_file.write('%s\t%s\n'%(clusterID,'0.0'))
-        else: # align and build tree
-            #print gene_cluster_nu_filename
-            #align_and_makeTree_single(gene_cluster_nu_filename,cluster_seqs_path, simple_tree)
-            proc= multiprocessing.Process(target=align_and_makeTree_single,args=(gene_cluster_nu_filename, cluster_seqs_path, clusterID, parallel, simple_tree))
-            proc.start(); proc.join()
-        #except:
-        #   print("Aligning and tree building of %s failed"%gene_cluster_nu_filename)
-    #mem_check('inside align_and_makeTree')
+                ## aa.aln
+                gene_cluster_aa_filename= gene_cluster_nu_filename.replace('.fna','.faa')
+                gene_cluster_aa_aln_filename= gene_cluster_nu_filename.replace('.fna','_aa.aln')
+                ## geneSeqID separator '|' is replaced by '-' for msa viewer compatibility
+                with open(gene_cluster_aa_aln_filename,'wb') as write_file:
+                    for SeqID, Sequence in read_fasta(gene_cluster_aa_filename).iteritems():
+                        write_in_fa(write_file, SeqID.replace('|','-'), Sequence)
+
+                geneDiversity_file.write('%s\t%s\n'%(clusterID,'0.0'))
+            else: # align and build tree                    
+                print gene_cluster_nu_filename
+                myTree = mpm_tree(gene_cluster_nu_filename, threads=parallel)
+                myTree.codon_align()
+                myTree.translate()
+                if simple_tree==0:
+                    myTree.build(raxml=False,treetime_used=True)
+                    myTree.ancestral(translate_tree=True)
+                    myTree.refine()
+                else:
+                    myTree.build(raxml=False,treetime_used=False)
+                myTree.export(path=alignFile_path)
+                myTree.diversity_statistics_nuc()#myTree.diversity_statistics_aa()
+                #random_alnID=myTree.seqs.keys()[0].split('-')[0]
+                diversity_nuc= round(myTree.diversity_nuc,3)#diversity_aa=round(myTree.diversity_aa,3)
+                #bestSplit_paraNodes,bestSplit_branchLen = myTree.paralogy_statistics()
+                #mean_seqLen, std_seqLen=  myTree.mean_std_seqLen()
+                #mean_seqLen, std_seqLen= [ round(i,3) for i in mean_seqLen, std_seqLen ]
+                geneDiversity_file.write('%s\t%s\n'%(clusterID,diversity_nuc))
+                if 0:
+                    cluster_correl_stats_file = open(alignFile_path+'cluster_correl_stats.txt', 'a')
+                    cluster_correl_stats_file.write('%s\n'%'\t'.join([
+                     str(i) for i in [clusterID, random_alnID, diversity_nuc, \
+                        mean_seqLen, std_seqLen, bestSplit_paraNodes, bestSplit_branchLen ] ]))
+        except:
+            print("Aligning and tree building of %s failed"%gene_cluster_nu_filename)
+
 
 def mem_check(flag):
     print(flag, ' memory usage: %.2f GB' % round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/(1024.0**2),1))
@@ -565,20 +544,29 @@ def create_geneCluster_fa(path,folders_dict):
     ## create cluster-genes fasta files
     cluster_seqs_path=path+'geneCluster/'
     os.system('mkdir '+cluster_seqs_path)
-
-    prepare_cluster_seq(cluster_seqs_path, geneCluster_dt, geneID_to_geneSeqID_dict,
-    gene_na_dict, gene_aa_dict)
-    #mem_check('inside create_geneCluster_fa')
+    
+    ## write nuc/aa sequences for each cluster
+    for clusterID, gene in geneCluster_dt.iteritems():
+        ## geneCluster file name
+        gene_cluster_nu_filename="%s%s"%(clusterID,'.fna')
+        gene_cluster_aa_filename="%s%s"%(clusterID,'.faa')
+        with open( cluster_seqs_path+gene_cluster_nu_filename, 'wb') as gene_cluster_nu_write, \
+            open( cluster_seqs_path+gene_cluster_aa_filename, 'wb') as gene_cluster_aa_write:
+            ## write nucleotide/amino_acid sequences into geneCluster files
+            for gene_memb in gene[1]:
+                ## gene_name format: strain_1|locusTag
+                strain_name= gene_memb.split('|')[0]
+                geneSeqID=geneID_to_geneSeqID_dict[gene_memb]
+                write_in_fa(gene_cluster_nu_write, geneSeqID, gene_na_dict[strain_name][gene_memb] )
+                write_in_fa(gene_cluster_aa_write, geneSeqID, gene_aa_dict[strain_name][gene_memb])
 
 def cluster_align_makeTree( path, folders_dict, parallel, disable_cluster_postprocessing, simple_tree ):
     """
     create gene clusters as nucleotide/ amino_acid fasta files
     and build individual gene trees based on fna files
     """
-    #create_geneCluster_fa(path, folders_dict)
     proc= multiprocessing.Process(target=create_geneCluster_fa, args=(path, folders_dict))
     proc.start(); proc.join()
-    #mem_check('after create_geneCluster_fa')
 
     ## align, build_tree, make_geneTree_json
     cluster_seqs_path = path+'geneCluster/'
@@ -595,7 +583,6 @@ def cluster_align_makeTree( path, folders_dict, parallel, disable_cluster_postpr
     fna_file_list=glob.glob(cluster_seqs_path+"*.fna")
     multips(align_and_makeTree, parallel, fna_file_list,
         cluster_seqs_path, parallel, simple_tree)
-    print 'multips(align_and_makeTree...) finished '
 
     ## if cluster_postprocessing skipped, rename allclusters.cpk as the final cluster file
     if disable_cluster_postprocessing==1:

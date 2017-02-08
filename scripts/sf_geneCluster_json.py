@@ -100,7 +100,8 @@ def geneCluster_to_json(path, disable_RNA_clustering, large_output, raw_locus_ta
         #print geneLength_list,geneClusterLength
 
         ## msa
-        geneCluster_aln='%s%s'%(clusterID,'_aa.aln')
+        #geneCluster_aln='%s%s'%(clusterID,'_aa.aln')
+        geneCluster_aln=clusterID
 
         ## check for duplicates
         if gene_count>strain_count:
@@ -115,8 +116,8 @@ def geneCluster_to_json(path, disable_RNA_clustering, large_output, raw_locus_ta
         ## locus_tag
         
         if raw_locus_tag==0:
-            locus_tag_strain=' '.join([ igl for igl in gene_list ])
-            #locus_tag_strain=' '.join([ igl.replace('|','_') for igl in gene_list ])
+            #locus_tag_strain=' '.join([ igl for igl in gene_list ])
+            locus_tag_strain=' '.join([ igl.replace('|','_') for igl in gene_list ])
         else:
             locus_tag_strain=' '.join([ igl.split('|')[1] for igl in gene_list ])
         if large_output==1:# reduce table size

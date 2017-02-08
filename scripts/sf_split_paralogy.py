@@ -3,7 +3,7 @@ import numpy as np
 from collections import Counter
 from Bio import Phylo
 from sf_miscellaneous import read_fasta, write_in_fa, load_pickle, multips
-from sf_geneCluster_align_makeTree import align_and_makeTree, find_best_split, update_diversity_cpk, load_sorted_clusters, update_geneCluster_cpk
+from sf_geneCluster_align_makeTree import align_and_makeTree, find_best_split, update_diversity_cpk, load_sorted_clusters, update_geneCluster_cpk, mem_check
  
 def split_cluster(tree, max_branch_length, max_paralogs):
     '''
@@ -202,6 +202,7 @@ def postprocess_paralogs(parallel, path, nstrains, simple_tree, geneCluster_dt,
 
     print 'new_split_fasta_files', time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()), new_fa_files_set
     ## make new aln and tree
-    multips(align_and_makeTree, parallel, list(new_fa_files_set), file_path, simple_tree)
-
+    mem_check('0 multips(align_and_')
+    multips(align_and_makeTree, parallel, list(new_fa_files_set), file_path, parallel, simple_tree)
+    mem_check('1 multips(align_and_')
     return n_split_clusters, new_fa_files_set

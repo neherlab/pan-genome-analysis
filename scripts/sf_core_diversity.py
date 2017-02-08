@@ -19,13 +19,13 @@ def export_cluster_seq_tmp(cluster_seqs_path, geneCluster_dt,
                 geneSeqID=geneID_to_geneSeqID_dict[gene_memb]
                 write_in_fa(gene_cluster_nu_write, geneSeqID, gene_na_dict[strain_name][gene_memb] )
 
-def calculate_diversity( files_list, file_path):
+def calculate_diversity( files_list, file_path, parallel):
     """ calculate_diversity
     """
     diversity_dict=defaultdict()
     for input_filepath in files_list:
         try:
-            myTree = mpm_tree(input_filepath)
+            myTree = mpm_tree(input_filepath, threads=parallel)
             myTree.codon_align()
             myTree.diversity_statistics_nuc()
             diversity_dict[input_filepath.split('/')[-1]]=round(myTree.diversity_nuc,4)
@@ -97,7 +97,7 @@ def estimate_core_gene_diversity(path, folders_dict, strain_list, parallel, core
         gene_na_dict, gene_aa_dict)
 
     tmp_fa_files=glob.glob(tmp_core_seq_path+"*.fna")
-    multips(calculate_diversity, parallel, tmp_fa_files, tmp_core_seq_path)
+    multips(calculate_diversity, parallel, tmp_fa_files, tmp_core_seq_path, parallel)
 
     calculated_core_diversity=tmp_average_core_diversity(tmp_core_seq_path)
     refined_core_diversity= (0.1+3*calculated_core_diversity)/(1+3*calculated_core_diversity)

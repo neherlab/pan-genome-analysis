@@ -99,8 +99,9 @@ def json_tnt_parser():
     tmp_meta_dict=json.loads(jsonString_out1)
     with open('strainMetainfo.json', 'wb') as write_json:
         write_json.write(jsonString_out1)
+    os.system('rm coreGenomeTree-noBranch.json')
 
-def json_parser( path, species, meta_info_file_path ):
+def json_parser( path, species, meta_info_file_path, large_output ):
     """ create json file for web-visualiaztion
         input: tree_result.newick, *metainfo.tsv
         output: json files for gene cluster table and core gene SNP tree
@@ -116,7 +117,8 @@ def json_parser( path, species, meta_info_file_path ):
     tree = Tree('%s%s'%(output_path,'tree_result.newick'),format=1)
     dt_genePresence=load_pickle('%s%s'%(path,'geneCluster/dt_genePresence.cpk'))
     ## create tree json files
-    jsonString=json.dumps(create_json_addLabel(species, dt_genePresence, tree, 0, path, metaFile))
+    no_presence = 0 if large_output==0 else 1
+    jsonString=json.dumps(create_json_addLabel(species, dt_genePresence, tree, no_presence, path, metaFile))
     jsonString1=json.dumps(create_json_addLabel(species, dt_genePresence, tree, 1, path, metaFile))
     os.chdir(output_path)
     with open('coreGenomeTree.json', 'wb') as write_json:
@@ -133,6 +135,8 @@ def json_parser( path, species, meta_info_file_path ):
     os.system('ln -sf %s/*.cpk %s/../'%(output_path,output_path))
     os.system('mv coreGenomeTree.json strainMetainfo.json geneGainLossEvent.json ../vis/;')
     os.system('mv GC*.aln GC*_tree.json ../vis/geneCluster/;')
+    os.system('mv GC*.nwk ../vis/geneCluster/;')
+    os.system('cp tree_result.newick ../vis/strain_tree.nwk;')
 
     keep_temporary_file=0
     if keep_temporary_file:

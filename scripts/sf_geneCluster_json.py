@@ -1,4 +1,4 @@
-import os, sys, glob, time
+import os, sys,glob, time
 from sf_miscellaneous import load_pickle, write_pickle, read_fasta, write_in_fa ,times
 from sf_geneCluster_align_makeTree import load_sorted_clusters
 from operator import itemgetter
@@ -48,7 +48,7 @@ def consolidate_geneName(path,all_gene_names, geneID_to_description_dict):
     #print all_geneName, ' ?', majority
     return all_geneName, majority
 
-def geneCluster_to_json(path, disable_RNA_clustering):
+def geneCluster_to_json(path, disable_RNA_clustering, large_output, raw_locus_tag):
     """
     create json file for gene cluster table visualzition
     input:  path to genecluster output
@@ -64,7 +64,8 @@ def geneCluster_to_json(path, disable_RNA_clustering):
     os.system('mkdir %s; mkdir %sgeneCluster/'%(visualzition_path,visualzition_path))
     write_file_lst_json=open(visualzition_path+'geneCluster.json', 'wb')
     gene_diversity_Dt=load_pickle(output_path+'gene_diversity.cpk')
-
+    if large_output==1:
+        locus_tag_outfile=open(path+'search_locus_tag.tsv', 'wb')
     ## sorted clusters
     sorted_genelist= load_sorted_clusters(path)
 
@@ -112,8 +113,15 @@ def geneCluster_to_json(path, disable_RNA_clustering):
             duplicated_state='no';dup_detail=''
 
         ## locus_tag
-        locus_tag_strain=' '.join([ igl for igl in gene_list ])
-        #locus_tag_strain=' ' # reduce table size
+        
+        if raw_locus_tag==0:
+            locus_tag_strain=' '.join([ igl for igl in gene_list ])
+            #locus_tag_strain=' '.join([ igl.replace('|','_') for igl in gene_list ])
+        else:
+            locus_tag_strain=' '.join([ igl.split('|')[1] for igl in gene_list ])
+        if large_output==1:# reduce table size
+            locus_tag_outfile.write('%s\t%s\n'%(clusterID,locus_tag_strain))
+            locus_tag_strain=' '
         #locus_tag_strain=' '.join([ '%s_%s'%(igl.split('|')[0],geneId_Dt_to_locusTag[igl]) for igl in gene[1][1] ])
 
         ## write json
@@ -124,4 +132,4 @@ def geneCluster_to_json(path, disable_RNA_clustering):
                                            gene_diversity_Dt[clusterID],gene_event, allAnn, majority_geneName, all_geneName, locus_tag_strain))
     write_file_lst_json.write(']')
     write_file_lst_json.close()
-
+    if large_output==1: locus_tag_outfile.close()

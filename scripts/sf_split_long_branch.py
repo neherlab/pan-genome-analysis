@@ -271,9 +271,7 @@ def postprocess_split_long_branch(parallel, path, simple_tree, cut_branch_thresh
     # parallelization: 
     # "post-clustering workflow for splitting trees on over-clustered records"
     treefile_used=True
-    mem_check('0 multips(cutTree')
     multips(cutTree_outputCluster, parallel, tree_fname_list, file_path, cut_branch_threshold, parallel, treefile_used)
-    mem_check('1 multips(cutTree')
 
     ## If refined_clusters.txt (over_split records) exists,
     ## then gather new clusters from refined_clusters.txt
@@ -282,9 +280,7 @@ def postprocess_split_long_branch(parallel, path, simple_tree, cut_branch_thresh
             new_fa_files_list=[ clus.rstrip() for clus in refined_clusters ]
 
         ## parallelization of "align and make tree on new cluster"
-        mem_check('0 multips(align_')
         multips(align_and_makeTree, parallel, new_fa_files_list, file_path, parallel, simple_tree)
-        mem_check('1 multips(align_')
         # =============================================
 
         ## delete original clusters which are split

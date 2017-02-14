@@ -1,5 +1,7 @@
 import argparse
 import os, sys, time
+sys.path.append('./')
+sys.path.append('./scripts/')
 from sf_miscellaneous import times, load_pickle, write_pickle, organize_folder, load_strains
 from sf_fetch_refseq import fetch_refseq
 from sf_extract_sequences import extract_sequences
@@ -52,22 +54,22 @@ parser.add_argument('-rp', '--roary_file_path', type = str, default = 'none',
     help='the absolute path for roary result (e.g.: /path/roary.out)' , metavar='')
 parser.add_argument('-mi', '--meta_info_file_path', type = str, default = 'none',
     help='the absolute path for meta_information file (e.g.: /path/meta.out)' , metavar='')
-parser.add_argument('-dme', '--diamond_evalue', type = str, default = '0.00001',
+parser.add_argument('-dme', '--diamond_evalue', type = str, default = '0.001',
     help='default: e-value threshold below 0.001', metavar='')
 parser.add_argument('-dmt', '--diamond_max_target_seqs', type = str, default = '600',
     help='Diamond: the maximum number of target sequences per query to keep alignments for.\
     Calculation: #strain * #max_duplication (40*15= 600)', metavar='')
-parser.add_argument('-dmi', '--diamond_identity', type = str, default = '30',
+parser.add_argument('-dmi', '--diamond_identity', type = str, default = '0',
     help='Diamond: sequence identity threshold to report an alignment. Default: empty.\
     When applied to species with low genetic diversity: 70 could be a decent starting point.\
     All alignments with identity below 0.7 of will not be reported, \
     thus also saving computational time. ', metavar='')
-parser.add_argument('-dmqc', '--diamond_query_cover', type = str, default = '30',
+parser.add_argument('-dmqc', '--diamond_query_cover', type = str, default = '0',
     help='Diamond: sequence (query) coverage threshold to report an alignment.  Default: empty.\
     When applied to species with low genetic diversity: 70 could be a decent starting point.\
     All alignments with less than 0.7 of query coverage will not be reported, \
     thus also saving computational time. ', metavar='')
-parser.add_argument('-dmsc', '--diamond_subject_cover', type = str, default = '30',
+parser.add_argument('-dmsc', '--diamond_subject_cover', type = str, default = '0',
     help='Diamond: sequence (subject) coverage threshold to report an alignment.  Default: empty.\
     When applied to species with low genetic diversity: 70 could be a decent starting point.\
     All alignments with less than 0.7 of subject coverage will not be reported, \
@@ -84,7 +86,7 @@ parser.add_argument('-dmdc', '--diamond_divide_conquer', type = int, default = 0
 parser.add_argument('-dcs', '--subset_size', type = int, default = 50,
     help='Default:subset_size (number of strains in a subset) for divide-and-conquer(DC) method',\
     metavar='')
-parser.add_argument('-imcl', '--mcl_inflation', type = float, default = 2.0,
+parser.add_argument('-imcl', '--mcl_inflation', type = float, default = 1.5,
     help='MCL: inflation parameter (varying this parameter affects granularity) ', metavar='')
 parser.add_argument('-ortha', '--orthAgogue_used', type = int, default = 0,
     help='Default: orthAgogue not used', metavar='')
@@ -134,6 +136,10 @@ parser.add_argument('-sitr', '--simple_tree', type = int, default = 0,
 
 parser.add_argument('-sp', '--species_name', type = str, default = '',
     help='default:', metavar='')
+parser.add_argument('-lo', '--large_output', type = int, default = 0,
+    help='default: not split gene presence/absence and gain/loss pattern into separate files for each cluster', metavar='')
+parser.add_argument('-rl', '--raw_locus_tag', type = int, default = 0,
+    help='default: use strain_ID + locus_tag as new locus_tag; if set to 0, use raw locus_tag from GenBank file', metavar='')
 
 parser.add_argument('-kt', '--keep_temporary_file', type = int, default = 1,
     help='default: keep temporary files', metavar='')
@@ -236,7 +242,7 @@ if 6 in params.steps:# step06:
             cluster_align_makeTree(path, folders_dict, params.threads, params.disable_cluster_postprocessing, params.simple_tree)
 
     ## with/without post-processing
-    if params.disable_cluster_postprocessing==0:
+    if 1 and params.disable_cluster_postprocessing==0:
         if 1:
             postprocess_split_long_branch(params.threads, path, params.simple_tree, params.split_long_branch_cutoff)
         if 1:
@@ -248,7 +254,7 @@ if 6 in params.steps:# step06:
             postprocess_unclustered_genes(params.threads, path, nstrains, params.simple_tree,\
             params.window_size_smoothed, params.strain_proportion, params.sigma_scale )
     if params.disable_RNA_clustering==0:
-        RNAclusters_align_makeTree(path, params.threads)
+        RNAclusters_align_makeTree(path, folders_dict, params.threads)
     print '======  time for step06: align genes in geneCluster by mafft and build gene trees'
     print times(start),'\n'
 
@@ -269,23 +275,23 @@ if 8 in params.steps:# step08:
 if 9 in params.steps:# step09:
     print '======  starting step09: infer presence/absence and gain/loss patterns of all genes'
     start = time.time()
-    make_genepresence_alignment(path, params.enable_gain_loss)
+    make_genepresence_alignment(path, params.enable_gain_loss, params.large_output)
     if params.enable_gain_loss==1:
-        process_gain_loss(path)
+        process_gain_loss(path, params.large_output)
     print '======  time for step09: infer presence/absence and gain/loss patterns of all genes'
     print times(start),'\n'
 
 if 10 in params.steps:# step10:
     print '======  starting step10: create json file for geneDataTable visualization'
     start = time.time()
-    geneCluster_to_json(path, params.disable_RNA_clustering)
+    geneCluster_to_json(path, params.disable_RNA_clustering, params.large_output, params.raw_locus_tag)
     print '======  time for step10: create json file for geneDataTable visualization'
     print times(start),'\n'
 
 if 11 in params.steps:# step11:
     print '======  starting step11: extract json files for tree and treeDataTable visualization,etc'
     start = time.time()
-    json_parser(path, species, params.meta_info_file_path)
+    json_parser(path, species, params.meta_info_file_path, params.large_output)
     print '======  time for step11: extract json files for tree and treeDataTable visualization,etc'
     print times(start),'\n'
 

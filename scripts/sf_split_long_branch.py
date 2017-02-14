@@ -107,8 +107,8 @@ def output_cutted_clusters(file_path, uncluster_filename, gene_list, cut_branch_
     ## split_gene_list has geneSeqID instead of geneID
     for sgs_index,split_gene_list in enumerate(gene_list,1):
         if cut_leftover==True:
-            ## newClusterId for the rest genes (_res_ as identifier)
-            newClusterId="%s_res_%s"%(clusterID,sgs_index)
+            ## newClusterId for the rest genes (_r as identifier)
+            newClusterId="%s_r%s"%(clusterID,sgs_index)
         else:
             newClusterId="%s_%s"%(clusterID,sgs_index)
 

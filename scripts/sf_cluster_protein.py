@@ -1,3 +1,5 @@
+
+
 import os, sys, time, glob
 from collections import defaultdict, Counter
 from sf_miscellaneous import times, read_fasta, write_pickle
@@ -74,11 +76,17 @@ def filter_hits_single(output_path, threads,
     with open(output_path+m8_filename,'rb') as m8_file,\
         open(output_path+filtered_hits_filename,'wb') as abc_file:
         print('filter hits:')
+        #using_BS=1; using_BAL=0
         for iline in m8_file:
             cols_list= iline.rstrip().split('\t')
             #query, ref, bit_score from column (0,1,-1)
             abc_file.write('%s\n'%'\t'.join([cols_list[ind] for ind in (0,1,-1)]))
-
+            ## BAL scoring option not used
+            # if using_BS:## using bscore
+            #     abc_file.write('%s\n'%'\t'.join([cols_list[ind] for ind in (0,1,-1)]))
+            # elif using_BAL:## using bscore/aln_len
+            #     abc_file.write('%s\n'%'\t'.join([cols_list[0], cols_list[1], \
+            #         str(round( float(cols_list[-1])/float(cols_list[3]),5 ))]))
     if input_prefix=='':
         print 'filter hits runtime:', times(start),'\n'
     else:
@@ -158,7 +166,7 @@ def clustering_protein(path, folders_dict, threads, blast_fpath, roary_fpath,
         mcl_run(clustering_path, threads, mcl_inflation)
         ## clean up diamond_query_file
         os.system(''.join(['rm ',clustering_path,'*faa']))
-    elif blast_file_path!='none': ## using user-given cluster file based on blast
+    elif blast_fpath!='none': ## using user-given cluster file based on blast
             os.system(''.join(['cp ',blast_fpath,' ',clustering_path,'blastp.m8']))
             ## filtering hits via BS score
             filter_hits_single(clustering_path, threads, input_prefix='blastp')

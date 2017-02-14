@@ -134,11 +134,11 @@ def json_parser( path, species, meta_info_file_path, large_output ):
     ##      GC*json file to ./data/YourSpecies/vis/geneCluster/ folder
     os.system('ln -sf %s/*.cpk %s/../'%(output_path,output_path))
     os.system('mv coreGenomeTree.json strainMetainfo.json geneGainLossEvent.json ../vis/')
-    os.system('mv GC*.aln GC*_tree.json ../vis/geneCluster/')
-    os.system('mv GC*.nwk ../vis/geneCluster/')
+    os.system('mv *C*.aln *C*_tree.json ../vis/geneCluster/')
+    os.system('mv *C*.nwk ../vis/geneCluster/')
     os.system('cp tree_result.newick ../vis/strain_tree.nwk')
     if large_output==1:
-        os.system('mv GC*patterns.json ../vis/geneCluster/')
+        os.system('mv *C*patterns.json ../vis/geneCluster/')
 
     keep_temporary_file=0
     if keep_temporary_file:

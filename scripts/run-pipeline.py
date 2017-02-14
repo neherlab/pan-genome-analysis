@@ -103,7 +103,7 @@ parser.add_argument('-np', '--disable_cluster_postprocessing', type = int, defau
     help='default: run post-processing procedure for splitting overclustered genes and paralogs,\
     and clustering un-clustered genes', metavar='')
 parser.add_argument('-nrna', '--disable_RNA_clustering', type = int, default = 1,
-    help='default: disabled, not cluster rRNAs and tRNAs', metavar='')
+    help='default: disabled, not cluster rRNAs', metavar='')
 ## split tree via breaking up long branches (resolving over-clustering)
 parser.add_argument('-cb', '--split_long_branch_cutoff', type = float, default = 0.0,
     help='split long branch cutoff provided by user (by default: 0.0 as not given):',metavar='')

@@ -1,5 +1,7 @@
-import os;from sf_miscellaneous import times
+import os, sys, time, random, glob, subprocess, shutil
+from sf_miscellaneous import times
 from ete2 import Tree
+from sf_geneCluster_align_makeTree import mpm_tree
 
 def resolve_polytomies(infileName, outfileName):
     newickString=open(infileName, 'rb').readline().rstrip().replace('[&R] ', '')
@@ -24,7 +26,6 @@ def aln_to_Newick(path, raxml_timelimit, threads):
         input: SNP_whole_matrix.aln 
         output: tree_result.newick
     """
-    import sys, time, random, glob, subprocess, shutil
     output_path = '_'.join(['temp_coretree', time.strftime('%Y%m%d-%H%M%S',time.gmtime()), str(random.randint(0,1000000))])
     os.system('mkdir %s'%output_path)
     os.system('ln -sf ../%s/SNP_whole_matrix.aln %s'%(path+'geneCluster',output_path))
@@ -52,7 +53,7 @@ def aln_to_Newick(path, raxml_timelimit, threads):
             time.sleep(10)
         process.terminate()
 
-        checkpoint_files = [file for file in glob.glob('RAxML_checkpoint*')]
+        checkpoint_files = glob.glob('RAxML_checkpoint*')
         if os.path.isfile('RAxML_result.topology'):
             checkpoint_files.append('RAxML_result.topology')
         if len(checkpoint_files) > 0:
@@ -72,3 +73,19 @@ def aln_to_Newick(path, raxml_timelimit, threads):
     shutil.copy('tree_result.newick', '../%s/tree_result.newick'%(path+'geneCluster') )
     os.chdir('../')
     os.system('rm -r %s'%output_path)
+
+    # if 0: phyloTree based visualization
+    #     simple_tree=0
+    #     ##new tree layout
+    #     cluster_seqs_path = '%s%s'%(path,'geneCluster/')
+    #     myTree = mpm_tree('%s%s'%(cluster_seqs_path,'SNP_whole_matrix.aln'))
+    #     myTree.align()
+    #     myTree.aa_aln=None
+    #     if simple_tree==0:
+    #         myTree.build(raxml=True,treetime_used=True)
+    #         myTree.ancestral(translate_tree=True)
+    #         myTree.refine()
+    #     else:
+    #         myTree.build(raxml=True,treetime_used=False)
+    #     myTree.layout()
+    #     myTree.export(path=cluster_seqs_path)

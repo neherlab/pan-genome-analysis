@@ -48,11 +48,11 @@ def make_genepresence_alignment(path, enable_gain_loss, large_output):
     write_pickle('%s%s'%(output_path,'dt_genePresence.cpk'), dt_strainGene)
 
     if enable_gain_loss==0:
+        geneEvents_dt={ i:0 for i in range(len(sorted_genelist)) }
+        write_pickle('%s%s'%(output_path,'dt_geneEvents.cpk'), geneEvents_dt)
         if large_output==0:
             gene_loss_fname='%s%s'%(output_path,'geneGainLossEvent.json')
             write_json(dt_strainGene, gene_loss_fname, indent=1)
-            geneEvents_dt={ i:0 for i in range(len(sorted_genelist)) }
-            write_pickle('%s%s'%(output_path,'dt_geneEvents.cpk'), geneEvents_dt)
         else:
             ## strainID as key, presence pattern as value (converted into np.array)
             keylist= dt_strainGene.keys(); keylist.sort()

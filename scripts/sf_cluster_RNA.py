@@ -1,11 +1,10 @@
 import os, sys
 from collections import defaultdict, Counter
-from sf_miscellaneous import write_pickle
-from sf_cluster_orthamcl import ortha_mcl_run, orthagogue_singletons
+from sf_miscellaneous import read_fasta, write_pickle
+from sf_cluster_protein import filter_hits_single, mcl_run
 
 def parse_RNACluster(path,inputfile):
     """ store clusters as dictionary in cpk file """
-    from operator import itemgetter
     inputfile="%s%s"%(path,inputfile)
     with open(inputfile, 'rb') as infile:
         RNACluster_dt=defaultdict(list)
@@ -20,37 +19,32 @@ def parse_RNACluster(path,inputfile):
 
 def RNA_cluster(path, threads,blastn_RNA_max_target_seqs, mcl_inflation ):
     '''
-    make all-against-all comparison using diamond
-    THEN generate RNA clusters followed by orthoMCL/orthagogue+MCL
-    OR use the output of all-to-all blast comparison and orthoMCL/orthagogue+MCL
-    OR use the output of roary
+    use the output of all-to-all blast comparison and MCL
     params:
         path:                    path to directory including data and output
         threads:                 number of parallel threads used to run blastn
 
     '''
     threads=str(threads)
-    input_path=path+'RNA_fna/'
-    output_path=input_path
+    RNA_path='%sRNA_fna/'%path
     ## prepare query & reference file (all against all): merge all fna files
     all_RNA_filename='all_RNAs'
-    os.system(''.join(['cat ',input_path,'*fna > ',input_path,all_RNA_filename,'.fna']))
+    os.system(''.join(['cat ',RNA_path,'*fna > ',RNA_path,all_RNA_filename,'.fna']))
     ## blastn on all RNA nucleotides
     ### make database
-    run_makeblastdb=''.join(['makeblastdb -in ',input_path,all_RNA_filename,'.fna -dbtype nucl -out ',input_path,all_RNA_filename])
+    run_makeblastdb=''.join(['makeblastdb -in ',RNA_path,all_RNA_filename,'.fna -dbtype nucl -out ',RNA_path,all_RNA_filename])
     os.system(run_makeblastdb)
     ### run blastn
-    run_blastn=''.join(['blastn -db ',input_path,all_RNA_filename,' -query ',input_path,all_RNA_filename,'.fna -out ',input_path,'query_matches.m8 -evalue 0.001 -outfmt 6 -max_target_seqs ',blastn_RNA_max_target_seqs,' -num_threads ',threads,' > ',input_path,'blastn-output.log'])
+    run_blastn=''.join(['blastn -db ',RNA_path,all_RNA_filename,' -query ',RNA_path,all_RNA_filename,'.fna -out ',RNA_path,'query_matches.m8 -evalue 0.001 -outfmt 6 -max_target_seqs ',blastn_RNA_max_target_seqs,' -num_threads ',threads,' > ',RNA_path,'blastn-output.log'])
     os.system(run_blastn)
-    
+    ## filtering hits via BS score
+    filter_hits_single(RNA_path, threads)
+    ## running mcl
+    mcl_run(RNA_path, threads, mcl_inflation)
     ## run orthagogue and MCL
-    ortha_mcl_run(output_path, threads, mcl_inflation)
-    ## save singeltons
-    origin_cluster_file='cluster.output'
-    orthagogue_singletons(output_path,origin_cluster_file,'%s.fna'%(all_RNA_filename))
     all_cluster_file='allclusters.tsv'
-    parse_RNACluster(output_path,all_cluster_file)
+    parse_RNACluster(RNA_path,all_cluster_file)
     ## remove database file
-    os.system(''.join(['rm ',input_path,all_RNA_filename,'*']))
-    os.system(''.join(['rm ',input_path,'*fna']))
-    os.system(''.join(['rm ',input_path,'all.abc']))
+    os.system(''.join(['rm ',RNA_path,all_RNA_filename,'*']))
+    os.system(''.join(['rm ',RNA_path,'*fna']))
+    os.system(''.join(['rm ',RNA_path,'all.abc']))

@@ -6,7 +6,7 @@ from sf_miscellaneous import read_fasta, write_in_fa, load_pickle, write_pickle
 def gbk_translation(strainID, gbk_fname, protein_fname, nucleotide_fname, RNA_fname,
     geneID_to_geneSeqID_dict,geneID_to_description_dict,
     RNAID_to_SeqID_dict, RNAID_to_description_dict,
-    gene_aa_dict, gene_na_dict, disable_RNA_clustering):
+    gene_aa_dict, gene_na_dict, RNA_dict, disable_RNA_clustering):
     '''
     extract sequences and meta informations of all genes in one reference genbank file
     params:
@@ -76,7 +76,8 @@ def gbk_translation(strainID, gbk_fname, protein_fname, nucleotide_fname, RNA_fn
                     geneID_to_geneSeqID_dict[geneID]='%s|%s-%d-%s%s'%(strainID,
                                                     locus_tag, contig_index,
                                                     geneName, annotation)
-            elif not disable_RNA_clustering and (feature.type=='rRNA' or feature.type=='tRNA'):
+            elif not disable_RNA_clustering and (feature.type=='rRNA'):
+            #elif not disable_RNA_clustering and (feature.type=='rRNA' or feature.type=='tRNA'):
                 if 'product' in feature.qualifiers:
                     geneName=''
                     product=feature.qualifiers['product'][0]
@@ -91,6 +92,7 @@ def gbk_translation(strainID, gbk_fname, protein_fname, nucleotide_fname, RNA_fn
                     RNAID= '%s|%s'%(strainID,locus_tag)
                     RNA_seq= str(feature.extract(contig.seq))
                     write_in_fa(RNA_sequence_file, RNAID, RNA_seq)
+                    RNA_dict[strainID][RNAID]=RNA_seq
                     # give tag 'gname:' to genes which have gene name and separate it from annotation
                     RNAID_to_description_dict[RNAID]={
                                                     'geneName': '',
@@ -118,13 +120,15 @@ def extract_sequences(path, strain_list, folders_dict, gbk_present, disable_RNA_
 
     protein_dict_path= '%s%s'%(protein_path,'all_protein_seq.cpk')
     nucleotide_dict_path= '%s%s'%(nucleotide_path,'all_nucleotide_seq.cpk')
+    RNA_dict_path= '%s%s'%(RNA_path,'all_RNA_seq.cpk')
 
     geneID_to_geneSeqID_dict= defaultdict()
     geneID_to_description_dict= defaultdict()
     RNAID_to_SeqID_dict= defaultdict()
     RNAID_to_description_dict= defaultdict()
     gene_aa_dict= defaultdict(dict) 
-    gene_na_dict= defaultdict(dict) 
+    gene_na_dict= defaultdict(dict)
+    RNA_dict= defaultdict(dict)
 
     if gbk_present==1:
         ## process gbk file
@@ -136,7 +140,7 @@ def extract_sequences(path, strain_list, folders_dict, gbk_present, disable_RNA_
             gbk_translation(strainID, gbk_fname, protein_fname, nucleotide_fname, RNA_fname,
                 geneID_to_geneSeqID_dict,geneID_to_description_dict,
                 RNAID_to_SeqID_dict, RNAID_to_description_dict,
-                gene_aa_dict, gene_na_dict, disable_RNA_clustering)
+                gene_aa_dict, gene_na_dict, RNA_dict, disable_RNA_clustering)
     else:
         ## process fna/faa files if gbk files are not given.
         for strainID in strain_list:
@@ -159,7 +163,7 @@ def extract_sequences(path, strain_list, folders_dict, gbk_present, disable_RNA_
     write_pickle(nucleotide_dict_path,gene_na_dict)
     ## option: process RNA sequences for RNA_clustering
     if disable_RNA_clustering==0:
+        write_pickle(RNA_dict_path,RNA_dict)
         write_pickle(RNAID_to_SeqID_file, RNAID_to_SeqID_dict)
         write_pickle(RNAID_to_description_file, RNAID_to_description_dict)
-
     return gene_aa_dict, gene_na_dict

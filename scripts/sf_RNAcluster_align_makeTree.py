@@ -11,28 +11,18 @@ def update_gene_cluster_with_RNA(path, diamond_RNACluster_dt, diamond_geneCluste
 
     diamond_geneCluster_dt.update(diamond_RNACluster_dt)
 
-    write_pickle(cluster_path+'allclusters_final.cpk',diamond_geneCluster_dt)
+    write_pickle(cluster_path+'allclusters_postprocessed.cpk',diamond_geneCluster_dt)
 
-def create_RNACluster_fa(path):
+def create_RNACluster_fa(path,folders_dict):
     """
         input: '.fna', '_RNA_nuc_dict.cpk', 'allclusters.cpk'
         output: '.aln', 'tree.json', etc
     """
-    if 0:
-        ## make sure the RNACluster folder is empty
-        if os.path.isdir(path+'RNACluster/')==True:
-            print 'remove previous folder: ',path+'RNACluster/'
-            os.system('rm -rf %s'%(path+'RNACluster/'))
-
-    ## dict storing nucleotide Id/Seq from '_RNA_nuc_dict.cpk' files
-    istrain_cpk={}; strain_list= load_pickle(path+'strain_list.cpk');
-    nucleotide_dict_path= '%s%s'%(path,'nucleotide_fna/')
-    for istrain in strain_list:
-        istrain_cpk[istrain]=load_pickle(nucleotide_dict_path+istrain+'_RNA_nuc_dict.cpk')
+    RNA_path= folders_dict['RNA_path']
+    RNA_dict= load_pickle('%s%s'%(RNA_path,'all_RNA_seq.cpk'))
 
     ## load RNA cluster cpk file
-    RNACluster_path=path+'RNA_fna/'
-    diamond_RNACluster_dt=load_pickle(RNACluster_path+'allclusters.cpk')
+    diamond_RNACluster_dt=load_pickle(RNA_path+'allclusters.cpk')
 
     ## load RNAID_to_RNASeqID RNASeqID cpk file
     RNAID_to_RNASeqID_dict=load_pickle(path+'RNAID_to_SeqID.cpk')
@@ -48,13 +38,13 @@ def create_RNACluster_fa(path):
         for RNA_memb in RNA[1]:
             ## RNA_name format: strain_1|locusTag
             strain_name= RNA_memb.split('|')[0]
-            RNA_memb_seq=str(istrain_cpk[strain_name][RNA_memb])
+            RNA_memb_seq=str(RNA_dict[strain_name][RNA_memb])
             RNASeqID=RNAID_to_RNASeqID_dict[RNA_memb]
             write_in_fa(RNA_cluster_nu_write, RNASeqID, RNA_memb_seq )
         RNA_cluster_nu_write.close()
     return diamond_RNACluster_dt
 
-def single_RNACluster_align_and_makeTree(thread, fa_files_list, alignFile_path):
+def single_RNACluster_align_and_makeTree(fa_files_list, alignFile_path, parallel):
     for RNA_cluster_nu_filename in fa_files_list:
         try:
             # extract GC_RNA002 from path/GC_RNA002.aln
@@ -68,40 +58,38 @@ def single_RNACluster_align_and_makeTree(thread, fa_files_list, alignFile_path):
                     for SeqID, Sequence in read_fasta(RNA_cluster_nu_filename).iteritems():
                         write_in_fa(write_file, SeqID.replace('|','-'), Sequence)
                 geneDiversity_file.write('%s\t%s\n'%(clusterID,'0.0'))
-
             else: # align and build tree
                 print RNA_cluster_nu_filename
-                myTree = mpm_tree(RNA_cluster_nu_filename)
+                myTree = mpm_tree(RNA_cluster_nu_filename,threads=parallel)
                 myTree.align()
                 myTree.build(raxml=False)
                 myTree.ancestral(translate_tree=True)
                 myTree.refine()
                 myTree.export(path=alignFile_path, RNA_specific=True)
-                myTree.diversity_statistics()
-                diversity=myTree.diversity
-                RNA_diversity_values='{0:.3f}'.format(diversity)
+                myTree.diversity_statistics_nuc()
+                RNA_diversity_values='{0:.3f}'.format(myTree.diversity_nuc)
                 geneDiversity_file.write('%s\t%s\n'%(clusterID,RNA_diversity_values))
+                print clusterID,RNA_diversity_values
         except:
-            print("Aligning and tree building of %s failed"%RNA_cluster_nu_filename)
-            print(myTree.tree)
+            print("Aligning and tree building of RNA %s failed"%RNA_cluster_nu_filename)
 
-def RNAclusters_align_makeTree( path, parallel ):
+def RNAclusters_align_makeTree( path, folders_dict, parallel ):
     """
     create RNA clusters as nucleotide fasta files
     and build individual RNA trees based on fna files
     """
 
-    diamond_RNACluster_dt=create_RNACluster_fa(path)
+    diamond_RNACluster_dt=create_RNACluster_fa(path,folders_dict)
 
     ## align, build_tree, make_RNATree_json
     fasta_path = path+'geneCluster/'
-    fa_files=glob.glob(fasta_path+"*RNA*.fna")
-    multips(single_RNACluster_align_and_makeTree, parallel, fa_files, fasta_path)
+    fa_files=glob.glob(fasta_path+"*RC*.fna")
+    multips(single_RNACluster_align_and_makeTree, parallel, fa_files, fasta_path, parallel)
     ## add RNA cluster in diamond_geneCluster_dt
     ### load gene cluster
     geneClusterPath='%s%s'%(path,'protein_faa/diamond_matches/')
-    os.system('cp %sallclusters_final.cpk %s/allclusters_final.cpk.bk '%(geneClusterPath,geneClusterPath))
-    diamond_geneCluster_dt=load_pickle(geneClusterPath+'allclusters_final.cpk')
+    os.system('cp %sallclusters_postprocessed.cpk %s/allclusters_postprocessed.cpk.bk '%(geneClusterPath,geneClusterPath))
+    diamond_geneCluster_dt=load_pickle(geneClusterPath+'allclusters_postprocessed.cpk')
     ### update gene cluster with RNA cluster
     update_gene_cluster_with_RNA(path, diamond_RNACluster_dt, diamond_geneCluster_dt)
     ### update diversity file

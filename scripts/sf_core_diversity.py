@@ -100,6 +100,7 @@ def estimate_core_gene_diversity(path, folders_dict, strain_list, parallel, core
     multips(calculate_diversity, parallel, tmp_fa_files, tmp_core_seq_path, parallel)
 
     calculated_core_diversity=tmp_average_core_diversity(tmp_core_seq_path)
+    #refined_core_diversity= (0.1+factor*calculated_core_diversity)/(1+factor*calculated_core_diversity) #later: factor as param  
     refined_core_diversity= (0.1+3*calculated_core_diversity)/(1+3*calculated_core_diversity)
     print('average core_diversity: ',calculated_core_diversity,\
             'refined core_diversity for splitting over_clustered genes: ',refined_core_diversity)

@@ -24,11 +24,11 @@ def concatenate_cluster_files(clusterID_list, index, file_path):
     cluster_needed_deletion=[i_file for i_file in clusterID_list]
     ## for nucleotide
     filenames_str=' '.join(['%s%s.fna'%(file_path,i_file) for i_file in clusterID_list])
-    merged_cluster_filename='GC_unclust%03d.fna'%index
+    merged_cluster_filename='GC_un%03d.fna'%index
     os.system('cat %s > %s%s'%(filenames_str, file_path, merged_cluster_filename))
     ## for amino_acid
     faa_filenames_str=' '.join(['%s%s.faa'%(file_path,i_file) for i_file in clusterID_list])
-    faa_clusters_in_peak_filename='GC_unclust%03d.faa'%index
+    faa_clusters_in_peak_filename='GC_un%03d.faa'%index
     os.system('cat %s > %s%s'%(faa_filenames_str, file_path, faa_clusters_in_peak_filename))
     return merged_cluster_filename, cluster_needed_deletion
 
@@ -103,18 +103,19 @@ def cut_all_trees_from_merged_clusters(parallel, path, cut_branch_threshold, sim
     params:
         gene_list: lists containing the genes in the new split clusters
     """
-    file_path='%s%s'%(path,'geneCluster/')
-    merged_cluster_filelist=glob.glob(file_path+'GC_unclust*.fna')
+    geneCluster_fasta_path='%s%s'%(path,'geneCluster/')
+    merged_cluster_filelist=glob.glob(geneCluster_fasta_path+'GC_un*.fna')
     ## parallelization of "post-clustering workflow for merged unclustered records"
-    multips(cutTree_outputCluster, parallel, merged_cluster_filelist, file_path,
+    multips(cutTree_outputCluster, parallel, merged_cluster_filelist, geneCluster_fasta_path,
         cut_branch_threshold, parallel, treefile_used=False)
 
     ## gather new clusters from refined_clusters.txt
-    with open(file_path+'refined_clusters.txt', 'rb') as refined_clusters:
+    #if os.path.exists(''.join([geneCluster_fasta_path,'refined_clusters.txt'])):
+    with open(''.join([geneCluster_fasta_path,'refined_clusters.txt']),'rb') as refined_clusters:
         new_fa_files_list=[ clus.rstrip() for clus in refined_clusters ]
 
     ## parallelization of "align and make tree on new cluster"
-    multips(align_and_makeTree, parallel, new_fa_files_list, file_path, parallel, simple_tree)
+    multips(align_and_makeTree, parallel, new_fa_files_list, geneCluster_fasta_path, parallel, simple_tree)
 
 def postprocess_unclustered_genes(parallel, path, nstrains, simple_tree, window_size_smoothed=5, strain_proportion=0.3 , sigma_scale=3):
     """

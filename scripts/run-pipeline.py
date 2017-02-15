@@ -52,6 +52,10 @@ parser.add_argument('-bp', '--blast_file_path', type = str, default = 'none',
     help='the absolute path for blast result (e.g.: /path/blast.out)' , metavar='')
 parser.add_argument('-rp', '--roary_file_path', type = str, default = 'none',
     help='the absolute path for roary result (e.g.: /path/roary.out)' , metavar='')
+parser.add_argument('-op', '--orthofinder_file_path', type = str, default = 'none',
+    help='the absolute path for orthofinder result (e.g.: /path/orthofinder.out)' , metavar='')
+parser.add_argument('-otp', '--other_tool_fpath', type = str, default = 'none',
+    help='the absolute path for result from other orthology inference tool  (e.g.: /path/other_tool.out)' , metavar='')
 parser.add_argument('-mi', '--meta_info_file_path', type = str, default = 'none',
     help='the absolute path for meta_information file (e.g.: /path/meta.out)' , metavar='')
 parser.add_argument('-dme', '--diamond_evalue', type = str, default = '0.001',
@@ -130,6 +134,11 @@ parser.add_argument('-cg', '--core_genome_threshold', type = float, default = 1.
     help='percentage of strains used to decide whether a gene is core.\
     Default: 1.0 for strictly core gene; customized instance: 0.9 for soft core genes',
     metavar='')
+## core gene strain constraint
+parser.add_argument('-csf', '--core_gene_strain_fpath', type = str, default = '',
+    help='file path for user-provided subset of strains( core genes should be present in all strains in this list)',
+    metavar='')
+## gene gain loss inference
 parser.add_argument('-gl', '--enable_gain_loss', type = int, default = 1,
     help='default: not enable gene gain and loss inference', metavar='')
 
@@ -210,6 +219,7 @@ if 5 in params.steps:# step05:
         if 1:
             clustering_protein(path, folders_dict, params.threads,
                 params.blast_file_path, params.roary_file_path,
+                params.orthofinder_file_path,params.other_tool_fpath,
                 params.diamond_evalue, params.diamond_max_target_seqs,
                 params.diamond_identity, params.diamond_query_cover, params.diamond_subject_cover,
                 params.mcl_inflation
@@ -263,7 +273,7 @@ if 6 in params.steps:# step06:
 if 7 in params.steps:# step07:
     print '======  starting step07: call SNPs from core genes'
     start = time.time()
-    create_core_SNP_matrix(path, params.core_genome_threshold)
+    create_core_SNP_matrix(path, params.core_genome_threshold, params.core_gene_strain_fpath)
     print '======  time for step07: call SNPs from core genes'
     print times(start),'\n'
 

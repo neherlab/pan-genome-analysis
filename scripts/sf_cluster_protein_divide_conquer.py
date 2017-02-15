@@ -40,15 +40,16 @@ def calculate_aln_consensus(aln_file):
     return consensus_arr_seq
 
 def build_consensus_cluster_multmode(cluster_input, subproblem_seqs_path,
-    clustering_path, consensus_outputfile, input_prefix, subproblem_faa_dict,
-    subproblem_geneCluster_dt, index=None):
+    clustering_path, consensus_outputfile, input_prefix, subproblem_faa_dict, index=None):
     """ """
-    #subproblem_geneCluster_dt=defaultdict()
+    subproblem_geneCluster_dt= {}
     subproblem_run_number= input_prefix.split('subproblem_')[1]
     for gid, iline in enumerate(cluster_input,index):#cluster_input
-        clusterID= "GCs%s_%07d"%(subproblem_run_number, gid)
+        ## use time to avoid clusterID conflict
+        clusterID= "GCs%s_%07d%s"%(subproblem_run_number, gid, time.strftime('%M%S',time.gmtime()))
         gene_ids= iline.rstrip().split('\t')
         subproblem_geneCluster_dt[clusterID]= gene_ids
+        #print 'debug', clusterID, gene_ids
         ## write amino-acid sequences
         faa_file= ''.join([subproblem_seqs_path,clusterID,'.faa'])
         with open(faa_file, 'wb') as cluster_aa_write:
@@ -67,8 +68,8 @@ def build_consensus_cluster_multmode(cluster_input, subproblem_seqs_path,
         with open(consensus_outputfile, 'a') as consensus_output:
             write_in_fa(consensus_output, clusterID, consensus_seq)
         ## write subproblem_geneCluster_dt
-        #write_pickle(''.join([clustering_path,input_prefix,'_',str(index),'_dict.cpk']),\
-        #                subproblem_geneCluster_dt)
+        write_pickle(''.join([clustering_path,input_prefix,'_',str(index),'_dict.cpk']),\
+                        subproblem_geneCluster_dt)
 
 def build_consensus_cluster(clustering_path, threads, input_prefix):
     """ build consensus cluster """
@@ -80,21 +81,15 @@ def build_consensus_cluster(clustering_path, threads, input_prefix):
     subproblem_faa_dict= read_fasta(subproblem_merged_faa)
     with open(cluster_file, 'rb') as cluster_input:
         subproblem_geneCluster_dt= defaultdict(list)
-        cluster_input_lines= (iline for iline in cluster_input)
-        ## use multiprocessing Manager
-        subproblem_geneCluster_dt= multips(build_consensus_cluster_multmode, threads, cluster_input_lines, 
-            subproblem_seqs_path, clustering_path, consensus_outputfile, input_prefix, subproblem_faa_dict,
-            manager_needed_dicts=[{}], index_needed=True)
-        subproblem_geneCluster_dt=dict(subproblem_geneCluster_dt[0])
-        write_pickle(''.join([clustering_path,input_prefix,'_dict.cpk']), subproblem_geneCluster_dt)
+        cluster_input_lines= [iline for iline in cluster_input]
+        # alternative (workable!): write to each cpk and then merge
+        multips(build_consensus_cluster_multmode, threads, cluster_input_lines, 
+            subproblem_seqs_path, clustering_path, consensus_outputfile, input_prefix, subproblem_faa_dict, index_needed=True)
+        merged_dt={}
+        for sub_dict in glob.iglob(''.join([clustering_path,input_prefix,'*_dict.cpk'])):
+            merged_dt.update(load_pickle(sub_dict))
+        write_pickle(''.join([clustering_path,input_prefix,'_dicts.cpk']), merged_dt)
     print 'build consensus clusters for', input_prefix,': ', times(start), '\n'
-        ## alternative (workable!): write to each cpk and then merge
-        # multips(build_consensus_cluster_multmode, threads, cluster_input_lines, 
-        #     subproblem_seqs_path, clustering_path, consensus_outputfile, input_prefix, subproblem_faa_dict, index_needed=True)
-        # merged_dt={}
-        # for sub_dict in glob.iglob(''.join([clustering_path,input_prefix,'*_dict.cpk'])):
-        #     merged_dt.update(load_pickle(sub_dict))
-        # write_pickle(''.join([clustering_path,input_prefix,'_dict.cpk']), merged_dt)
 
 def clustering_subproblem(clustering_path, threads, subproblem_merged_faa,
         diamond_evalue, diamond_max_target_seqs, diamond_identity,
@@ -102,7 +97,7 @@ def clustering_subproblem(clustering_path, threads, subproblem_merged_faa,
         mcl_inflation,last_run_flag):
     """ clustering on subproblems """
     if last_run_flag==0:
-        diamond_identity= diamond_query_cover= diamond_subject_cover='70'
+        diamond_identity= diamond_query_cover= diamond_subject_cover='90'
     else:
         diamond_identity= diamond_query_cover= diamond_subject_cover='30'
 
@@ -125,7 +120,7 @@ def integrate_clusters(clustering_path, cluster_fpath):
     """ integrate all clusters """
     ## consensus ID as key, original gene IDs as value
     consensus_to_origin_dict=defaultdict()    
-    for idict in glob.glob(clustering_path+"*_dict.cpk"):
+    for idict in glob.iglob(clustering_path+"*_dicts.cpk"):
         consensus_to_origin_dict.update(load_pickle(idict))
     with open('%s%s'%(clustering_path,'subroblem_finalRound_cluster.output')) \
                                                     as finalRound_cluster,\
@@ -153,7 +148,7 @@ def clustering_divide_conquer(path, folders_dict, threads,
     cluster_dt_cpk_fpath='%s%s'%(clustering_path,'allclusters.cpk')
 
     os.system('mkdir -p %ssubproblem_cluster_seqs'%clustering_path)
-    faa_list= [ifaa for ifaa in glob.glob(protein_path+"*.faa")]
+    faa_list= glob.glob(protein_path+"*.faa")
     #subset_size=50
     subproblems_count, leftover_count= divmod(len(faa_list),subset_size)
     all_faa_list=[]
@@ -182,7 +177,7 @@ def clustering_divide_conquer(path, folders_dict, threads,
                 ## decide whether to distribute the leftover to each subproblem
                 ## if leftover_count/subproblems_count:
         ## final run
-        sub_list= glob.glob('%s%s'%(clustering_path, '*_consensus.faa'))
+        sub_list= glob.iglob('%s%s'%(clustering_path, '*_consensus.faa'))
         subproblem_merged_faa= 'subroblem_finalRound.faa'
         concatenate_faa_file(clustering_path, sub_list, subproblem_merged_faa)
         clustering_subproblem(clustering_path, threads, subproblem_merged_faa,

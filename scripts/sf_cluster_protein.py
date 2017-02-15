@@ -108,7 +108,7 @@ def mcl_run(output_path, threads, mcl_inflation, input_prefix=''):
 def cleanup_clustering(clustering_path):
     cwd = os.getcwd()
     os.chdir(clustering_path)
-    os.system('rm -rf *.faa *.m8 *.abc *.output *dict.cpk ./subproblem_cluster_seqs/')
+    os.system('rm -rf *.faa *.m8 *.abc *.output *dict*.cpk ./subproblem_cluster_seqs/')
     os.chdir(cwd)
 
 def parse_geneCluster(input_fpath, output_fpath, cluster_log=False):

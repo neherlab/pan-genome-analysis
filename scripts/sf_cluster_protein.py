@@ -1,8 +1,6 @@
-
-
 import os, sys, time, glob
 from collections import defaultdict, Counter
-from sf_miscellaneous import times, read_fasta, write_pickle
+from sf_miscellaneous import times, read_fasta, load_pickle, write_pickle
 
 def diamond_run(output_path, dmd_ref_file, threads,
     diamond_evalue, diamond_max_target_seqs,diamond_identity,
@@ -127,15 +125,46 @@ def parse_geneCluster(input_fpath, output_fpath, cluster_log=False):
     write_pickle(output_fpath,geneCluster_dt)
     return geneCluster_dt
 
-def clustering_protein(path, folders_dict, threads, blast_fpath, roary_fpath,
+def roary_cluster_process(locus_tag_to_geneID_dict, input_fpath, output_fpath):
+    """ """
+    with open(input_fpath,'rb') as in_clusters:
+        with open(output_fpath,'wb') as out_clusters:
+            for cluster in in_clusters:
+                cluster_line_lst=[]
+                #out_clusters.write('%s\n'%'\t'.join([ locus_tag_to_geneID_dict[gene.split('.')[0]] for gene in cluster.rstrip().split(': ')[1].split('\t') ]) )
+                for gene in cluster.rstrip().split(': ')[1].split('\t'):
+                    if gene.split('.')[0] not in locus_tag_to_geneID_dict:
+                        ## Roary also clusters non-CDS genes (skip and record them)
+                        #print gene.split('.')[0], 'not in locus_tag_to_geneID_dict'
+                        print gene.split('.')[0], ' non-coding gene from Roary file (skipped) '
+                    else:
+                        cluster_line_lst.append(locus_tag_to_geneID_dict[gene.split('.')[0]])
+                out_clusters.write('%s\n'%'\t'.join(cluster_line_lst))
+
+def process_orthofinder(input_fpath,output_fpath):
+    """
+    Orthogroups.txt: inputfile_orthogroups
+    Orthogroups_UnassignedGenes.csv: inputfile_singleton
+    """
+    #outfilename='orthofinder_cluster.tsv'
+    with open(input_fpath,'rb') as orthogroups,\
+        open(output_fpath,'wb') as outfile:
+        for iline in orthogroups:
+            cluster_line='\t'.join([gene for gene in iline.rstrip().split(': ')[1].split(' ')])
+            outfile.write('%s\n'%cluster_line)
+
+def clustering_protein(path, folders_dict, threads,
+    blast_fpath, roary_fpath, orthofinder_fpath, other_tool_fpath,
     diamond_evalue, diamond_max_target_seqs, diamond_identity,
     diamond_query_cover, diamond_subject_cover, mcl_inflation):
     '''
     Procedure: all-against-all protein comparison + hits filtering + mcl clustering
     By default: DIAMOND -> BS -> MCL
     Alternatives: 
-    1. Blastp (user-provided) -> BS -> MCL
+    1. Blastp output (user-provided) -> BS -> MCL
     2. Roary
+    3. OrthoFinder
+    4. other coming tools.
     params:
         path:                    path to directory including data and output
         threads:                 number of parallel threads used to run diamond
@@ -151,9 +180,14 @@ def clustering_protein(path, folders_dict, threads, blast_fpath, roary_fpath,
     clustering_path= folders_dict['clustering_path']
     cluster_fpath= '%s%s'%(clustering_path,'allclusters.tsv')
     cluster_dt_cpk_fpath='%s%s'%(clustering_path,'allclusters.cpk')
-    
+    if any( i!='none' for i in [blast_fpath, roary_fpath, orthofinder_fpath, other_tool_fpath]):
+        geneID_to_geneSeqID_dict= load_pickle('%sgeneID_to_geneSeqID.cpk'%path)
+        locus_tag_to_geneID_dict= defaultdict(list)
+        for geneID in geneID_to_geneSeqID_dict.keys():
+            locus_tag=geneID.split('|')[1]
+            locus_tag_to_geneID_dict[locus_tag]=geneID
     ## using standard pipeline (roary_fpath=='none')
-    if blast_fpath=='none' and roary_fpath=='none':
+    if all( i=='none' for i in [blast_fpath, roary_fpath, orthofinder_fpath, other_tool_fpath]):
         dmd_ref_file='reference.faa'
         ## prepare dmd_query_file (dmd_query_file is dmd_ref_file)
         os.system(''.join(['cat ',protein_path,'*faa > ',clustering_path,dmd_ref_file]))
@@ -172,11 +206,15 @@ def clustering_protein(path, folders_dict, threads, blast_fpath, roary_fpath,
             filter_hits_single(clustering_path, threads, input_prefix='blastp')
             ## running mcl
             mcl_run(clustering_path, threads, mcl_inflation, input_prefix='blastp')
-    elif roary_file_path!='none': ## using cluster files from roary
-        os.system('ln -sf %s %sclustered_proteins'%(roary_fpath, clustering_path))
-        with open(roary_fpath, 'rb') as cluster_external_file:
-            with open(cluster_fpath, 'wb') as cluster_final_file:
-                for cluster_line in cluster_external_file:
-                     cluster_final_file.write( '%s\n'%'\t'.join([ gene_tag.replace('_','|') if '|' not in gene_tag else gene_tag for gene_tag in cluster_line.rstrip().split(': ')[1].split('\t')]) )
+    elif roary_fpath!='none': ## using cluster files from roary
+        roary_cluster_process(locus_tag_to_geneID_dict, roary_fpath, cluster_fpath)
+        # with open(roary_fpath, 'rb') as cluster_external_file:
+        #     with open(cluster_fpath, 'wb') as cluster_final_file:
+        #         for cluster_line in cluster_external_file:
+        #              cluster_final_file.write( '%s\n'%'\t'.join([ gene_tag.replace('_','|') if '|' not in gene_tag else gene_tag for gene_tag in cluster_line.rstrip().split(': ')[1].split('\t')]) )
+    elif orthofinder_fpath!='none':
+        process_orthofinder(orthofinder_fpath,cluster_fpath)
+    elif other_tool_fpath!='none':
+        os.system('cp %s %s'%(other_tool_fpath,cluster_fpath))
     cleanup_clustering(clustering_path)
     return parse_geneCluster(cluster_fpath, cluster_dt_cpk_fpath)

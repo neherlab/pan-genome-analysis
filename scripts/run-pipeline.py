@@ -2,6 +2,7 @@ import argparse
 import os, sys, time
 sys.path.append('./')
 sys.path.append('./scripts/')
+from pangenome_computation import pangenome
 from sf_miscellaneous import times, load_pickle, write_pickle, organize_folder, load_strains
 from sf_fetch_refseq import fetch_refseq
 from sf_extract_sequences import extract_sequences
@@ -166,18 +167,52 @@ if params.steps[0]=='all':
 print 'Running panX in main folder: %s'%path
 species=params.strain_list.split('-RefSeq')[0]
 #species=params.species_name TODO
-folders_dict=organize_folder(path)
 
-class pangenome(object):
-    """organize and streamline pangenome analysis"""
-    def __init__(self, **kwargs):
-        for k, v in kwargs.iteritems():
-            setattr(self, k, v)
-        self.path= '%s/'%self.path
-
-if 1 in params.steps: #step 01:
-    load_strains(path, params.gbk_present,folders_dict)
-    print '======  step01: refSeq strain list successfully found.'
+myPangenome=pangenome(
+    path=params.folder_name,
+    gbk_present=params.gbk_present,
+    threads=params.threads,
+    raxml_limit=params.raxml_max_time,
+    blast_fpath=params.blast_file_path,
+    roary_fpath=params.roary_file_path,
+    orthofinder_fpath=params.orthofinder_file_path,
+    other_tool_fpath=params.other_tool_fpath,
+    metainfo_fpath=params.meta_info_file_path,
+    diamond_evalue=params.diamond_evalue,
+    diamond_max_target=params.diamond_max_target_seqs,
+    diamond_identity=params.diamond_identity,
+    diamond_q_cover=params.diamond_query_cover,
+    diamond_s_cover=params.diamond_subject_cover,
+    diamond_identity_subprob=params.diamond_identity_precluster,
+    diamond_q_cover_subprob=params.diamond_query_cover_precluster,
+    diamond_s_cover_subprob=params.diamond_subject_cover_precluster,
+    diamond_dc_used=params.diamond_divide_conquer,
+    diamond_dc_subsize=params.subset_size,
+    mcl_inflation=params.mcl_inflation,
+    blastn_max_target=params.blastn_RNA_max_target_seqs,
+    disable_postprocess=params.disable_cluster_postprocessing,
+    disable_RNA_cluster=params.disable_RNA_clustering,
+    split_long_branch_cutoff=params.split_long_branch_cutoff,
+    paralog_frac_cutoff=params.paralog_frac_cutoff,
+    paralog_branch_cutoff=params.paralog_branch_cutoff,
+    windowsize_smoothed=params.window_size_smoothed,
+    strain_proportion=params.strain_proportion,
+    sigma_scale=params.sigma_scale,    
+    core_genome_threshold=params.core_genome_threshold,
+    core_gene_strain_fpath=params.core_gene_strain_fpath,
+    enable_gain_loss=params.enable_gain_loss,
+    simple_tree=params.simple_tree,
+    large_output=params.large_output,
+    raw_locus_tag=params.raw_locus_tag,
+    keep_temporary_file=params.keep_temporary_file
+    )
+folders_dict=myPangenome.organize_folder()
+if 1 in params.steps:#step 01:
+    #load_strains(path, params.gbk_present,folders_dict)
+    folders_dict=myPangenome.organize_folder()
+    myPangenome.specify_filepath()
+    myPangenome.make_strain_list()
+    print '======  step01: strain list successfully loaded'
 ## load strain_list.cpk file and give the total number of strains
 if os.path.isfile(path+'strain_list.cpk'):
     strain_list= load_pickle(path+'strain_list.cpk')

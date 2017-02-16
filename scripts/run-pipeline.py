@@ -157,16 +157,23 @@ parser.add_argument('-kt', '--keep_temporary_file', type = int, default = 1,
 
 params = parser.parse_args()
 path = params.folder_name
-## run all steps
-if params.steps[0]=='all':
-    params.steps=range(1,12)
-
 if path[:-1]!='/':
     path='%s/'%path
+if params.steps[0]=='all':
+    ## run all steps
+    params.steps=range(1,12)
+
 print 'Running panX in main folder: %s'%path
 species=params.strain_list.split('-RefSeq')[0]
 #species=params.species_name TODO
 folders_dict=organize_folder(path)
+
+class pangenome(object):
+    """organize and streamline pangenome analysis"""
+    def __init__(self, **kwargs):
+        for k, v in kwargs.iteritems():
+            setattr(self, k, v)
+        self.path= '%s/'%self.path
 
 if 1 in params.steps: #step 01:
     load_strains(path, params.gbk_present,folders_dict)

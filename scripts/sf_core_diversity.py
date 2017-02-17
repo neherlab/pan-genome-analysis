@@ -72,8 +72,8 @@ def estimate_core_gene_diversity(path, folders_dict, strain_list, parallel, core
         ## check whether #genes == #strains and it's a core/soft-core gene
         if cluster_stats[0]==cluster_stats[2] and cluster_stats[0]>=strain_core_cutoff:
             core_geneCluster_dt[clusterID]=cluster_stats
-
-    os.system(''.join(['rm -r ',tmp_core_seq_path]))
+    if os.path.exists(tmp_core_seq_path):
+        os.system(''.join(['rm -r ',tmp_core_seq_path]))
     os.system('mkdir %s'%tmp_core_seq_path)
 
     ## create dict storing all genes' translation

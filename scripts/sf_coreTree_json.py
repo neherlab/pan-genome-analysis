@@ -132,7 +132,7 @@ def json_parser( path, species, meta_info_file_path, large_output ):
     ## move all *.cpk file to ./data/YourSpecies/ folder
     ##      coreGenomeTree.json and strainMetainfo.json file to ./data/YourSpecies/vis/ folder
     ##      GC*json file to ./data/YourSpecies/vis/geneCluster/ folder
-    os.system('ln -sf %s/*.cpk %s/../'%(output_path,output_path))
+    #os.system('ln -sf %s/*.cpk %s/.. '%(output_path,output_path))
     os.system('mv coreGenomeTree.json strainMetainfo.json geneGainLossEvent.json ../vis/')
     os.system('mv *C*.aln *C*_tree.json ../vis/geneCluster/')
     os.system('mv *C*.nwk ../vis/geneCluster/')

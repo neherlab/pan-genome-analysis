@@ -98,7 +98,7 @@ class pangenome:
         write_pickle('%s%s'%(path,'strain_list.cpk'), strain_list)
         self.strain_list=strain_list
         self.nstrains=len(strain_list)
-        self.strainCollector= defaultdict()
+        #self.strainCollector= defaultdict()
 
     def extract_gbk_sequences(self):
         """ extract nucleotide and protein sequences from GenBank file """ 

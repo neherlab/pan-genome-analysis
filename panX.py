@@ -194,7 +194,7 @@ myPangenome=pangenome(
     )
 
 if 1 in params.steps:#step 01:
-    myPangenome.organize_folder()
+    myPangenome.organize_folders()
     myPangenome.specify_filepath()
     myPangenome.make_strain_list()
     print '======  step01: strain list successfully loaded'

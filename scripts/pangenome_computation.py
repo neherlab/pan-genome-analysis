@@ -21,7 +21,14 @@ from sf_geneCluster_json import geneCluster_to_json
 from sf_coreTree_json import json_parser
 
 class pangenome:
-    """streamlined pangenome analysis """
+    """
+    pangenome analysis based on diamond and MCL
+    This creates orthologous clusters from genes in a collection of reference
+    genomes by first finding homologous genes using diamond, clustering those
+    using MCL, and post-processing these clusters by building phylogenies using
+    fasttree. Finally, alignments, meta data, and annotated phylogenies are
+    exported fro visualization in a web browser.
+    """
     def __init__(self, **kwargs):
         for k, v in kwargs.iteritems():
             setattr(self, k, v)
@@ -36,7 +43,8 @@ class pangenome:
             cluster_seq_path='geneCluster/',
             tmp_core_seq_path='tmp_core/')
 
-    def organize_folder(self):
+
+    def organize_folders(self):
         """ create folders for pangenome analysis """
         folders_dict=self.folders_dict
         command_mkdir='mkdir -p '
@@ -48,8 +56,13 @@ class pangenome:
         self.protein_path=folders_dict['protein_path']
         self.clustering_path=folders_dict['clustering_path']
 
+
     def specify_filepath(self):
-        """ organize file paths """
+        """
+        create names for files written or accesses by different parts of the pipeline.
+        Having a central store for all files names helps keeping the code in order.
+        Note that self.organize_folders needs to be called first.
+        """
         fpaths_dict=defaultdict( str,
             strain_cpk='%s%s'%(self.path,'strain_list.cpk'),
             geneID_to_geneSeqID_path='%s%s'%(self.path,'geneID_to_geneSeqID.cpk'),
@@ -66,7 +79,7 @@ class pangenome:
 
     def make_strain_list(self):
         """ make strainID list and harmonize input filename """
-        ## load input strains in strain_list 
+        ## load input strains in strain_list
         path=self.path
         folders_dict=self.folders_dict
         if self.gbk_present==1:
@@ -101,7 +114,7 @@ class pangenome:
         #self.strainCollector= defaultdict()
 
     def extract_gbk_sequences(self):
-        """ extract nucleotide and protein sequences from GenBank file """ 
+        """ extract nucleotide and protein sequences from GenBank file """
         extract_sequences(self.path, self.strain_list, self.folders_dict, self.gbk_present, self.disable_RNA_clustering)
         #gene_aa_dict, gene_na_dict= extract_sequences()
 
@@ -178,7 +191,7 @@ class pangenome:
     def infer_gene_gain_loss_pattern(self):
         """
         infer gene gain/loss pattern for each gene cluster
-        (displayed on core tree) 
+        (displayed on core tree)
         """
         process_gain_loss(self.path, self.large_output)
 
@@ -197,5 +210,5 @@ def harmonize_filename(path, glob_list):
         if '-' in gbk_fname:
             ## force to replace '-' with '_' in GenBank filename
             gbk_fname= gbk_fname.replace('-','_')
-            print ''.join(['filename harmonized: ',fpath,' -> ',gbk_fname]) 
+            print ''.join(['filename harmonized: ',fpath,' -> ',gbk_fname])
             os.system(''.join(['mv ',fpath,' ',path,gbk_fname]))

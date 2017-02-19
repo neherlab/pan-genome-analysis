@@ -4,7 +4,7 @@ import numpy as np
 from collections import defaultdict
 from Bio import SeqIO
 from Bio.Seq import Seq
-from Bio.SeqRecord import SeqRecord  
+from Bio.SeqRecord import SeqRecord
 from itertools import izip_longest
 import math
 
@@ -20,13 +20,13 @@ def read_fasta(filename):
         fa_dt[record.id]=str(record.seq)
     return fa_dt
 
-def gbk_seq(each_gb_path, gbk_name):  
+def gbk_seq(each_gb_path, gbk_name):
     # get sequence from gbk file
     gb = each_gb_path + gbk_name
     genome = SeqIO.read(gb,'genbank')
     allseq = genome.seq
     return allseq
-    
+
 def write_in_fa(write_file,Id, seq):
     #write_file=open(filename, 'wb');
     sequences = SeqRecord(Seq(seq), Id)
@@ -54,6 +54,8 @@ def write_json(data, file_name, indent=1):
         json.dump(data, handle, indent=indent)
         handle.close()
 
+
+# IS THIS STILL NEEDED?
 def organize_folder(main_path):
     """ create folders for pangenome analysis """
     ## Genbank folder
@@ -77,7 +79,7 @@ def harmonize_filename(path,glob_list):
         if '-' in gbk_fname:
             ## force to replace '-' with '_' in GenBank filename
             gbk_fname= gbk_fname.replace('-','_')
-            print ''.join(['filename harmonized: ',fpath,' -> ',gbk_fname]) 
+            print ''.join(['filename harmonized: ',fpath,' -> ',gbk_fname])
             os.system(''.join(['mv ',fpath,' ',path,gbk_fname]))
 
 def load_strains(path,gbk_present,folders_dict):

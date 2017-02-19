@@ -43,6 +43,10 @@ class pangenome:
             cluster_seq_path='geneCluster/',
             tmp_core_seq_path='tmp_core/')
 
+        # set up folder structure and files names
+        self.organize_folders()
+        self.specify_filepath()
+
 
     def organize_folders(self):
         """ create folders for pangenome analysis """
@@ -51,7 +55,8 @@ class pangenome:
         for k,v in folders_dict.iteritems():
             folders_dict[k]='%s%s'%(self.path,v)
         for key, folder_path in folders_dict.iteritems():
-            os.system(''.join([command_mkdir,folder_path]))
+            if not os.path.isdir(folder_path):
+                os.system(''.join([command_mkdir,folder_path]))
         self.nucleotide_path=folders_dict['nucleotide_path']
         self.protein_path=folders_dict['protein_path']
         self.clustering_path=folders_dict['clustering_path']
@@ -77,20 +82,22 @@ class pangenome:
             cluster_cpk_final_fpath='%s%s'%(self.clustering_path,'allclusters_postprocessed.cpk'))
         self.fpaths_dict=fpaths_dict
 
+
     def make_strain_list(self):
-        """ make strainID list and harmonize input filename """
-        ## load input strains in strain_list
+        """ make strainID list and harmonize input filenames"""
         path=self.path
         folders_dict=self.folders_dict
+        ## load input strains from all gbk or fasta files in self.path
         if self.gbk_present==1:
             glob_item='.gbk'
             gbk_path=folders_dict['gbk_path']
             glob_list=glob.glob('%s*%s'%(path,glob_item))
             if len(glob_list)!=0:
                 harmonize_filename(path,glob_list)
-                strain_list= [i.split('/')[-1].split(glob_item)[0] for i in glob.iglob('%s*%s'%(path,glob_item))]
+                strain_list= [i.split('/')[-1].split(glob_item)[0]
+                              for i in glob.iglob('%s*%s'%(path,glob_item))]
                 ## move gbk files in folder input_GenBank
-                command_organize_gbk_input=''.join(['mv ',path,'*gbk ',gbk_path])
+                command_organize_gbk_input=' '.join(['mv', path+'*gbk',gbk_path])
                 os.system(command_organize_gbk_input)
             else:
                 gbk_glob=glob.iglob('%s*%s'%(gbk_path,glob_item))
@@ -100,7 +107,8 @@ class pangenome:
             glob_list=glob.glob('%s*%s'%(path,glob_item))
             if len(glob_list)!=0:
                 harmonize_filename(path,glob_list)
-                strain_list=[i.split('/')[-1].split(glob_item)[0] for i in glob.iglob('%s*%s'%(path,glob_item))]
+                strain_list=[i.split('/')[-1].split(glob_item)[0]
+                             for i in glob.iglob('%s*%s'%(path,glob_item))]
             else:
                 protein_glob=glob.iglob('%s*%s'%(folders_dict['protein_path'],glob_item))
                 strain_list= [i.split('/')[-1].split(glob_item)[0] for i in protein_glob]
@@ -108,10 +116,11 @@ class pangenome:
             command_organize_nuc_input='mv %s*.fna %s'%(path,folders_dict['nucleotide_path'])
             os.system(command_organize_nuc_input)
             os.system(command_organize_aa_input)
-        write_pickle('%s%s'%(path,'strain_list.cpk'), strain_list)
+        # write the list of strains to a pickle file and store the list in self
+        write_pickle(self.fpaths_dict['strain_cpk'], strain_list)
         self.strain_list=strain_list
         self.nstrains=len(strain_list)
-        #self.strainCollector= defaultdict()
+
 
     def extract_gbk_sequences(self):
         """ extract nucleotide and protein sequences from GenBank file """

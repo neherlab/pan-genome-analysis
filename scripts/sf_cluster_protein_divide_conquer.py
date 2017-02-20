@@ -122,7 +122,7 @@ def integrate_clusters(clustering_path, cluster_fpath):
     consensus_to_origin_dict=defaultdict()    
     for idict in glob.iglob(clustering_path+"*_dicts.cpk"):
         consensus_to_origin_dict.update(load_pickle(idict))
-    with open('%s%s'%(clustering_path,'subroblem_finalRound_cluster.output')) \
+    with open('%s%s'%(clustering_path,'subproblem_finalRound_cluster.output')) \
                                                     as finalRound_cluster,\
         open(cluster_fpath,'wb') as integrated_cluster:
             for iline in finalRound_cluster:
@@ -178,7 +178,7 @@ def clustering_divide_conquer(path, folders_dict, threads,
                 ## if leftover_count/subproblems_count:
         ## final run
         sub_list= glob.iglob('%s%s'%(clustering_path, '*_consensus.faa'))
-        subproblem_merged_faa= 'subroblem_finalRound.faa'
+        subproblem_merged_faa= 'subproblem_finalRound.faa'
         concatenate_faa_file(clustering_path, sub_list, subproblem_merged_faa)
         clustering_subproblem(clustering_path, threads, subproblem_merged_faa,
                             diamond_evalue,diamond_max_target_seqs, diamond_identity,

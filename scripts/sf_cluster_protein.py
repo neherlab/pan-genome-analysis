@@ -13,7 +13,7 @@ def diamond_run(output_path, dmd_ref_file, threads,
         output_m8_filename='query_matches.m8'
     else:
         output_m8_filename= '%s%s'%(input_prefix,'.m8')
-    
+
     makedb_command= ''.join([diam,' makedb -p ',threads,
                         ' --in ', output_path, dmd_ref_file,
                         ' -d ',output_path,'nr_',input_prefix,
@@ -161,7 +161,7 @@ def clustering_protein(path, folders_dict, threads,
     '''
     Procedure: all-against-all protein comparison + hits filtering + mcl clustering
     By default: DIAMOND -> BS -> MCL
-    Alternatives: 
+    Alternatives:
     1. Blastp output (user-provided) -> BS -> MCL
     2. Roary
     3. OrthoFinder
@@ -169,12 +169,12 @@ def clustering_protein(path, folders_dict, threads,
     params:
         path:                    path to directory including data and output
         threads:                 number of parallel threads used to run diamond
-        blast_fpath: gene clusters by all-vs-all blast 
+        blast_fpath: gene clusters by all-vs-all blast
                                  comparison and other clusterings methods
         roary_fpath: gene clusters by roary
-        diamond_max_target_seqs: Diamond setting: the maximum number of target sequences 
-                                  per query to keep alignments for. Defalut: 
-                                  #strain * #max_duplication= 40*15= 600 
+        diamond_max_target_seqs: Diamond setting: the maximum number of target sequences
+                                  per query to keep alignments for. Defalut:
+                                  #strain * #max_duplication= 40*15= 600
     '''
     threads=str(threads)
     protein_path= folders_dict['protein_path']

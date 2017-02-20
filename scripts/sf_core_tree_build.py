@@ -20,10 +20,10 @@ def midpointRooting(infileName, outfileName):
     tree.ladderize()
     with open(outfileName, 'wb') as outfile:
         outfile.write(tree.write(format=1))
-    
+
 def aln_to_Newick(path, raxml_timelimit, threads):
     """ function: build core gene SNP tree using SNP alignment
-        input: SNP_whole_matrix.aln 
+        input: SNP_whole_matrix.aln
         output: tree_result.newick
     """
     output_path = '_'.join(['temp_coretree', time.strftime('%Y%m%d-%H%M%S',time.gmtime()), str(random.randint(0,1000000))])
@@ -33,12 +33,12 @@ def aln_to_Newick(path, raxml_timelimit, threads):
 
     ## run fasttree
     start = time.time();
-    
-    os.system('fasttree -gtr -nt -gamma -nosupport -mlacc 2 -slownni SNP_whole_matrix.aln > initial_tree.newick0') ; 
+
+    os.system('fasttree -gtr -nt -gamma -nosupport -mlacc 2 -slownni SNP_whole_matrix.aln > initial_tree.newick0') ;
     print ' fasttree time-cost:', times(start)
 
     resolve_polytomies('initial_tree.newick0','initial_tree.newick')
-    
+
     ## run raxml
     start = time.time();
     out_fname = "tree_infer.newick"

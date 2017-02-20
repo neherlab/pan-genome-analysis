@@ -59,8 +59,8 @@ def cut_tree_gather_clades(tree, cut_branch_threshold):
     elif num_rest_genes>1:
         ## keep the data structure consistent for the loop in output_cutted_clusters()
         rest_genes= [rest_genes]
-        
-    ## ignore empty sets    
+
+    ## ignore empty sets
     gene_list = [x for x in gene_list if len(x)]
 
     return gene_list, rest_genes
@@ -91,7 +91,7 @@ def output_cutted_clusters(file_path, uncluster_filename, gene_list, cut_branch_
     params:
         gene_list: lists containing the genes in the new split clusters
         geneCluster_dt: cluster dictionary to be updated
-        cut_leftover: flag to indicate whether there are the leftover nodes 
+        cut_leftover: flag to indicate whether there are the leftover nodes
             after cutting long branches. Default: empty.
     """
     clusterID = uncluster_filename.replace('.fna','')
@@ -117,7 +117,7 @@ def output_cutted_clusters(file_path, uncluster_filename, gene_list, cut_branch_
         gene_cluster_nu_filename="%s%s"%(newClusterId,'.fna')
         gene_cluster_nu_filepath= file_path+gene_cluster_nu_filename
         gene_cluster_nu_write=open(gene_cluster_nu_filepath , 'wb')
-        
+
         gene_cluster_aa_filename="%s%s"%(newClusterId,'.faa')
         gene_cluster_aa_filepath= file_path+gene_cluster_aa_filename
         gene_cluster_aa_write=open( file_path+gene_cluster_aa_filename, 'wb')
@@ -186,7 +186,7 @@ def cutTree_outputCluster( file_list, file_path, cut_branch_threshold, parallel,
     """
     new_fa_files=set()
     for input_filepath in file_list:
-        
+
         if treefile_used==True:
             ## read tree
             input_cluster_filename=input_filepath.split('/')[-1].replace('.nwk','.fna')
@@ -204,8 +204,8 @@ def cutTree_outputCluster( file_list, file_path, cut_branch_threshold, parallel,
 
         ## add to-be-deleted cluster records
         if len(gene_list)!=0 and '_res_' not in input_cluster_filename:
-            ## 1st check: original cluster has been split 
-            ## 2nd check: it's not a "further-split" cluster 
+            ## 1st check: original cluster has been split
+            ## 2nd check: it's not a "further-split" cluster
             ##            from an already split cluster
             with open(file_path+'delete_misclusters.txt', 'a') as delete_cluster_file:
                 print('delete clusters that have been split: ',input_cluster_filename)
@@ -213,7 +213,7 @@ def cutTree_outputCluster( file_list, file_path, cut_branch_threshold, parallel,
 
         ## output cutted clusters
         if len(gene_list)==0:
-            ## nothing can be further cutted, 
+            ## nothing can be further cutted,
             ## cutting process for current tree will stop.
             if '_res_' not in input_cluster_filename:
                 ## a tree does not need to be split, skip the following
@@ -268,7 +268,7 @@ def postprocess_split_long_branch(parallel, path, simple_tree, cut_branch_thresh
         os.system(''.join(['rm ',file_path,'delete_misclusters.txt']))
 
     # =============================================
-    # parallelization: 
+    # parallelization:
     # "post-clustering workflow for splitting trees on over-clustered records"
     treefile_used=True
     multips(cutTree_outputCluster, parallel, tree_fname_list, file_path, cut_branch_threshold, parallel, treefile_used)

@@ -50,7 +50,7 @@ def extract_metadata(path, strain_list, folders_dict, gbk_present):
                                         datacolct='%s-%s-%s'%(dates[0][:4], dates[0][4:6], dates[0][6:])
                                     elif len(datacolct)==6: #'2010-05'
                                         datacolct='%s-%s-01'%(dates[0][:4], dates[0][4:6])
-                                    else: 
+                                    else:
                                         datacolct=dates[0]+'-01-01'
 
                             # just get the year

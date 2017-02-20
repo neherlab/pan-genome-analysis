@@ -40,7 +40,7 @@ def consolidate_geneName(path,all_gene_names, geneID_to_description_dict):
     if majority=='':
         if len(geneNames)!=1:
             majority=geneNames_sorted[1][0]
-        else: 
+        else:
             majority='None'
 
     # "#" to delimit key/count ; "@" to seperate various geneNames
@@ -114,7 +114,7 @@ def geneCluster_to_json(path, disable_RNA_clustering, large_output, raw_locus_ta
             duplicated_state='no';dup_detail=''
 
         ## locus_tag
-        
+
         if raw_locus_tag==0:
             #locus_tag_strain=' '.join([ igl for igl in gene_list ])
             locus_tag_strain=' '.join([ igl.replace('|','_') for igl in gene_list ])

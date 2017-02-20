@@ -78,13 +78,13 @@ def estimate_core_gene_diversity(path, folders_dict, strain_list, parallel, core
 
     ## create dict storing all genes' translation
     if 0:
-        gene_aa_dict= defaultdict(dict) 
+        gene_aa_dict= defaultdict(dict)
         for accession_id in strain_list:
             gene_aa_dict[accession_id]= read_fasta(''.join([protein_path,accession_id,'.faa']))
         write_pickle(protein_dict_path, gene_aa_dict)
 
         ## create dict for all gene's nucleotide sequence
-        gene_na_dict= defaultdict(dict) 
+        gene_na_dict= defaultdict(dict)
         for accession_id in strain_list:
             gene_na_dict[accession_id]=read_fasta(''.join([nucleotide_path,accession_id,'.fna']))
         write_pickle(nucleotide_dict_path, gene_na_dict)
@@ -92,7 +92,7 @@ def estimate_core_gene_diversity(path, folders_dict, strain_list, parallel, core
     gene_aa_dict= load_pickle(protein_dict_path)
     gene_na_dict= load_pickle(nucleotide_dict_path)
 
-    ## write nucleotide and amino-acid sequences for each gene cluster 
+    ## write nucleotide and amino-acid sequences for each gene cluster
     export_cluster_seq_tmp(tmp_core_seq_path, core_geneCluster_dt, geneID_to_geneSeqID_dict,
         gene_na_dict, gene_aa_dict)
 
@@ -100,7 +100,7 @@ def estimate_core_gene_diversity(path, folders_dict, strain_list, parallel, core
     multips(calculate_diversity, parallel, tmp_fa_files, tmp_core_seq_path, parallel)
 
     calculated_core_diversity=tmp_average_core_diversity(tmp_core_seq_path)
-    #refined_core_diversity= (0.1+factor*calculated_core_diversity)/(1+factor*calculated_core_diversity) #later: factor as param  
+    #refined_core_diversity= (0.1+factor*calculated_core_diversity)/(1+factor*calculated_core_diversity) #later: factor as param
     refined_core_diversity= (0.1+3*calculated_core_diversity)/(1+3*calculated_core_diversity)
     print('average core_diversity: ',calculated_core_diversity,\
             'refined core_diversity for splitting over_clustered genes: ',refined_core_diversity)

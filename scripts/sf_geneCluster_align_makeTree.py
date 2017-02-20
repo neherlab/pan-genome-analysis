@@ -382,7 +382,7 @@ class mpm_tree(object):
 
     def paralogy_statistics(self):
         best_split = find_best_split(self.tree)
-        return len(best_split.para_nodes), best_split.branch_length 
+        return len(best_split.para_nodes), best_split.branch_length
 
     def diversity_statistics_nuc(self):
         ''' calculate alignment entropy of nucleotide alignments '''
@@ -435,7 +435,7 @@ class mpm_tree(object):
         ## msa compatible
         for i_aln in self.aln:
             i_aln.id=i_aln.id.replace('|','-',1)
-        
+
         AlignIO.write(self.aln, path+self.clusterID+'_na.aln', 'fasta')
 
         if RNA_specific==False:
@@ -493,7 +493,7 @@ def align_and_makeTree( fna_file_list, alignFile_path, parallel, simple_tree):
                         write_in_fa(write_file, SeqID.replace('|','-'), Sequence)
 
                 geneDiversity_file.write('%s\t%s\n'%(clusterID,'0.0'))
-            else: # align and build tree                    
+            else: # align and build tree
                 print gene_cluster_nu_filename
                 myTree = mpm_tree(gene_cluster_nu_filename, threads=parallel)
                 myTree.codon_align()
@@ -544,7 +544,7 @@ def create_geneCluster_fa(path,folders_dict):
     ## create cluster-genes fasta files
     cluster_seqs_path=path+'geneCluster/'
     os.system('mkdir '+cluster_seqs_path)
-    
+
     ## write nuc/aa sequences for each cluster
     for clusterID, gene in geneCluster_dt.iteritems():
         ## geneCluster file name

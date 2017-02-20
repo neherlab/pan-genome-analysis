@@ -13,7 +13,7 @@ def fetch_refseq(path, strain_lst, species_to_search='Mycoplasma genitalium'):
             headers = csv_reader.next()
             for icsv_line in csv_reader:
                 # species name and complete
-                if species_to_search in icsv_line[7] and 'Complete' in icsv_line[11]: 
+                if species_to_search in icsv_line[7] and 'Complete' in icsv_line[11]:
                     #os.system('wget -c %s/%s'%(icsv_line[19],'*_genomic.gbff.gz -P ./Refseq/Mt'))
                     output.write('%s/%s\n'%(icsv_line[19],'*_genomic.gbff.gz'))
 

@@ -36,7 +36,7 @@ def preclustering_protein(path, folders_dict, threads,
     ''' preclustering for finding highly similar genes (duplicates) '''
     threads=str(threads)
     protein_path= folders_dict['protein_path']
-    
+
     for faa_file in glob.iglob('%s%s'%(protein_path,'*.faa')):
         dmd_ref_file=faa_file.split('/')[-1]
         ## run diamond

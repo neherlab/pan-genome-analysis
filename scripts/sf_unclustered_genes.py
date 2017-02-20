@@ -74,7 +74,7 @@ def find_and_merge_unclustered_genes( path, nstrains, window_size=5, strain_prop
 
 def delete_old_merged_clusters(file_path, geneCluster_dt, merged_clusters_dict):
     """
-    Using given merged_clusters_dict to delete 
+    Using given merged_clusters_dict to delete
     mis-clustered records in geneCluster_dt
     Param:
     geneCluster_dt:
@@ -85,7 +85,7 @@ def delete_old_merged_clusters(file_path, geneCluster_dt, merged_clusters_dict):
     return:
         updated geneCluster_dt
     """
-    
+
     with open(file_path+'delete_misclusters.txt', 'rb') as delete_cluster_file:
         uncluster_filename_list= [ uncluster_filename.rstrip() for  uncluster_filename in delete_cluster_file]
         try:

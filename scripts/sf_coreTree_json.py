@@ -3,9 +3,9 @@ from collections import defaultdict, Counter
 from itertools import izip
 from sf_miscellaneous import load_pickle
 def id_separation(species, path, infile):
-    """ extract meta-info from meta-info file 
+    """ extract meta-info from meta-info file
         input:  metainfo.tsv
-        return: id_dict as dictionary storing meta-info 
+        return: id_dict as dictionary storing meta-info
     """
     id_dict=defaultdict()
     with open(infile) as csvfile:
@@ -22,7 +22,7 @@ def id_separation(species, path, infile):
             id_dict[ icsv_line[0] ] = icsv_line
             for h, v in izip(headers, icsv_line):
                 if len(v)==0:
-                    v= "unknown" 
+                    v= "unknown"
                 meta_dict[h].append(v)
         for k,v in meta_dict.iteritems():
             meta_item_list=sorted(dict(Counter(v)).keys())
@@ -45,9 +45,9 @@ def create_json_simple(node):
     node.name = node.name.replace("'", '')
     json0 = OrderedDict()
     json0["name"]=node.name.split('-')[0]
-    if node.children: ##branchset 
+    if node.children: ##branchset
         json0["children"] = []
-        for ch in node.children: ## recursively 
+        for ch in node.children: ## recursively
             json0["children"].append(create_json_simple(ch))
     json0["branch_length"]=float(node.dist)
     return json0
@@ -55,20 +55,20 @@ def create_json_simple(node):
 def create_json_addLabel( species, dt_genePresence, node, pres_flag, table_flag, path, metaFile):
     ## tree json with meta-info labels
     from collections import OrderedDict
-    id_dict,headers=id_separation(species, path, metaFile); 
+    id_dict,headers=id_separation(species, path, metaFile);
     node.name = node.name.replace("'", '')
     json0 = OrderedDict()
     if table_flag==0:
         json0["name"]=node.name
     elif table_flag==1:
-        if node.name.startswith('NODE_'): 
+        if node.name.startswith('NODE_'):
             json0["name"]=""
         else:
             json0["name"]=node.name
 
-    if node.children: ##branchset 
+    if node.children: ##branchset
         json0["children"] = []
-        for ch in node.children: ## recursively 
+        for ch in node.children: ## recursively
             json0["children"].append(create_json_addLabel(species, dt_genePresence, ch, pres_flag, table_flag, path, metaFile))
     if table_flag==0:
         json0["branch_length"]=float(node.dist)
@@ -88,7 +88,7 @@ def create_json_addLabel( species, dt_genePresence, node, pres_flag, table_flag,
 def json_tnt_parser():
     read_json=open('coreGenomeTree-noBranch.json', 'rb')
     jsonString=''
-    for ir in read_json: 
+    for ir in read_json:
         jsonString=ir.split('\n')[0]
     jsonString1=jsonString.replace('{"name": "", "children": [', '').replace(']}', '');
     jsonString_out1='[%s]'%jsonString1.replace('"name"','"accession"')

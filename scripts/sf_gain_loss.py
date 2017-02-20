@@ -68,7 +68,7 @@ def export_gain_loss(tree, path, large_output):
     events_dict =  { index:event for index, event in enumerate(events_array) }
     events_dict_path= sep.join([ output_path, 'dt_geneEvents.cpk'])
     write_pickle(events_dict_path, events_dict)
-    
+
     if large_output==0:
         ## export gene loss dict to json for visualization
         gene_loss_fname = sep.join([ output_path, 'geneGainLossEvent.json'])
@@ -99,7 +99,7 @@ def process_gain_loss(path, large_output):
         res = minimize(myminimizer,[0.5,1.],method='L-BFGS-B',bounds = [(0.0001,0.999),(0.01,1000.)])
         success = res.success
     except:
-        success = False        
+        success = False
     if success == True:
         print('successfully estimated the gtr parameters. Reconstructing ancestral states...')
         change_gtr_parameters_forgainloss(tree,res.x[0],res.x[1])

@@ -24,7 +24,7 @@ def calculate_aln_consensus(aln_file):
         ## only one seq
         ## if letters not in alphabet:
         consensus_arr_seq=''.join([ ic if ic in alphabet else 'X' for ic in aln_dt.values()[0] ])
-    else: 
+    else:
         ## consensus of multiple seqs
         try:
             aln_array = np.array([ i for i in aln_dt.values()])
@@ -83,7 +83,7 @@ def build_consensus_cluster(clustering_path, threads, input_prefix):
         subproblem_geneCluster_dt= defaultdict(list)
         cluster_input_lines= [iline for iline in cluster_input]
         # alternative (workable!): write to each cpk and then merge
-        multips(build_consensus_cluster_multmode, threads, cluster_input_lines, 
+        multips(build_consensus_cluster_multmode, threads, cluster_input_lines,
             subproblem_seqs_path, clustering_path, consensus_outputfile, input_prefix, subproblem_faa_dict, index_needed=True)
         merged_dt={}
         for sub_dict in glob.iglob(''.join([clustering_path,input_prefix,'*_dict.cpk'])):
@@ -119,14 +119,14 @@ def concatenate_faa_file(clustering_path, sub_list, subproblem_merged_faa):
 def integrate_clusters(clustering_path, cluster_fpath):
     """ integrate all clusters """
     ## consensus ID as key, original gene IDs as value
-    consensus_to_origin_dict=defaultdict()    
+    consensus_to_origin_dict=defaultdict()
     for idict in glob.iglob(clustering_path+"*_dicts.cpk"):
         consensus_to_origin_dict.update(load_pickle(idict))
     with open('%s%s'%(clustering_path,'subproblem_finalRound_cluster.output')) \
                                                     as finalRound_cluster,\
         open(cluster_fpath,'wb') as integrated_cluster:
             for iline in finalRound_cluster:
-                integrated_cluster.write('%s\n'%'\t'.join([geneID 
+                integrated_cluster.write('%s\n'%'\t'.join([geneID
                                     for consensusID in iline.rstrip().split('\t') \
                                     for geneID in consensus_to_origin_dict[consensusID]
                                         ]))

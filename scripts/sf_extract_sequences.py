@@ -10,7 +10,7 @@ def gbk_translation(strainID, gbk_fname, protein_fname, nucleotide_fname, RNA_fn
     '''
     extract sequences and meta informations of all genes in one reference genbank file
     params:
-        - gbk_fname:        Genbank filename 
+        - gbk_fname:        Genbank filename
         - protein_fname:  file into which all amino acid sequences are written
                             in fasta format. needed as input for diamond
         - nucleotide_fname: file into which all nucleotide sequences are written
@@ -67,7 +67,7 @@ def gbk_translation(strainID, gbk_fname, protein_fname, nucleotide_fname, RNA_fn
                     write_in_fa(nu_sequence_file, geneID, na_seq)
                     gene_aa_dict[strainID][geneID]=trans_seq
                     gene_na_dict[strainID][geneID]=na_seq
-                    # give tag 'gname:' to genes which have gene name and separate it from annotation 
+                    # give tag 'gname:' to genes which have gene name and separate it from annotation
                     geneID_to_description_dict[geneID]={'geneName': geneName,
                                                         'contig': contig_index,
                                                         'annotation': annotation}
@@ -126,7 +126,7 @@ def extract_sequences(path, strain_list, folders_dict, gbk_present, disable_RNA_
     geneID_to_description_dict= defaultdict()
     RNAID_to_SeqID_dict= defaultdict()
     RNAID_to_description_dict= defaultdict()
-    gene_aa_dict= defaultdict(dict) 
+    gene_aa_dict= defaultdict(dict)
     gene_na_dict= defaultdict(dict)
     RNA_dict= defaultdict(dict)
 

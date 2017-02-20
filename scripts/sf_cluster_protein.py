@@ -139,7 +139,8 @@ def roary_cluster_process(locus_tag_to_geneID_dict, input_fpath, output_fpath):
                         print gene.split('.')[0], ' non-coding gene from Roary file (skipped) '
                     else:
                         cluster_line_lst.append(locus_tag_to_geneID_dict[gene.split('.')[0]])
-                out_clusters.write('%s\n'%'\t'.join(cluster_line_lst))
+                if len(cluster_line_lst)!=0: # skip clusters on single non-CDS gene
+                    out_clusters.write('%s\n'%'\t'.join(cluster_line_lst))
 
 def process_orthofinder(input_fpath,output_fpath):
     """

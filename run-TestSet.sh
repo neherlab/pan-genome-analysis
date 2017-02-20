@@ -21,6 +21,6 @@
 #  Send email when the job begins, ends, aborts, or is suspended
 #$ -m beas
 
-python ./scripts/run-pipeline.py -fn ./data/TestSet -sl TestSet-RefSeq.txt  -st 1 3 4 5 6 7 8 9 10 11 -t 32  > TestSet.log
+./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt  -st 1 3 4 5 6 7 8 9 10 11 -t 32  > TestSet.log
 ## example for using soft core_gene and core_gene strain constraint list
-#python ./scripts/run-pipeline.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -csf ./data/TestSet/core_strain_list.txt -cg 0.7 -st 1 3 4 5 6 7 8 9 10 11 -t 32  > TestSet-cg0.7.log
+#./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -csf ./data/TestSet/core_strain_list.txt -cg 0.7 -st 1 3 4 5 6 7 8 9 10 11 -t 32  > TestSet-cg0.7.log

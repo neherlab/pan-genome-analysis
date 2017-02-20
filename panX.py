@@ -1,14 +1,21 @@
+#!/usr/bin/env python
 import argparse
 import os, sys, time
-sys.path.append('./')
-sys.path.append('./scripts/')
+sys.path.insert(0,'./')
+sys.path.insert(0,'./scripts/')
 from pangenome_computation import pangenome
-from sf_miscellaneous import times, load_pickle, write_pickle, organize_folder, load_strains
+from sf_miscellaneous import times
+'''
+panX clusters genes in a set of microbial genomes into orthologous clusters
+and exports alignments, phylogenies, and meta data for web visualization.
 
-#python run-pipeline.py -fn data/Pmnb -sl Pat3-RefSeq.txt -st 5 -bp Pm_clustering/Pm_allclusters.tab > Pmnb-5.log 2>&1
-
+USAGE EXAMPLE: ./panX -fn data/Pmnb -sl Pat3-RefSeq.txt -st 5 -bp Pm_clustering/Pm_allclusters.tab > Pmnb-5.log 2>&1
+for help, type:
+    ./panX -h
+'''
 parser = argparse.ArgumentParser(description=\
-    'Software for computing core and pan-genome from a set of genome sequences.',
+    'panX: Software for computing core and pan-genome from a set of genome sequences.'
+    'The results will be exported as json files for visualization in the browser.',
     usage='%(prog)s')
 parser.add_argument('-fn', '--folder_name', type = str, required=True,
     help='the absolute path for project folder ', metavar='')
@@ -25,7 +32,7 @@ parser.add_argument('-t', '--threads', type = int, default = 1,
     help='number of threads', metavar='')
 
 #/*==================================
-#            clustering            
+#            clustering
 #==================================*/
 parser.add_argument('-bp', '--blast_file_path', type = str, default = 'none',
     help='the absolute path for blast result (e.g.: /path/blast.out)' , metavar='')
@@ -80,7 +87,7 @@ parser.add_argument('-cst', '--enable_cluster_correl_stats', type = int, default
     help='default: calculate statistics on each cluster for correlation test', metavar='')
 
 #/*=======================================
-#            post-processing            
+#            post-processing
 #=======================================*/
 parser.add_argument('-np', '--disable_cluster_postprocessing', type = int, default = 0,
     help='default: run post-processing procedure for splitting overclustered genes and paralogs,\
@@ -176,7 +183,7 @@ myPangenome=pangenome(
     paralog_branch_cutoff=params.paralog_branch_cutoff,
     window_size_smoothed=params.window_size_smoothed,
     strain_proportion=params.strain_proportion,
-    sigma_scale=params.sigma_scale,    
+    sigma_scale=params.sigma_scale,
     core_genome_threshold=params.core_genome_threshold,
     core_gene_strain_fpath=params.core_gene_strain_fpath,
     enable_gain_loss=params.enable_gain_loss,
@@ -187,8 +194,6 @@ myPangenome=pangenome(
     )
 
 if 1 in params.steps:#step 01:
-    myPangenome.organize_folder()
-    myPangenome.specify_filepath()
     myPangenome.make_strain_list()
     print '======  step01: strain list successfully loaded'
 
@@ -249,7 +254,7 @@ if 6 in params.steps:# step06:
             if params.paralog_branch_cutoff==0.0:
             ## using default setting (core gene diverstiy)
                 params.paralog_branch_cutoff=params.split_long_branch_cutoff
-            myPangenome.postprocessing_split_paralogs()   
+            myPangenome.postprocessing_split_paralogs()
         if 1:
             myPangenome.postprocess_merge_underclustered_genes()
 

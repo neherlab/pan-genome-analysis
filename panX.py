@@ -6,11 +6,12 @@ sys.path.insert(0,'./scripts/')
 from pangenome_computation import pangenome
 from sf_miscellaneous import times
 '''
-panX clusters genes in a set of microbial genomes into orthologous clusters
-and exports alignments, phylogenies, and meta data for web visualization.
+panX clusters genes from a set of microbial genomes into orthologous clusters
+and exports alignments, phylogenies, and meta data for interactive web visualization
+and powerful pan-genomic data exploration.
 
-USAGE EXAMPLE: ./panX -fn data/Pmnb -sl Pat3-RefSeq.txt -st 5 -bp Pm_clustering/Pm_allclusters.tab > Pmnb-5.log 2>&1
-for help, type:
+USAGE EXAMPLE: ./panX -fn data/TestSet -sl TestSet-RefSeq.txt 1>TestSet.log 2>TestSet.err
+For help, type:
     ./panX -h
 '''
 parser = argparse.ArgumentParser(description=\

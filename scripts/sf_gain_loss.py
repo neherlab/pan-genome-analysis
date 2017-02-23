@@ -49,6 +49,9 @@ def export_gain_loss(tree, path, large_output):
     # write final tree with internal node names as assigned by treetime
     sep='/'
     output_path= sep.join([path.rstrip(sep), 'geneCluster/'])
+    events_dict_path= sep.join([ output_path, 'dt_geneEvents.cpk'])
+    gene_pattern_dict_path= sep.join([ output_path, 'dt_genePattern.cpk'])
+
     tree_fname = sep.join([output_path, 'tree_result.newick'])
     Phylo.write(tree.tree, tree_fname, 'newick')
 
@@ -66,13 +69,14 @@ def export_gain_loss(tree, path, large_output):
     # 1 and 2 are codes for gain/loss events
     events_array = ((gain_loss_array == 1) | (gain_loss_array == 2)).sum(axis=0)
     events_dict =  { index:event for index, event in enumerate(events_array) }
-    events_dict_path= sep.join([ output_path, 'dt_geneEvents.cpk'])
+
     write_pickle(events_dict_path, events_dict)
 
     if large_output==0:
         ## export gene loss dict to json for visualization
-        gene_loss_fname = sep.join([ output_path, 'geneGainLossEvent.json'])
-        write_json(gene_gain_loss_dict, gene_loss_fname, indent=1)
+        #gene_loss_fname = sep.join([ output_path, 'geneGainLossEvent.json'])
+        #write_json(gene_gain_loss_dict, gene_loss_fname, indent=1)
+        write_pickle(gene_pattern_dict_path, gene_gain_loss_dict)
     else:
         ## strainID as key, presence pattern as value (converted into np.array)
         sorted_genelist = load_sorted_clusters(path)

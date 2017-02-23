@@ -52,7 +52,7 @@ def create_json_simple(node):
     json0["branch_length"]=float(node.dist)
     return json0
 
-def create_json_addLabel( species, dt_genePresence, node, pres_flag, table_flag, path, metaFile):
+def create_json_addLabel( species, dt_genePattern, node, no_pres_flag, table_flag, path, metaFile):
     ## tree json with meta-info labels
     from collections import OrderedDict
     id_dict,headers=id_separation(species, path, metaFile);
@@ -69,20 +69,22 @@ def create_json_addLabel( species, dt_genePresence, node, pres_flag, table_flag,
     if node.children: ##branchset
         json0["children"] = []
         for ch in node.children: ## recursively
-            json0["children"].append(create_json_addLabel(species, dt_genePresence, ch, pres_flag, table_flag, path, metaFile))
+            json0["children"].append(create_json_addLabel(species, dt_genePattern, ch, no_pres_flag, table_flag, path, metaFile))
     if table_flag==0:
         json0["branch_length"]=float(node.dist)
 
-    if json0["name"].startswith('NODE_') or json0["name"]=="": pass
+    if json0["name"].startswith('NODE_') or json0["name"]=="":
+        if no_pres_flag==0:
+            json0["genePattern"]=dt_genePattern[json0["name"]]
     else:
         # accName, strainName, antiBio, dateInfo, country, host
         accName_each=json0["name"].split('-')[0]
         for index_head, head in enumerate(headers):
             if index_head!=0: # skip the accName head
                 json0[head]=id_dict[accName_each][index_head]
-        # load genePresence info
-        if pres_flag==0:
-            json0["genePresence"]=dt_genePresence[accName_each]
+        # load genePattern info
+        if no_pres_flag==0:
+            json0["genePattern"]=dt_genePattern[accName_each]
     return json0
 
 def json_tnt_parser():
@@ -112,14 +114,16 @@ def json_parser( path, species, meta_info_file_path, large_output ):
         ## create a link of user-provided meta_info_file
         os.system('cp %s %s'%(meta_info_file_path, metaFile))
 
-    output_path='%s%s'%(path,'geneCluster/')
+    output_path= ''.join([path,'geneCluster/'])
+    gene_pattern_dict_path= ''.join([output_path,'dt_genePattern.cpk'])
     #visualzition_path='%s%s'%(path,'vis/')
     tree = Tree('%s%s'%(output_path,'tree_result.newick'),format=1)
-    dt_genePresence=load_pickle('%s%s'%(path,'geneCluster/dt_genePresence.cpk'))
+    #dt_genePattern=load_pickle('%s%s'%(path,'geneCluster/dt_genePattern.cpk'))
+    dt_genePattern=load_pickle(gene_pattern_dict_path)
     ## create tree json files
     no_presence = 0 if large_output==0 else 1
-    jsonString=json.dumps(create_json_addLabel(species, dt_genePresence, tree, no_presence, 0, path, metaFile))
-    jsonString1=json.dumps(create_json_addLabel(species, dt_genePresence, tree, 1, 1, path, metaFile))
+    jsonString=json.dumps(create_json_addLabel(species, dt_genePattern, tree, no_presence, 0, path, metaFile))
+    jsonString1=json.dumps(create_json_addLabel(species, dt_genePattern, tree, 1, 1, path, metaFile))
     os.chdir(output_path)
     with open('coreGenomeTree.json', 'wb') as write_json:
         write_json.write(jsonString)
@@ -132,8 +136,8 @@ def json_parser( path, species, meta_info_file_path, large_output ):
     ## move all *.cpk file to ./data/YourSpecies/ folder
     ##      coreGenomeTree.json and strainMetainfo.json file to ./data/YourSpecies/vis/ folder
     ##      GC*json file to ./data/YourSpecies/vis/geneCluster/ folder
-    #os.system('ln -sf %s/*.cpk %s/.. '%(output_path,output_path))
-    os.system('mv coreGenomeTree.json strainMetainfo.json geneGainLossEvent.json ../vis/')
+    #os.system('ln -sf %s/*.cpk %s/../'%(output_path,output_path))
+    os.system('mv coreGenomeTree.json strainMetainfo.json ../vis/')
     os.system('mv *C*.aln *C*_tree.json ../vis/geneCluster/')
     os.system('mv *C*.nwk ../vis/geneCluster/')
     os.system('cp tree_result.newick ../vis/strain_tree.nwk')

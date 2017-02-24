@@ -291,3 +291,6 @@ def postprocess_split_long_branch(parallel, path, simple_tree, cut_branch_thresh
         update_geneCluster_cpk(path, geneCluster_dt)
         ## write gene_diversity_Dt cpk file
         update_diversity_cpk(path)
+    else: # no clusters postprocessed
+        os.system(' '.join(['cp',cluster_path+'allclusters.cpk',cluster_path+'allclusters_postprocessed.cpk']))
+

@@ -8,11 +8,11 @@ from sf_geneCluster_align_makeTree import mpm_tree, \
 
 def update_geneCluster_dt(path,geneCluster_dt):
     """
-    add new cluster statistics in folder update_uncluster_splits
+    add new cluster statistics in folder update_long_branch_splits
     geneCluster_dt: geneCluster dict to be updated
     """
-    update_uncluster_splits=''.join([path,'geneCluster/update_uncluster_splits/'])
-    for ifile in glob.iglob(update_uncluster_splits+'*.cpk'):
+    update_long_branch_splits=''.join([path,'geneCluster/update_long_branch_splits/'])
+    for ifile in glob.iglob(update_long_branch_splits+'*.cpk'):
         for k,v in load_pickle(ifile).iteritems():
             print('adding newly split clusters %s'%k)
             geneCluster_dt[k] = v
@@ -146,7 +146,7 @@ def output_cutted_clusters(file_path, uncluster_filename, gene_list, cut_branch_
             ## add record in refined_clusters.txt, which is used for align new clusters
             new_fa_files.add(gene_cluster_nu_filepath)
 
-            ## write cluster statistics in folder update_uncluster_splits
+            ## write cluster statistics in folder update_long_branch_splits
             addin_geneCluster_dt=defaultdict(list)
             addin_geneCluster_dt[ newClusterId ] = [0,[],0]
             ## num_stains
@@ -156,7 +156,7 @@ def output_cutted_clusters(file_path, uncluster_filename, gene_list, cut_branch_
             ## gene members
             addin_geneCluster_dt[ newClusterId ][1]=[ ig.split('-')[0] for ig in split_gene_list ]
             ## cPickle new cluster statistics
-            write_pickle(''.join([file_path,'update_uncluster_splits/', newClusterId,'.cpk']),addin_geneCluster_dt)
+            write_pickle(''.join([file_path,'update_long_branch_splits/', newClusterId,'.cpk']),addin_geneCluster_dt)
 
     ## write records in gene_diversity file
     with open(file_path+'refined_clusters.txt', 'a') as refined_cluster_file:
@@ -203,7 +203,7 @@ def cutTree_outputCluster( file_list, file_path, cut_branch_threshold, parallel,
         gene_list, rest_genes = cut_tree_gather_clades(tree,cut_branch_threshold)
 
         ## add to-be-deleted cluster records
-        if len(gene_list)!=0 and '_res_' not in input_cluster_filename:
+        if len(gene_list)!=0 and '_r' not in input_cluster_filename:
             ## 1st check: original cluster has been split
             ## 2nd check: it's not a "further-split" cluster
             ##            from an already split cluster
@@ -215,7 +215,7 @@ def cutTree_outputCluster( file_list, file_path, cut_branch_threshold, parallel,
         if len(gene_list)==0:
             ## nothing can be further cutted,
             ## cutting process for current tree will stop.
-            if '_res_' not in input_cluster_filename:
+            if '_r' not in input_cluster_filename:
                 ## a tree does not need to be split, skip the following
                 continue
             else:
@@ -243,7 +243,7 @@ def postprocess_split_long_branch(parallel, path, simple_tree, cut_branch_thresh
     """
 
     file_path = ''.join([path,'geneCluster/'])
-    new_split_folder= ''.join([file_path,'update_uncluster_splits/'])
+    new_split_folder= ''.join([file_path,'update_long_branch_splits/'])
     if os.path.exists(new_split_folder):
         ## remove the folder from previous run
         os.system(''.join(['rm -r ',new_split_folder]))

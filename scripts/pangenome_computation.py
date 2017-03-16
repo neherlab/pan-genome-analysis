@@ -157,7 +157,9 @@ class pangenome:
 
     def estimate_raw_core_diversity(self):
         """ computing raw core gene diversity which's refined as post-processing cutoff """
-        estimate_core_gene_diversity(self.path, self.folders_dict, self.strain_list, self.threads, self.core_genome_threshold)
+        if self.split_long_branch_cutoff==0.0:
+            self.split_long_branch_cutoff= estimate_core_gene_diversity(self.path,
+                self.folders_dict, self.strain_list, self.threads, self.core_genome_threshold, self.factor_core_diversity)
 
     def make_geneCluster_alignment_and_tree(self):
         """ align genes in gene cluster and building gene tree """
@@ -169,6 +171,8 @@ class pangenome:
 
     def postprocessing_split_paralogs(self):
         """ postprocessing: split paralogs"""
+        if self.paralog_branch_cutoff==0.0:
+            self.paralog_branch_cutoff=self.split_long_branch_cutoff
         postprocess_paralogs_iterative(self.threads, self.path, self.nstrains,
             self.simple_tree, self.paralog_branch_cutoff, self.paralog_frac_cutoff,
             self.explore_paralog_plot)

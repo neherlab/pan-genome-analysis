@@ -245,21 +245,20 @@ if 6 in params.steps:# step06:
     print '======  starting step06: align genes in geneCluster by mafft and build gene trees'
     start = time.time()
     if params.disable_cluster_postprocessing==0:## core gene diveristy
-        if params.split_long_branch_cutoff==0.0:
-            params.split_long_branch_cutoff=\
-            myPangenome.estimate_raw_core_diversity()
+        #if params.split_long_branch_cutoff==0.0:
+        #    params.split_long_branch_cutoff=\
+        myPangenome.estimate_raw_core_diversity()
 
-    if 1:## align and make tree
-        myPangenome.make_geneCluster_alignment_and_tree()
+    ## align and make tree
+    myPangenome.make_geneCluster_alignment_and_tree()
 
     ## with/without post-processing
     if params.disable_cluster_postprocessing==0:
         if 1:
             myPangenome.postprocessing_split_long_branch()
         if 1:
-            if params.paralog_branch_cutoff==0.0:
-            ## using default setting (core gene diverstiy)
-                params.paralog_branch_cutoff=params.split_long_branch_cutoff
+            #if params.paralog_branch_cutoff==0.0:# default:core gene diverstiy
+                #params.paralog_branch_cutoff=params.split_long_branch_cutoff
             myPangenome.postprocessing_split_paralogs()
         if 1:
             myPangenome.postprocess_merge_underclustered_genes()

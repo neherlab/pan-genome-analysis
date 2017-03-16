@@ -117,7 +117,8 @@ def cut_all_trees_from_merged_clusters(parallel, path, cut_branch_threshold, sim
     ## parallelization of "align and make tree on new cluster"
     multips(align_and_makeTree, parallel, new_fa_files_list, geneCluster_fasta_path, parallel, simple_tree)
 
-def postprocess_unclustered_genes(parallel, path, nstrains, simple_tree, window_size_smoothed=5, strain_proportion=0.3 , sigma_scale=3):
+def postprocess_unclustered_genes(parallel, path, nstrains, simple_tree, split_long_branch_cutoff,
+    window_size_smoothed=5, strain_proportion=0.3 , sigma_scale=3):
     """
         1) detect suspicious peaks in the distribution of average length of genes in gene cluster (aa count)
            np.bincount([1,2,3,34,3]) -> how often each entry is found

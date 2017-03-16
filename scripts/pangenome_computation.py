@@ -176,7 +176,7 @@ class pangenome:
     def postprocess_merge_underclustered_genes(self):
         """ postprocessing: integrate under_clustered genes """
         postprocess_unclustered_genes(self.threads, self.path, self.nstrains, self.simple_tree,
-            self.window_size_smoothed, self.strain_proportion, self.sigma_scale)
+            self.split_long_branch_cutoff, self.window_size_smoothed, self.strain_proportion, self.sigma_scale)
 
     def make_RNACluster_alignment_and_tree(self):
         """ aligning RNA clusters and building RNA tree """

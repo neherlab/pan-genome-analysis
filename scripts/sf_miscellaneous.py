@@ -54,24 +54,6 @@ def write_json(data, file_name, indent=1):
         json.dump(data, handle, indent=indent)
         handle.close()
 
-
-# IS THIS STILL NEEDED?
-def organize_folder(main_path):
-    """ create folders for pangenome analysis """
-    ## Genbank folder
-    command_mkdir='mkdir -p '
-    folders_dict=defaultdict( str,
-        gbk_path='input_GenBank/', RNA_path='RNA_fna/',
-        protein_path='protein_faa/', nucleotide_path='nucleotide_fna/',
-        clustering_path='protein_faa/diamond_matches/',
-        cluster_seq_path='geneCluster/', tmp_core_seq_path='tmp_core/'
-        )
-    for k,v in folders_dict.iteritems():
-        folders_dict[k]='%s%s'%(main_path,v)
-    for key, folder_path in folders_dict.iteritems():
-        os.system(''.join([command_mkdir,folder_path]))
-    return folders_dict
-
 def harmonize_filename(path,glob_list):
     """ """
     for fpath in glob_list:
@@ -141,7 +123,8 @@ def multips(function_in_use, threads, full_list, *args, **kwargs):
             args_content+= managed_dicts
         #print 'args_content: ', args_content, 'kwargs_dict: ',kwargs_dict
         p= multiprocessing.Process(target=function_in_use, args=args_content, kwargs=kwargs_dict)
-        p.Daemon = True; p.start(); procs.append(p)
+        #p.Daemon = True;
+        p.start(); procs.append(p)
 
     for p in procs:
         p.join()

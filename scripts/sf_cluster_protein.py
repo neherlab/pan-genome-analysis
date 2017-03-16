@@ -37,6 +37,7 @@ def diamond_run(output_path, dmd_ref_file, threads,
                         option_no_self_hits,
                         ' -k ', diamond_max_target_seqs,
                         ' -d ',output_path,'nr_', input_prefix,
+                        ' -f 6 qseqid sseqid bitscore',
                         ' -q ',output_path,dmd_ref_file,
                         ' -o ',output_path,output_m8_filename,
                         ' -t ./  > ',output_path,'diamond_blastp_',input_prefix,'.log  2>&1'
@@ -59,7 +60,7 @@ def gather_seq_length(faa_path):
     return seq_length_dt
 
 def filter_hits_single(output_path, threads,
-    input_prefix='', gather_seq_length_flag=0):
+    input_prefix='', gather_seq_length_flag=0, no_filtering=True):
     """  """
     start = time.time()
     if input_prefix=='':
@@ -71,24 +72,29 @@ def filter_hits_single(output_path, threads,
         m8_filename='%s%s'%(input_prefix,'.m8')
         filtered_hits_filename='%s%s'%(input_prefix,'_filtered_hits.abc')
 
-    with open(output_path+m8_filename,'rb') as m8_file,\
-        open(output_path+filtered_hits_filename,'wb') as abc_file:
-        print('filter hits:')
-        #using_BS=1; using_BAL=0
-        for iline in m8_file:
-            cols_list= iline.rstrip().split('\t')
-            #query, ref, bit_score from column (0,1,-1)
-            abc_file.write('%s\n'%'\t'.join([cols_list[ind] for ind in (0,1,-1)]))
-            ## BAL scoring option not used
-            # if using_BS:## using bscore
-            #     abc_file.write('%s\n'%'\t'.join([cols_list[ind] for ind in (0,1,-1)]))
-            # elif using_BAL:## using bscore/aln_len
-            #     abc_file.write('%s\n'%'\t'.join([cols_list[0], cols_list[1], \
-            #         str(round( float(cols_list[-1])/float(cols_list[3]),5 ))]))
-    if input_prefix=='':
-        print 'filter hits runtime:', times(start),'\n'
+    if no_filtering==True:
+        m8_fpath=os.path.abspath(output_path+m8_filename)
+        filtered_hits_fpath=os.path.abspath(output_path+filtered_hits_filename)
+        os.system(' '.join(['ln -s',m8_fpath,filtered_hits_fpath]))
     else:
-        print 'filter hits runtime for ',input_prefix,':', times(start),'\n'
+        with open(output_path+m8_filename,'rb') as m8_file,\
+            open(output_path+filtered_hits_filename,'wb') as abc_file:
+            print('filter hits:')
+            #using_BS=1; using_BAL=0
+            for iline in m8_file:
+                cols_list= iline.rstrip().split('\t')
+                #query, ref, bit_score from column (0,1,-1)
+                abc_file.write('%s\n'%'\t'.join([cols_list[ind] for ind in (0,1,-1)]))
+                ## BAL scoring option not used
+                # if using_BS:## using bscore
+                #     abc_file.write('%s\n'%'\t'.join([cols_list[ind] for ind in (0,1,-1)]))
+                # elif using_BAL:## using bscore/aln_len
+                #     abc_file.write('%s\n'%'\t'.join([cols_list[0], cols_list[1], \
+                #         str(round( float(cols_list[-1])/float(cols_list[3]),5 ))]))
+        if input_prefix=='':
+            print 'filter hits runtime:', times(start),'\n'
+        else:
+            print 'filter hits runtime for ',input_prefix,':', times(start),'\n'
 
 def mcl_run(output_path, threads, mcl_inflation, input_prefix=''):
     """ """
@@ -101,9 +107,10 @@ def mcl_run(output_path, threads, mcl_inflation, input_prefix=''):
     command_mcl=''.join(['mcl ',output_path,filtered_hits_filename,' --abc ',\
                         '-o ',output_path,'allclusters.tsv -I ',str(mcl_inflation),\
                         ' -te ',str(threads),' > ',output_path,'mcl.log 2>&1'])
+    os.system(command_mcl)
     print 'command line mcl:', command_mcl
     print 'mcl runtime:', times(start),'\n'
-    os.system(command_mcl)
+
 
 def cleanup_clustering(clustering_path):
     cwd = os.getcwd()
@@ -127,6 +134,7 @@ def parse_geneCluster(input_fpath, output_fpath, cluster_log=False):
 
 def roary_cluster_process(locus_tag_to_geneID_dict, input_fpath, output_fpath):
     """ """
+    print input_fpath,output_fpath
     with open(input_fpath,'rb') as in_clusters:
         with open(output_fpath,'wb') as out_clusters:
             for cluster in in_clusters:

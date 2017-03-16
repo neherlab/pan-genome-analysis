@@ -43,7 +43,7 @@ def tmp_average_core_diversity(file_path):
         diversity_lst=[float(iline.split('\t')[1]) for iline in tmp_core_diversity_file]
     return round(np.mean(diversity_lst),4)
 
-def estimate_core_gene_diversity(path, folders_dict, strain_list, parallel, core_cutoff):
+def estimate_core_gene_diversity(path, folders_dict, strain_list, parallel, core_cutoff, factor_core_diversity):
     """
     estimate core gene diversity before gene cluster alignment
     and cluster post-processing
@@ -73,7 +73,7 @@ def estimate_core_gene_diversity(path, folders_dict, strain_list, parallel, core
         if cluster_stats[0]==cluster_stats[2] and cluster_stats[0]>=strain_core_cutoff:
             core_geneCluster_dt[clusterID]=cluster_stats
     if os.path.exists(tmp_core_seq_path):
-        os.system(''.join(['rm -r ',tmp_core_seq_path]))
+        os.system(''.join(['rm -rf ',tmp_core_seq_path]))
     os.system('mkdir %s'%tmp_core_seq_path)
 
     ## create dict storing all genes' translation
@@ -101,7 +101,7 @@ def estimate_core_gene_diversity(path, folders_dict, strain_list, parallel, core
 
     calculated_core_diversity=tmp_average_core_diversity(tmp_core_seq_path)
     #refined_core_diversity= (0.1+factor*calculated_core_diversity)/(1+factor*calculated_core_diversity) #later: factor as param
-    refined_core_diversity= (0.1+3*calculated_core_diversity)/(1+3*calculated_core_diversity)
+    refined_core_diversity= (0.1+factor_core_diversity*calculated_core_diversity)/(1+factor_core_diversity*calculated_core_diversity)
     print('average core_diversity: ',calculated_core_diversity,\
             'refined core_diversity for splitting over_clustered genes: ',refined_core_diversity)
     ## move folder tmp_core to the central data folder

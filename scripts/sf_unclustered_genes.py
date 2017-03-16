@@ -160,7 +160,7 @@ def postprocess_unclustered_genes(parallel, path, nstrains, simple_tree, split_l
         if os.path.exists(''.join([geneCluster_fasta_path,'delete_misclusters.txt'])):
             os.system(''.join(['rm ',geneCluster_fasta_path,'delete_misclusters.txt']))
 
-        cut_branch_threshold=0.3
+        cut_branch_threshold=split_long_branch_cutoff#0.3
         ## cut tree and make new clusters
         cut_all_trees_from_merged_clusters(parallel, path, cut_branch_threshold, simple_tree)
 

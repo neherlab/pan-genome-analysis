@@ -185,6 +185,7 @@ def cutTree_outputCluster( file_list, file_path, cut_branch_threshold, parallel,
     process flow for parallelization to cut the tree and output the clades in new clusters
     """
     new_fa_files=set()
+
     for input_filepath in file_list:
 
         if treefile_used==True:
@@ -193,7 +194,7 @@ def cutTree_outputCluster( file_list, file_path, cut_branch_threshold, parallel,
             try:
                 tree= Phylo.read(input_filepath, 'newick')
             except:
-                print 'xyz ',input_filepath
+                print 'reading tree failed: ',input_filepath
         else:
             ## make tree
             input_cluster_filename=input_filepath.split('/')[-1]
@@ -217,7 +218,7 @@ def cutTree_outputCluster( file_list, file_path, cut_branch_threshold, parallel,
             ## cutting process for current tree will stop.
             if '_r' not in input_cluster_filename:
                 ## a tree does not need to be split, skip the following
-                continue
+                pass#continue
             else:
                 ## this's a list of rest genes which cannot be split.
                 ## fill gene_list with genes in rest_genes

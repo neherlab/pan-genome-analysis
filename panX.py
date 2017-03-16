@@ -98,7 +98,10 @@ parser.add_argument('-nrna', '--disable_RNA_clustering', type = int, default = 1
 ## split tree via breaking up long branches (resolving over-clustering)
 #parser.add_argument('-sf', '--split_long_branch_factor', type = float, default = 3.0,
 #    help='use (0.1+3.0*core_diversity)/(1+3.0*core_diversity) to decide split_long_branch_cutoff',metavar='')
-parser.add_argument('-cb', '--split_long_branch_cutoff', type = float, default = 0.0,
+parser.add_argument('-fcd', '--factor_core_diversity', type = float, default = 3.0,
+    help='default: factore used to refine raw core genome diversity, \
+    apply (0.1+3.0*core_diversity)/(1+3.0*core_diversity) to decide split_long_branch_cutoff', metavar='')
+parser.add_argument('-slb', '--split_long_branch_cutoff', type = float, default = 0.0,
     help='split long branch cutoff provided by user (by default: 0.0 as not given):',metavar='')
 ## split paralogy
 parser.add_argument('-pep', '--explore_paralog_plot', type = int, default = 0,
@@ -173,11 +176,12 @@ myPangenome=pangenome(
     diamond_query_cover_subproblem=params.diamond_query_cover_subproblem,
     diamond_subject_cover_subproblem=params.diamond_subject_cover_subproblem,
     diamond_dc_used=params.diamond_divide_conquer,
-    diamond_dc_subsize=params.subset_size,
+    diamond_dc_subset_size=params.subset_size,
     mcl_inflation=params.mcl_inflation,
     blastn_max_target=params.blastn_RNA_max_target_seqs,
     disable_cluster_postprocessing=params.disable_cluster_postprocessing,
     disable_RNA_clustering=params.disable_RNA_clustering,
+    factor_core_diversity=params.factor_core_diversity,
     split_long_branch_cutoff=params.split_long_branch_cutoff,
     explore_paralog_plot=params.explore_paralog_plot,
     paralog_frac_cutoff=params.paralog_frac_cutoff,
@@ -240,15 +244,16 @@ if 5 in params.steps:# step05:
 if 6 in params.steps:# step06:
     print '======  starting step06: align genes in geneCluster by mafft and build gene trees'
     start = time.time()
-    if 1:## core gene diveristy
+    if params.disable_cluster_postprocessing==0:## core gene diveristy
         if params.split_long_branch_cutoff==0.0:
             params.split_long_branch_cutoff=\
             myPangenome.estimate_raw_core_diversity()
+
     if 1:## align and make tree
         myPangenome.make_geneCluster_alignment_and_tree()
 
     ## with/without post-processing
-    if 1 and params.disable_cluster_postprocessing==0:
+    if params.disable_cluster_postprocessing==0:
         if 1:
             myPangenome.postprocessing_split_long_branch()
         if 1:

@@ -9,8 +9,8 @@ from itertools import izip_longest
 import math
 
 def times(start):
-    t = int(time.time()-start)
-    time_record=' %d minutes %d seconds (%d s)'%(t/60, t%60, t)
+    t = time.time()-start
+    time_record=' %.2f minutes (%.2f seconds)'%(round(t/60,2),round(t,2))
     return time_record
 
 def read_fasta(filename):

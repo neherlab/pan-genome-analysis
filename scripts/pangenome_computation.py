@@ -1,5 +1,6 @@
 import os, glob
 from collections import defaultdict
+from cluster_collective_processing import clusterCollector
 from sf_miscellaneous import times, write_in_fa, load_pickle, write_pickle
 from sf_extract_sequences import extract_sequences
 from sf_extract_metadata import extract_metadata
@@ -7,11 +8,6 @@ from sf_cluster_protein import clustering_protein
 from sf_preclustering import preclustering_protein
 from sf_cluster_protein_divide_conquer import clustering_divide_conquer
 from sf_cluster_RNA import RNA_cluster
-from sf_geneCluster_align_makeTree import cluster_align_makeTree
-from sf_core_diversity import estimate_core_gene_diversity
-from sf_split_long_branch import postprocess_split_long_branch
-from sf_split_paralogy import postprocess_paralogs_iterative
-from sf_unclustered_genes import postprocess_unclustered_genes
 from sf_RNAcluster_align_makeTree import RNAclusters_align_makeTree
 from sf_core_SNP_matrix import create_core_SNP_matrix
 from sf_core_tree_build import aln_to_Newick
@@ -155,32 +151,31 @@ class pangenome:
         """clustering RNA sequences """
         RNA_cluster(self.path, self.threads, self.blastn_RNA_max_target_seqs, self.mcl_inflation)
 
-    def estimate_raw_core_diversity(self):
-        """ computing raw core gene diversity which's refined as post-processing cutoff """
-        if self.split_long_branch_cutoff==0.0:
-            self.split_long_branch_cutoff= estimate_core_gene_diversity(self.path,
-                self.folders_dict, self.strain_list, self.threads, self.core_genome_threshold, self.factor_core_diversity)
+    def process_cluster(self):
+        """"""
+        myClusterCollector= clusterCollector(
+            path=self.path, folders_dict=self.folders_dict,
+            strain_list=self.strain_list,
+            nstrains=self.nstrains, threads=self.threads,
+            core_genome_threshold=self.core_genome_threshold,
+            factor_core_diversity=self.factor_core_diversity,
+            disable_cluster_postprocessing=self.disable_cluster_postprocessing,
+            simple_tree=self.simple_tree,
+            split_long_branch_cutoff=self.split_long_branch_cutoff,
+            paralog_branch_cutoff=self.paralog_branch_cutoff,
+            paralog_frac_cutoff=self.paralog_frac_cutoff,
+            explore_paralog_plot=self.explore_paralog_plot,
+            window_size_smoothed=self.window_size_smoothed,
+            strain_proportion=self.strain_proportion,
+            sigma_scale=self.sigma_scale
+            )
 
-    def make_geneCluster_alignment_and_tree(self):
-        """ align genes in gene cluster and building gene tree """
-        cluster_align_makeTree(self.path, self.folders_dict, self.threads, self.disable_cluster_postprocessing, self.simple_tree)
-
-    def postprocessing_split_long_branch(self):
-        """ postprocessing: split long branch via refined core gene diversity """
-        postprocess_split_long_branch(self.threads, self.path, self.simple_tree, self.split_long_branch_cutoff)
-
-    def postprocessing_split_paralogs(self):
-        """ postprocessing: split paralogs"""
-        if self.paralog_branch_cutoff==0.0:
-            self.paralog_branch_cutoff=self.split_long_branch_cutoff
-        postprocess_paralogs_iterative(self.threads, self.path, self.nstrains,
-            self.simple_tree, self.paralog_branch_cutoff, self.paralog_frac_cutoff,
-            self.explore_paralog_plot)
-
-    def postprocess_merge_underclustered_genes(self):
-        """ postprocessing: integrate under_clustered genes """
-        postprocess_unclustered_genes(self.threads, self.path, self.nstrains, self.simple_tree,
-            self.split_long_branch_cutoff, self.window_size_smoothed, self.strain_proportion, self.sigma_scale)
+        myClusterCollector.estimate_raw_core_diversity()
+        #self.clusterCollector= myClusterCollector.cluster_align_makeTree()
+        myClusterCollector.make_geneCluster_alignment_and_tree()
+        myClusterCollector.postprocessing_split_long_branch()
+        myClusterCollector.postprocessing_split_paralogs()
+        myClusterCollector.postprocess_merge_underclustered_genes()
 
     def make_RNACluster_alignment_and_tree(self):
         """ aligning RNA clusters and building RNA tree """

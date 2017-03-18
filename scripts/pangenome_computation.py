@@ -151,7 +151,7 @@ class pangenome:
         """clustering RNA sequences """
         RNA_cluster(self.path, self.threads, self.blastn_RNA_max_target_seqs, self.mcl_inflation)
 
-    def process_cluster(self):
+    def process_clusters(self):
         """"""
         myClusterCollector= clusterCollector(
             path=self.path, folders_dict=self.folders_dict,

@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import argparse
 import os, sys, time
-panx_script_dir= os.path.dirname(os.path.realpath(__file__))
-sys.path.insert(0,panx_script_dir+'/scripts/')
+panX_script_dir= os.path.dirname(os.path.realpath(__file__))
+sys.path.insert(0,panX_script_dir+'/scripts/')
 from pangenome_computation import pangenome
 from sf_miscellaneous import times
 '''

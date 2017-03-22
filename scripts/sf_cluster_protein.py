@@ -6,7 +6,7 @@ def diamond_run(output_path, dmd_ref_file, threads,
     diamond_evalue, diamond_max_target_seqs,diamond_identity,
     diamond_query_cover, diamond_subject_cover, diamond_no_self_hits=0):
     """ run diamond using sensitive alignment mode """
-    diam='./tools/diamond'
+    diam= ''.join([os.path.dirname(os.path.realpath(__file__)), '/../tools/diamond'])
     print 'diamond inputfile:', dmd_ref_file
     input_prefix= dmd_ref_file.split('.faa')[0]
     if input_prefix=='reference':

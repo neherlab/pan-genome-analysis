@@ -142,6 +142,8 @@ parser.add_argument('-lo', '--large_output', type = int, default = 0,
 parser.add_argument('-rl', '--raw_locus_tag', type = int, default = 0,
     help='default: use strain_ID + locus_tag as new locus_tag; if set to 0, use raw locus_tag from GenBank file', metavar='')
 
+#parser.add_argument('-dbg', '--debug_module', type = int, default = 1,
+#    help='default: debug module not used', metavar='')
 parser.add_argument('-kt', '--keep_temporary_file', type = int, default = 1,
     help='default: keep temporary files', metavar='')
 
@@ -233,8 +235,8 @@ if 5 in params.steps:# step05:
     else:
         if 0:## pre-clustering
             myPangenome.finding_gene_copies()
-        if 1:## clustering
-            myPangenome.clustering_protein_sequences()
+        ## clustering
+        myPangenome.clustering_protein_sequences()
     ## clustering RNA when option activated
     if params.disable_RNA_clustering==0:
         myPangenome.RNA_clustering()
@@ -244,24 +246,7 @@ if 5 in params.steps:# step05:
 if 6 in params.steps:# step06:
     print '======  starting step06: align genes in geneCluster by mafft and build gene trees'
     start = time.time()
-    if params.disable_cluster_postprocessing==0:## core gene diveristy
-        #if params.split_long_branch_cutoff==0.0:
-        #    params.split_long_branch_cutoff=\
-        myPangenome.estimate_raw_core_diversity()
-
-    ## align and make tree
-    myPangenome.make_geneCluster_alignment_and_tree()
-
-    ## with/without post-processing
-    if params.disable_cluster_postprocessing==0:
-        if 1:
-            myPangenome.postprocessing_split_long_branch()
-        if 1:
-            #if params.paralog_branch_cutoff==0.0:# default:core gene diverstiy
-                #params.paralog_branch_cutoff=params.split_long_branch_cutoff
-            myPangenome.postprocessing_split_paralogs()
-        if 1:
-            myPangenome.postprocess_merge_underclustered_genes()
+    myPangenome.process_clusters()
 
     if params.disable_RNA_clustering==0:
         myPangenome.make_RNACluster_alignment_and_tree()

@@ -42,7 +42,9 @@ class pangenome:
         # set up folder structure and files names
         self.organize_folders()
         self.specify_filepath()
-
+        if os.path.exists(self.fpaths_dict['strain_cpk']):
+            self.strain_list=load_pickle(self.fpaths_dict['strain_cpk'])
+            self.nstrains=len(self.strain_list)
 
     def organize_folders(self):
         """ create folders for pangenome analysis """

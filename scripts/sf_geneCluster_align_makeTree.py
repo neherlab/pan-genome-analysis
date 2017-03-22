@@ -168,7 +168,7 @@ class mpm_tree(object):
     def __init__(self, cluster_seq_filepath, **kwarks):
         self.clusterID= cluster_seq_filepath.split('/')[-1].split('.fna')[0]
         self.threads=kwarks['threads']
-        speciesID= cluster_seq_filepath.split('/data/')[1].split('/')[0]
+        speciesID= cluster_seq_filepath.split('/')[-2]
         self.seqs = {x.id:x for x in SeqIO.parse(cluster_seq_filepath, 'fasta')}
         if 'run_dir' not in kwarks:
             import random

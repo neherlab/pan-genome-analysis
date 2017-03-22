@@ -24,7 +24,7 @@ def create_core_SNP_matrix(path, core_cutoff=1.0, core_gene_strain_fpath=''):#1.
     sorted_geneList = load_sorted_clusters(path)
     if core_gene_strain_fpath!='':
         with open(core_gene_strain_fpath,'rb') as core_gene_strain_file:
-            core_strain_set= set([i.rstrip() for i in core_gene_strain_file])
+            core_strain_set= set([i.rstrip().replace('-','_') for i in core_gene_strain_file])
     with open(output_path+'core_geneList.txt','wb') as outfile:
         for clusterID, vg in sorted_geneList:
             if core_cutoff==1.0:
@@ -36,15 +36,14 @@ def create_core_SNP_matrix(path, core_cutoff=1.0, core_gene_strain_fpath=''):#1.
                 ## sequences might be discarded because of premature stops
                 coreGeneName_path= alnFilePath+coreGeneName
                 if os.path.exists(coreGeneName_path) and len(read_fasta(coreGeneName_path)) >= strain_core_cutoff:
-                    if core_gene_strain_fpath=='':
-                        pass
-                    elif core_gene_strain_fpath!='' and len(core_strain_set-set([i.split('|')[0] for i in vg[1]]))!=0:
+                    if core_gene_strain_fpath!='' and len(core_strain_set-set([i.split('|')[0] for i in vg[1]]))!=0:
                         continue
                     outfile.write(coreGeneName+'\n')
                     corelist.append(coreGeneName)
                 else:
-                    pass
                     #print '%s%s%s'%('warning: ',coreGeneName_path,' is not a core gene')
+                    pass
+
 
         write_pickle(output_path+'core_geneList.cpk',corelist)
 

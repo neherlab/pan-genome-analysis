@@ -115,11 +115,15 @@ def json_parser( path, species, meta_info_file_path, large_output ):
         os.system('cp %s %s'%(meta_info_file_path, metaFile))
 
     output_path= ''.join([path,'geneCluster/'])
-    gene_pattern_dict_path= ''.join([output_path,'dt_genePattern.cpk'])
+    if large_output==0:
+        gene_pattern_dict_path= ''.join([output_path,'dt_genePattern.cpk'])
+        dt_genePattern=load_pickle(gene_pattern_dict_path)
+    else:
+        dt_genePattern=None
+
     #visualzition_path='%s%s'%(path,'vis/')
     tree = Tree('%s%s'%(output_path,'tree_result.newick'),format=1)
-    #dt_genePattern=load_pickle('%s%s'%(path,'geneCluster/dt_genePattern.cpk'))
-    dt_genePattern=load_pickle(gene_pattern_dict_path)
+
     ## create tree json files
     no_presence = 0 if large_output==0 else 1
     jsonString=json.dumps(create_json_addLabel(species, dt_genePattern, tree, no_presence, 0, path, metaFile))

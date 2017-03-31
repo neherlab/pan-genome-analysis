@@ -57,12 +57,14 @@ def export_gain_loss(tree, path, large_output):
 
     from collections import defaultdict
     gene_gain_loss_dict=defaultdict(str)
+    preorder_strain_list= [] #store the preorder nodes as strain list
     for node in tree.tree.find_clades(order='preorder'):# order does not matter much here
             if node.up is None: continue
             #print(node.name ,len(node.geneevents),node.geneevents)
             gain_loss = [ str(int(ancestral)*2+int(derived))
                         for ancestral,derived in zip(node.up.genepresence, node.genepresence)]
             gene_gain_loss_dict[node.name]="".join(gain_loss)
+            preorder_strain_list.append(node.name)
 
     gain_loss_array = np.array([[i for i in gain_loss_str]
                                 for gain_loss_str in gene_gain_loss_dict.values()], dtype=int)
@@ -80,13 +82,20 @@ def export_gain_loss(tree, path, large_output):
     else:
         ## strainID as key, presence pattern as value (converted into np.array)
         sorted_genelist = load_sorted_clusters(path)
-        keylist= gene_gain_loss_dict.keys(); keylist.sort()
-        strainID_keymap= {ind:k for ind, k in enumerate(keylist)} # dict(zip(keylist, range(3)))
-        presence_arr= np.array([ np.fromstring(gene_gain_loss_dict[k], np.int8)-48 for k in keylist])
+        strainID_keymap= {ind:k for ind, k in enumerate(preorder_strain_list)}
+        presence_arr= np.array([ np.fromstring(gene_gain_loss_dict[k], np.int8)-48 for k in preorder_strain_list])
+        ## if true, write pattern dict instead of pattern string in a json file
+        pattern_json_flag=False
         for ind, (clusterID, gene) in enumerate(sorted_genelist):
-            pattern_dt= { strainID_keymap[strain_ind]:str(patt) for strain_ind, patt in enumerate(presence_arr[:, ind])}
             pattern_fname='%s%s_patterns.json'%(output_path,clusterID)
-            write_json(pattern_dt, pattern_fname, indent=1)
+            if pattern_json_flag:
+                pattern_dt= { strainID_keymap[strain_ind]:str(patt) for strain_ind, patt in enumerate(presence_arr[:, ind])}
+                write_json(pattern_dt, pattern_fname, indent=1)
+            #print(preorder_strain_list,clusterID)
+            #print(''.join([ str(patt) for patt in presence_arr[:, ind]]))
+            with open(pattern_fname,'w') as write_pattern:
+                write_pattern.write(''.join([ str(patt) for patt in presence_arr[:, ind]]))
+
 
 def process_gain_loss(path, large_output):
     ##  infer gain/loss event

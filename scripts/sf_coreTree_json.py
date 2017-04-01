@@ -60,7 +60,8 @@ def core_tree_to_json( species, node, path, metadata_process_result, strain_list
         core_tree_dict["children"] = []
         for child in node.children: ## recursively
             core_tree_dict["children"].append(core_tree_to_json(species, child, path, metadata_process_result, strain_list))
-    else:
+    core_tree_dict["branch_length"]=float(node.dist)
+    if not core_tree_dict["name"].startswith('NODE_'):
         ## accession, strainName, antiBio, dateInfo, country, host
         accession=core_tree_dict["name"]
         core_tree_dict['attr']={}
@@ -94,22 +95,28 @@ def json_parser( path, species, meta_info_file_path, large_output ):
     with open(output_path+'coreGenomeTree.json', 'wb') as core_tree_json:
         core_tree_json.write(coreTree_jsonString)
 
+    ## organize meta json
+    metajson_exp={"color_options":{ }}
+
     ## write meta-dict.js in metajson
     for metatype in metajson_dict:
+        metajson_exp['color_options'][metatype]={"menuItem":metatype}
         if metatype=='country':
-            pass
+            metajson_exp['color_options'][metatype]["type"]="discrete"
         elif metatype=='collection_date':
-            pass
+            #create num_date #"menuItem":"date",
+            metajson_exp['color_options'][metatype]["type"]="continuous"
         elif metatype=='host':
-            pass
-        else:
-            pass
+            metajson_exp['color_options'][metatype]["type"]="discrete"
+        else:# guess the type
+            #metajson_dict[metatype].isdigit()
+            metajson_exp['color_options'][metatype]["type"]="discrete"
 
     with open(''.join([path,'meta-dict-',species,'.js']),'wb') as meta_js_out:
         meta_js_out.write('var meta_set = ')
         meta_js_out.write('%s;'%json.dumps(metajson_dict))
         meta_js_out.write('var meta_display_set = ')
-        meta_js_out.write('%s;'%json.dumps(meta_display_dict))
+        meta_js_out.write('%s;'%json.dumps(metajson_exp))#meta_display_dict
 
     ## move all *.cpk file to ./data/YourSpecies/ folder
     ##      coreGenomeTree.json and strainMetainfo.json file to ./data/YourSpecies/vis/ folder

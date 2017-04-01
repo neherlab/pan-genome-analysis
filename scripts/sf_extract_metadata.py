@@ -10,8 +10,8 @@ def extract_metadata(path, strain_list, folders_dict, gbk_present):
     """
     from Bio import SeqIO
     with open('%s%s'%(path,'metainfo.tsv'), 'wb') as writeseq:
-        #headers: accName, strainName, dateInfo, country, host
-        writeseq.write( "%s\n"%('\t'.join(['accName' , 'strain', 'collection_date', 'country', 'host'])) )
+        #headers: accession, strainName, dateInfo, country, host
+        writeseq.write( "%s\n"%('\t'.join(['accession' , 'strain', 'collection_date', 'country', 'host'])) )
         if gbk_present==1:
             gbk_path=folders_dict['gbk_path']
             for strainID in strain_list:

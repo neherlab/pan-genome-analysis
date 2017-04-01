@@ -97,12 +97,13 @@ def json_parser( path, species, meta_info_file_path, large_output ):
     ## write meta-dict.js in metajson
     for metatype in metajson_dict:
         if metatype=='country':
-
+            pass
         elif metatype=='collection_date':
-
+            pass
         elif metatype=='host':
-
+            pass
         else:
+            pass
 
     with open(''.join([path,'meta-dict-',species,'.js']),'wb') as meta_js_out:
         meta_js_out.write('var meta_set = ')

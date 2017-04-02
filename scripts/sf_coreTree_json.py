@@ -42,7 +42,7 @@ def metadata_process(species, path, infile):
 
         #filter the redundant metadata for each metadata_type
         for k,v in metajson_dict.iteritems():
-            metajson_dict[k]=sorted(dict(Counter(v)).keys())
+            metajson_dict[k]=list(set(v))
         output_path= ''.join([path,'geneCluster/'])
         with open(output_path+'strainMetainfo.json', 'wb') as strain_metadata_json:
             strain_metadata_json.write(json.dumps(metatable_strains_json_dict))
@@ -62,55 +62,51 @@ def core_tree_to_json( species, node, path, metadata_process_result, strain_list
             core_tree_dict["children"].append(core_tree_to_json(species, child, path, metadata_process_result, strain_list))
     core_tree_dict["branch_length"]=float(node.dist)
     if not core_tree_dict["name"].startswith('NODE_'):
-        ## accession, strainName, antiBio, dateInfo, country, host
+        ## accession, strain, antibiotics, collection_date, country, host
         accession=core_tree_dict["name"]
         core_tree_dict['attr']={}
         for index_head, head in enumerate(headers):
-            if index_head!=0: # skip the accName head
+            if index_head!=0: # skip the accession head
                 core_tree_dict['attr'][head]=strain_meta_dict[accession][index_head]
     return core_tree_dict
 
-def json_parser( path, species, meta_info_file_path, large_output ):
-    """ create json files for web-visualiaztion
-        input: tree_result.newick, metainfo.tsv
-        output: json files for core gene SNP tree and strain metadata table
-    """
-    metaFile= '%s%s'%(path,'metainfo.tsv')
-    if meta_info_file_path !='none':
-        ## create a link of user-provided meta_info_file
-        os.system('cp %s %s'%(meta_info_file_path, metaFile))
-
-    output_path= ''.join([path,'geneCluster/'])
-
-    tree = Tree('%s%s'%(output_path,'tree_result.newick'),format=1)
-    strain_list=[node.name for node in tree.traverse("preorder")]
-
-    ## create strain tree json file
-    strain_meta_dict, headers, metajson_dict = metadata_process(species, path, metaFile)
-    meta_display_dict = { h:h for h in headers }
-    metadata_process_result=(strain_meta_dict, headers)
-
-    coreTree_jsonString=json.dumps(core_tree_to_json(species, tree, path, metadata_process_result, strain_list))
-
-    with open(output_path+'coreGenomeTree.json', 'wb') as core_tree_json:
-        core_tree_json.write(coreTree_jsonString)
-
-    ## organize meta json
+def process_metajson(path, species, meta_tidy_fpath, metajson_dict):
+    """ """
     metajson_exp={"color_options":{ }}
+    meta_display_choice_dt={}
+    meta_display_order=[]
+    if meta_tidy_fpath!='':
+        with open(meta_tidy_fpath,'r') as meta_tidy_file:
+            next(meta_tidy_file)
+            ## meta_category data_type display
+            for iline in meta_tidy_file:
+                meta_category, data_type, display= iline.rstrip().split('\t')
+                meta_display_order.append(meta_category)
+                meta_display_choice_dt[meta_category]=(data_type, display)
+        metajson_exp['meta_display_order']=meta_display_order
+    else:
+        metajson_exp['meta_display_order']=metajson_dict.keys()
 
     ## write meta-dict.js in metajson
     for metatype in metajson_dict:
         metajson_exp['color_options'][metatype]={"menuItem":metatype}
         if metatype=='country':
             metajson_exp['color_options'][metatype]["type"]="discrete"
-        elif metatype=='collection_date':
-            #create num_date #"menuItem":"date",
+        elif metatype=='collection_date':#TODO create num_date #"menuItem":"date",
             metajson_exp['color_options'][metatype]["type"]="continuous"
         elif metatype=='host':
             metajson_exp['color_options'][metatype]["type"]="discrete"
-        else:# guess the type
-            #metajson_dict[metatype].isdigit()
-            metajson_exp['color_options'][metatype]["type"]="discrete"
+        else:
+            if len(meta_display_choice_dt)!=0:
+                if meta_display_choice_dt[metatype][1]=='yes': #display
+                    metajson_exp['color_options'][metatype]["type"]= meta_display_choice_dt[metatype][0]
+            else:# infer the type
+                valid_elem_set=set(metajson_dict[metatype])-set(['unknown'])
+                for elem in valid_elem_set:
+                    num_isdigit= len([elem.replace(replace_str,'').isdigit() for replace_str in ('>','>=','<','<=','=')])
+                    if num_isdigit==len(valid_elem_set):
+                        metajson_exp['color_options'][metatype]["type"]="continuous"
+                    metajson_exp['color_options'][metatype]["type"]="discrete"
 
     with open(''.join([path,'meta-dict-',species,'.js']),'wb') as meta_js_out:
         meta_js_out.write('var meta_set = ')
@@ -118,9 +114,35 @@ def json_parser( path, species, meta_info_file_path, large_output ):
         meta_js_out.write('var meta_display_set = ')
         meta_js_out.write('%s;'%json.dumps(metajson_exp))#meta_display_dict
 
-    ## move all *.cpk file to ./data/YourSpecies/ folder
-    ##      coreGenomeTree.json and strainMetainfo.json file to ./data/YourSpecies/vis/ folder
-    ##      GC*json file to ./data/YourSpecies/vis/geneCluster/ folder
+def json_parser( path, folders_dict, species, meta_info_file_path, large_output, meta_tidy_fpath ):
+    """ create json files for web-visualiaztion
+        input: tree_result.newick, metainfo.tsv
+        output: json files for core gene SNP tree and strain metadata table
+    """
+    metaFile= '%s%s'%(path,'metainfo.tsv')
+    ## create a link of user-provided meta_info_file
+    if meta_info_file_path !='none':
+        os.system('cp %s %s'%(meta_info_file_path, metaFile))
+
+    output_path= folders_dict['cluster_seq_path']
+    tree = Tree(output_path+'tree_result.newick',format=1)
+    strain_list=[node.name for node in tree.traverse("preorder")]
+
+    ## create strain tree json file
+    strain_meta_dict, headers, metajson_dict = metadata_process(species, path, metaFile)
+    metadata_process_result=(strain_meta_dict, headers)
+    coreTree_dict=core_tree_to_json(species, tree, path, metadata_process_result, strain_list)
+    coreTree_jsonString=json.dumps(coreTree_dict)
+    with open(output_path+'coreGenomeTree.json', 'wb') as core_tree_json:
+        core_tree_json.write(coreTree_jsonString)
+
+    ## process meta json
+    process_metajson(path, species, meta_tidy_fpath, metajson_dict)
+
+    ## Data organization
+    ## Move:1. all *.cpk file to ./data/YourSpecies/ folder
+    ##      2. coreGenomeTree.json, strainMetainfo.json to ./data/YourSpecies/vis/ folder
+    ##      3. GC*json file to ./data/YourSpecies/vis/geneCluster/ folder
     #os.system('ln -sf %s/*.cpk %s/../'%(output_path,output_path))
     os.chdir(output_path)
     #visualzition_path='%s%s'%(path,'vis/')
@@ -135,7 +157,6 @@ def json_parser( path, species, meta_info_file_path, large_output ):
     if keep_temporary_file:
         strain_protein_fa='./protein_faa/'
         strain_nucleotide_fa='./nucleotide_fna/'
-
         os.system('rm %s'%strain_protein_fa)
         os.system('rm %s'%strain_nucleotide_fa)
         # os.system('rm ')

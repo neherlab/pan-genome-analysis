@@ -83,33 +83,13 @@ def process_gain_loss(path):
         return compute_totallh(tree,c)
 
     from scipy.optimize import minimize
-    with np.errstate(divide='ignore'):
-        try:
-            res1 = minimize(myminimizer,[0.5,1.],method='L-BFGS-B',bounds = [(0.01,0.99),(0.1,100.)])
-            success1 = res1.success
-        except:
-            res1 = type('', (), {})()
-            res1.fun = np.inf
-            success1 = False
-        try:
-            res2 = minimize(myminimizer,[0.2,1.],method='L-BFGS-B',bounds = [(0.01,0.99),(0.1,100.)])
-            success2 = res2.success
-        except:
-            res2 = type('', (), {})()
-            res2.fun = np.inf
-            success2 = False
-        try:
-            res3 = minimize(myminimizer,[0.8,1.],method='L-BFGS-B',bounds = [(0.01,0.99),(0.1,100.)])
-            success3 = res3.success
-        except:
-            res3 = type('', (), {})()
-            res3.fun = np.inf
-            success3 = False
-    if (success1 or success2 or success3) == True:
+    try:
+        res = minimize(myminimizer,[0.5,1.],method='L-BFGS-B',bounds = [(0.0001,0.999),(0.01,1000.)])
+        success = res.success
+    except:
+        success = False        
+    if success == True:
         print('successfully estimated the gtr parameters. Reconstructing ancestral states...')
-        #get the best of the three numerical estimates
-        minimalindex = (res1.fun,res2.fun,res3.fun).index(min(res1.fun,res2.fun,res3.fun))
-        res = (res1,res2,res3)[minimalindex]
         change_gtr_parameters_forgainloss(tree,res.x[0],res.x[1])
         tree.reconstruct_anc(method='ml')
         export_gain_loss(tree,path)
@@ -165,10 +145,7 @@ def create_visible_pattern_dictionary(tree):
     tree.tree.pattern_abundance = [tree.tree.clusterdict[key][0] for key in sorted(tree.tree.clusterdict.keys())]
     tree.tree.pattern_include = [tree.tree.clusterdict[key][1] for key in sorted(tree.tree.clusterdict.keys())]
     #save the index of the first core pattern
-    # check whether there is a corepattern (usually there should always be a corepattern, unless you are using single cell sequencing data.)
-    if corepattern in tree.tree.patterndict:
-        tree.tree.corepattern_index = sorted(tree.tree.clusterdict.keys()).index(tree.tree.patterndict[corepattern][0])
-    
+    tree.tree.corepattern_index = sorted(tree.tree.clusterdict.keys()).index(tree.tree.patterndict[corepattern][0])
 
 def index2pattern(index,numstrains):
     """
@@ -355,8 +332,7 @@ def compute_totallh(tree,params,adjustcore = True,verbose = 0):
     if verbose > 2:
         print("adjusting for all pattern that have been set to pattern_include == 0")
     tree.tree.root.total_llh = tree.tree.root.total_llh - ( np.log(1.- ll_forsumofignored) * np.sum(np.array(tree.tree.pattern_abundance) * np.array(tree.tree.pattern_include)) )
-    if verbose > 3:
-        print("totalLH:", pi_present, mymu, tree.tree.root.total_llh)
+    #print("totalLH:", pi_present, mymu, tree.tree.root.total_llh)
     if np.isnan(tree.tree.root.total_llh) or np.isinf(tree.tree.root.total_llh):
         return 1e50
     else:

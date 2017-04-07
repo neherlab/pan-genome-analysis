@@ -3,16 +3,15 @@ Author: Wei Ding, Franz Baumdicker and Richard Neher
 
 Overview:
 panX is based on an automated pan-genome identification pipeline that determines clusters of orthologous genes. The pipeline starts with a set of annotated sequences (e.g. NCBI RefSeq) of a bacterial species.
-The genomes are split into individual genes and all genes from all strains are compared to each other via the fast protein alignment tool [DIAMOND](http://www.nature.com/nmeth/journal/v12/n1/full/nmeth.3176.html) and then clustered into orthologous groups using [orthAgogue](https://code.google.com/archive/p/orthagogue/) and MCL. After the construction of gene clusters, genes within clusters are aligned and the corresponding phylogenetic tree is computed, with mutations mapped into each tree and various summary statistics calculated.
+The genomes are split into individual genes and all genes from all strains are compared to each other via the fast protein alignment tool [DIAMOND](http://www.nature.com/nmeth/journal/v12/n1/full/nmeth.3176.html) and then clustered into orthologous groups using MCL and panX post-processing procedures. After the construction of gene clusters, genes within clusters are aligned and the corresponding phylogenetic tree is computed, with mutations mapped into each tree and various summary statistics calculated.
 
 1. Dependencies:
 
   1. Required software:
     * DIAMOND (fast protein alignment tool)
       - Install: (source: https://github.com/bbuchfink/diamond)
-      - wget http://github.com/bbuchfink/diamond/releases/download/v0.7.12/diamond-linux64.tar.gz
+      - wget https://github.com/bbuchfink/diamond/releases/download/v0.8.34/diamond-linux64.tar.gz
       - tar xzf diamond-linux64.tar.gz
-    * orthAgogue: Please install including all the required dependencies as specified [here] (https://code.google.com/archive/p/orthagogue/)
     * [MCL Markov Cluster Algorithm](http://micans.org/mcl/)
       - sudo apt-get install mcl
     * mafft (multiple alignment program)
@@ -44,18 +43,17 @@ The genomes are split into individual genes and all genes from all strains are c
     NOTICE: strain_list format should be species_name+'-RefSeq', e.g.: Saureus-RefSeq.txt
     Example: python ./scripts/run-pipeline.py  -fn ./data/TestSet -sl TestSet-RefSeq.txt -st 1 2 3 4 5 6 7 8 9 10 11 -t 64 > TestSet.log 2>&1
   ```
-  The result will be a number of files that contain the all the information necessary for visualizing the pan-genome in the browser using [pan-genome-visuzalization](https://github.com/neherlab/pan-genome-visualization).
+  The result will be a number of files that contain the all the information necessary for visualizing the pan-genome in the browser using [pan-genome-visualization](https://github.com/neherlab/pan-genome-visualization).
   ```
   ./data
       YourSpecies               # folder specific to the your pan genome
         - YourSpecies-RefSeq.txt    # INPUT: GenBank accession numbers
-        - inputGenomes              # INPUT: genomes in genbank format
+        - inputGenomes              # INPUT: genomes in GenBank format
           - strain1.gbk
           - strain2.gbk
           ...
         - vis
           - geneCluster.json
-          - geneGainLossEvent.json
           - strainMetainfo.json
           - coreGenomeTree.json
           - GeneClusters/       # Folder contain orthologous clusters
@@ -129,23 +127,23 @@ In folder `./data/TestSet/:`<br />
 metainfo_curated.tsv and meta-dict-TestSet.js (metadata for visualization)<br />
 
 **Step05: compute gene clusters**<br />
-Conduct all-against-all protein sequences comparison by Diamond and cluster genes using Orthagogue and MCL<br />
+Conduct all-against-all protein sequences comparison by Diamond and cluster genes using MCL<br />
 - Input:<br />
 In folder `./data/TestSet/protein_faa/:`<br />
 \*.faa file<br />
 - Output:<br />
 In folder `./data/TestSet/protein_faa/diamond_matches/:`<br />
-orthamcl-allclusters.cpk (dictionary for gene clusters)<br />
+allclusters.cpk (dictionary for gene clusters)<br />
 diamond_geneCluster_dt: {clusterID:[ count_strains,[memb1,...],count_genes }<br />
 
 **Step06: build alignments, gene trees from gene clusters and split paralogs**<br />
 Load nucleotide sequences in gene clusters, construct nucleotide and amino acid alignment, build a gene tree based on nucleotide alignment, split paralogs and export the gene tree in json file for visualization<br />
 - Input:<br />
 In folder `./data/TestSet/protein_faa/diamond_matches/:`<br />
-orthamcl-allclusters.cpk file<br />
+allclusters.cpk file<br />
 - Output:<br />
 In folder `./data/TestSet/protein_faa/diamond_matches/:`<br />
-orthamcl-allclusters_final.cpk ( final gene clusters)<br />
+allclusters_final.tsv ( final gene clusters)<br />
 In folder `./data/TestSet/geneCluster/:`<br />
 GC\*.fna (nucleotide fasta)<br />
 GC\*_na.aln (nucleotide alignment)<br />
@@ -155,9 +153,6 @@ GC\*_tree.json (gene tree in json file)<br />
 
 **Step07: construct core gene SNP matrix**<br />
 Call SNPs in strictly core genes (without no gene duplication) and build SNP matrix for strain tree<br />
-- Input:<br />
-In folder `./data/TestSet/protein_faa/diamond_matches/:`<br />
-orthamcl-allclusters_final.cpk file<br />
 - Output:<br />
 In folder `./data/TestSet/geneCluster/:`<br />
 SNP_whole_matrix.aln (SNP matrix as pseudo alignment)<br />
@@ -174,9 +169,6 @@ tree_result.newick<br />
 
 **Step09: infer gene gain and loss event**<br />
 Use ancestral reconstruction algorithm (treetime) to conduct gain and loss events inference<br />
-- Input:<br />
-In folder `./data/TestSet/geneCluster/:`<br />
-orthamcl-allclusters_final.cpk file<br />
 - Output:<br />
 In folder `./data/TestSet/geneCluster/:`<br />
 geneGainLossEvent.json (gene gain/loss event)<br />
@@ -185,9 +177,6 @@ tree_result.newick (final strain tree with inner nodes)<br />
 
 **Step10: export gene cluster json file**<br />
 Export json file for gene cluster datatable visualization<br />
-- Input:<br />
-In folder `./data/TestSet/protein_faa/diamond_matches/:`<br />
-orthamcl-allclusters_final.cpk file (gene cluster dictionary)<br />
 In folder `./data/TestSet/geneCluster/:`<br />
 gene_diversity.cpk (diversity for each gene cluster)<br />
 dt_geneEvents.cpk (gain/loss event count)<br />

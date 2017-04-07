@@ -5,18 +5,21 @@ Overview:
 panX is based on an automated pan-genome identification pipeline that determines clusters of orthologous genes. The pipeline starts with a set of annotated sequences (e.g. NCBI RefSeq) of a bacterial species.
 The genomes are split into individual genes and all genes from all strains are compared to each other via the fast protein alignment tool [DIAMOND](http://www.nature.com/nmeth/journal/v12/n1/full/nmeth.3176.html) and then clustered into orthologous groups using MCL and panX post-processing procedures. After the construction of gene clusters, genes within clusters are aligned and the corresponding phylogenetic tree is computed, with mutations mapped into each tree and various summary statistics calculated.
 
-1. Dependencies:
+Quick start:
+```git clone https://github.com/neherlab/pan-genome-analysis.git```
 
+Enter the folder ```pan-genome-analysis```:
+```git submodule update --init```
+
+1. Dependencies:
   1. Required software:
-    * DIAMOND (fast protein alignment tool)
-      - Install: (source: https://github.com/bbuchfink/diamond)
-      - wget https://github.com/bbuchfink/diamond/releases/download/v0.8.34/diamond-linux64.tar.gz
-      - tar xzf diamond-linux64.tar.gz
+    * [DIAMOND](https://github.com/bbuchfink/diamond) (fast protein alignment tool)
+      - located in ./tools/diamond
     * [MCL Markov Cluster Algorithm](http://micans.org/mcl/)
       - sudo apt-get install mcl
     * mafft (multiple alignment program)
-      - Download and install from http://mafft.cbrcj.p/alignment/software/linux.html
-      - OR sudo apt-get install mafft
+      - sudo apt-get install mafft
+      - Or: download and install from http://mafft.cbrcj.p/alignment/software/linux.html
     * [fasttree](http://www.microbesonline.org/fasttree/)
       - sudo apt-get install fasttree
     * [raxml](https://github.com/stamatak/standard-RAxML)
@@ -35,13 +38,13 @@ The genomes are split into individual genes and all genes from all strains are c
   ```
     Description:
     This calls run-pipeline.py to run each step using scripts located in folder ./scripts/
-    run-pipeline.py [-h] -fn folder_name -sl strain_list
+    panX.py [-h] -fn folder_name -sl strain_list
                        [-st steps [steps ...]] [-rt raxml_max_time]
                        [-t threads] [-bp blast_file_path]
 
     mandatory parameters: -fn folder_name / -sl strain_list / [-st steps [steps ...]]
     NOTICE: strain_list format should be species_name+'-RefSeq', e.g.: Saureus-RefSeq.txt
-    Example: python ./scripts/run-pipeline.py  -fn ./data/TestSet -sl TestSet-RefSeq.txt -st 1 2 3 4 5 6 7 8 9 10 11 -t 64 > TestSet.log 2>&1
+    Example: ./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -t 64 > TestSet.log 2>&1
   ```
   The result will be a number of files that contain the all the information necessary for visualizing the pan-genome in the browser using [pan-genome-visualization](https://github.com/neherlab/pan-genome-visualization).
   ```
@@ -56,7 +59,7 @@ The genomes are split into individual genes and all genes from all strains are c
           - geneCluster.json
           - strainMetainfo.json
           - coreGenomeTree.json
-          - GeneClusters/       # Folder contain orthologous clusters
+          - geneCluster/       # Folder contain orthologous clusters
             - GC_000001*_na.aln
             - GC_000001*_aa.aln
             - GC_000001*_tree.json
@@ -71,8 +74,8 @@ The genomes are split into individual genes and all genes from all strains are c
 
 
 ##**Step-by-Step tutorial:**<br />
-In `data/TestSet`, you will find a small set of four *Pseudomonas aeruginosa* genomes that is used in this tutorial. Your own data should also reside in such a folder within `data/` -- we will refer to this folder as *run directory* below. The name of the run directory is used as a species name in down-stream analysis.
-To run `pan-genome-analysis` pipeline, you need to execute a series of steps that can be started using the `run.sh` script
+In `data/TestSet`, you will find a small set of five *Mycoplasma genitalium* genomes that is used in this tutorial. Your own data should also reside in such a folder within `data/` -- we will refer to this folder as *run directory* below. The name of the run directory is used as a species name in down-stream analysis.
+To run `pan-genome-analysis` pipeline, you need to execute a series of steps that can be started using the `run-TestSet.sh` script
 To run ...
 ```
 python ./scripts/run-pipeline -fn data/TestSet -sl TestSet-RefSeq.txt -st 1 2

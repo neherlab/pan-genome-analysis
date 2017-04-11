@@ -94,7 +94,7 @@ def export_gain_loss(tree, path, large_output):
             #print(preorder_strain_list,clusterID)
             #print(''.join([ str(patt) for patt in presence_arr[:, ind]]))
             with open(pattern_fname,'w') as write_pattern:
-                write_pattern.write(''.join([ str(patt) for patt in presence_arr[:, ind]]))
+                write_pattern.write('{"patterns":"'+''.join([ str(patt) for patt in presence_arr[:, ind]])+'"}')
 
 
 def process_gain_loss(path, large_output):

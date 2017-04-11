@@ -100,12 +100,19 @@ def process_metajson(path, species, meta_tidy_fpath, metajson_dict):
             if len(meta_display_choice_dt)!=0:
                 if meta_display_choice_dt[metatype][1]=='yes': #display
                     metajson_exp['color_options'][metatype]["type"]= meta_display_choice_dt[metatype][0]
+                else:
+                    metajson_exp['color_options'][metatype]["display"]='no'
             else:# infer the type
                 valid_elem_set=set(metajson_dict[metatype])-set(['unknown'])
+                num_isdigit=0
                 for elem in valid_elem_set:
-                    num_isdigit= len([elem.replace(replace_str,'').isdigit() for replace_str in ('>','>=','<','<=','=')])
-                    if num_isdigit==len(valid_elem_set):
-                        metajson_exp['color_options'][metatype]["type"]="continuous"
+                    for replace_str in ('>=','<=','>','<','='):
+                        if elem.replace(replace_str,'').replace(' ','').isdigit():
+                            num_isdigit+=1
+                            break
+                if num_isdigit==len(valid_elem_set):
+                    metajson_exp['color_options'][metatype]["type"]="continuous"
+                else:
                     metajson_exp['color_options'][metatype]["type"]="discrete"
 
     with open(''.join([path,'meta-dict-',species,'.js']),'wb') as meta_js_out:

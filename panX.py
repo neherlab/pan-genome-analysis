@@ -142,6 +142,8 @@ parser.add_argument('-lo', '--large_output', type = int, default = 0,
 parser.add_argument('-rl', '--raw_locus_tag', type = int, default = 0,
     help='default: use strain_ID + locus_tag as new locus_tag; if set to 0, use raw locus_tag from GenBank file', metavar='')
 
+parser.add_argument('-mtf', '--meta_tidy_fpath', type = str, default = '',
+    help='default: file path for a tidy metadata structure (discrete/continuous data type, etc.)', metavar='')
 #parser.add_argument('-dbg', '--debug_module', type = int, default = 1,
 #    help='default: debug module not used', metavar='')
 parser.add_argument('-kt', '--keep_temporary_file', type = int, default = 1,
@@ -197,6 +199,7 @@ myPangenome=pangenome(
     simple_tree=params.simple_tree,
     large_output=params.large_output,
     raw_locus_tag=params.raw_locus_tag,
+    meta_tidy_fpath=params.meta_tidy_fpath,
     keep_temporary_file=params.keep_temporary_file
     )
 

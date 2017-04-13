@@ -441,13 +441,13 @@ class mpm_tree(object):
         for i_aln in self.aln:
             i_aln.id=i_aln.id.replace('|','-',1)
 
-        AlignIO.write(self.aln, path+self.clusterID+'_na.aln', 'fasta')
+        AlignIO.write(self.aln, path+self.clusterID+'_na_aln.fa', 'fasta')
 
         if RNA_specific==False:
             for i_aa_aln in self.aa_aln:
                 i_aa_aln.id=i_aa_aln.id.replace('|','-',1)
 
-            AlignIO.write(self.aa_aln, path+self.clusterID+'_aa.aln', 'fasta')
+            AlignIO.write(self.aa_aln, path+self.clusterID+'_aa_aln.fa', 'fasta')
 
         ## write seq json
         write_seq_json=0
@@ -482,16 +482,16 @@ def align_and_makeTree( fna_file_list, alignFile_path, parallel, simple_tree):
             start = time.time();
             geneDiversity_file = open(alignFile_path+'gene_diversity.txt', 'a')
             if len( read_fasta(gene_cluster_nu_filename) )==1: # nothing to do for singletons
-                ## na.aln
-                gene_cluster_nu_aln_filename= gene_cluster_nu_filename.replace('.fna','_na.aln')
+                ## na_aln.fa
+                gene_cluster_nu_aln_filename= gene_cluster_nu_filename.replace('.fna','_na_aln.fa')
                 ## geneSeqID separator '|' is replaced by '-' for msa viewer compatibility
                 with open(gene_cluster_nu_aln_filename,'wb') as write_file:
                     for SeqID, Sequence in read_fasta(gene_cluster_nu_filename).iteritems():
                         write_in_fa(write_file, SeqID.replace('|','-'), Sequence)
 
-                ## aa.aln
+                ## aa_aln.fa
                 gene_cluster_aa_filename= gene_cluster_nu_filename.replace('.fna','.faa')
-                gene_cluster_aa_aln_filename= gene_cluster_nu_filename.replace('.fna','_aa.aln')
+                gene_cluster_aa_aln_filename= gene_cluster_nu_filename.replace('.fna','_aa_aln.fa')
                 ## geneSeqID separator '|' is replaced by '-' for msa viewer compatibility
                 with open(gene_cluster_aa_aln_filename,'wb') as write_file:
                     for SeqID, Sequence in read_fasta(gene_cluster_aa_filename).iteritems():

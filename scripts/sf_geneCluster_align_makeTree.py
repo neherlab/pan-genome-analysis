@@ -415,14 +415,19 @@ class mpm_tree(object):
                 for mut in node.mutations:
                     self.mut_to_branch[mut].append(node)
 
-    def export(self, path = '', extra_attr = ['aa_muts','ann','branch_length','name','longName'], RNA_specific=False):
+    #def export(self, path = '', extra_attr = ['aa_muts','ann','branch_length','name','longName'], RNA_specific=False):
+    def export(self, path = '', extra_attr = ['aa_muts','annotation','branch_length','name','accession'], RNA_specific=False):
         ## write tree
         Phylo.write(self.tree, path+self.clusterID+'.nwk', 'newick')
 
         ## processing node name
         for node in self.tree.get_terminals():
-            node.name = node.ann.split('|')[0]
-            node.longName = node.ann.split('-')[0]
+            #node.name = node.ann.split('|')[0]
+            node.accession = node.ann.split('|')[0]
+            #node.longName = node.ann.split('-')[0]
+            node.name = node.ann.split('-')[0]
+            #NZ_CP008870|HV97_RS21955-1-fabG_3-ketoacyl-ACP_reductase
+            node.annotation= node.ann.split('-',2)[2]
 
         ## write tree json
         for n in self.tree.root.find_clades():

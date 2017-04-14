@@ -107,12 +107,15 @@ def process_metajson(path, species, meta_tidy_fpath, metajson_dict):
                 num_isdigit=0
                 for elem in valid_elem_set:
                     for replace_str in ('>=','<=','>','<','='):
-                        if elem.replace(replace_str,'').replace(' ','').isdigit():
+                        #"10.2": remove the 1st decimal point before isdigit()  (10..2 not)
+                        if elem.replace(replace_str,'').replace(' ','').replace(".", "", 1).isdigit():
                             num_isdigit+=1
                             break
                 if num_isdigit==len(valid_elem_set):
+                    print metatype, ': undefined coloring type is now set to continuous.'
                     metajson_exp['color_options'][metatype]["type"]="continuous"
                 else:
+                    print metatype, ': undefined coloring type is now set to discrete.'
                     metajson_exp['color_options'][metatype]["type"]="discrete"
 
     with open(''.join([path,'meta-dict-',species,'.js']),'wb') as meta_js_out:
@@ -154,7 +157,7 @@ def json_parser( path, folders_dict, species, meta_info_file_path, large_output,
     os.chdir(output_path)
     #visualzition_path='%s%s'%(path,'vis/')
     os.system('mv coreGenomeTree.json strainMetainfo.json ../vis/')
-    os.system('mv *C*.aln *C*_tree.json ../vis/geneCluster/')
+    os.system('mv *C*_aln.fa *C*_tree.json ../vis/geneCluster/')
     os.system('mv *C*.nwk ../vis/geneCluster/')
     os.system('cp tree_result.newick ../vis/strain_tree.nwk')
     if large_output==1:

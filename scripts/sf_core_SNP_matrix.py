@@ -32,7 +32,7 @@ def create_core_SNP_matrix(path, core_cutoff=1.0, core_gene_strain_fpath=''):#1.
             else:
                 strain_core_cutoff=int(totalStrain*core_cutoff)
             if vg[0]==vg[2] and vg[0]>=strain_core_cutoff:
-                coreGeneName='%s%s'%(clusterID,'_na.aln')
+                coreGeneName='%s%s'%(clusterID,'_na_aln.fa')
                 ## sequences might be discarded because of premature stops
                 coreGeneName_path= alnFilePath+coreGeneName
                 if os.path.exists(coreGeneName_path) and len(read_fasta(coreGeneName_path)) >= strain_core_cutoff:

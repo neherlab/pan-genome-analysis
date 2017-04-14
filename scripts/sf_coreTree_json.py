@@ -118,11 +118,11 @@ def process_metajson(path, species, meta_tidy_fpath, metajson_dict):
                     print metatype, ': undefined coloring type is now set to discrete.'
                     metajson_exp['color_options'][metatype]["type"]="discrete"
 
-    with open(''.join([path,'meta-dict-',species,'.js']),'wb') as meta_js_out:
-        meta_js_out.write('var meta_set = ')
-        meta_js_out.write('%s;'%json.dumps(metajson_dict))
-        meta_js_out.write('var meta_display_set = ')
-        meta_js_out.write('%s;'%json.dumps(metajson_exp))#meta_display_dict
+    with open(''.join([path,'metaConfiguration.js']),'wb') as meta_js_out:
+        meta_js_out.write('var meta_details=')
+        meta_js_out.write('%s'%json.dumps(metajson_dict))
+        meta_js_out.write(', meta_display=')
+        meta_js_out.write('%s;'%json.dumps(metajson_exp))
 
 def json_parser( path, folders_dict, species, meta_info_file_path, large_output, meta_tidy_fpath ):
     """ create json files for web-visualiaztion
@@ -157,6 +157,7 @@ def json_parser( path, folders_dict, species, meta_info_file_path, large_output,
     os.chdir(output_path)
     #visualzition_path='%s%s'%(path,'vis/')
     os.system('mv coreGenomeTree.json strainMetainfo.json ../vis/')
+    os.system('mv ../metaConfiguration.js ../vis/')
     os.system('mv *C*_aln.fa *C*_tree.json ../vis/geneCluster/')
     os.system('mv *C*.nwk ../vis/geneCluster/')
     os.system('cp tree_result.newick ../vis/strain_tree.nwk')

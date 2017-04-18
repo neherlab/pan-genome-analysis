@@ -3,7 +3,7 @@ from collections import defaultdict, Counter, OrderedDict
 from ete2 import Tree
 from itertools import izip
 from sf_miscellaneous import write_json
-
+import math
 def metadata_process(species, path, infile):
     """ extract meta-info from meta-info file
         input:  metainfo.tsv
@@ -70,6 +70,27 @@ def core_tree_to_json( species, node, path, metadata_process_result, strain_list
                 core_tree_dict['attr'][head]=strain_meta_dict[accession][index_head]
     return core_tree_dict
 
+def process_mixed_continuous(meta_detail):
+    #process mixed_continuous data: remove all the signs
+    processed_elems=[]
+    for raw_elem in meta_detail:
+        new_elem=raw_elem.replace(' ','')
+        for replace_str in ('>=','<=','>','<','='):
+            if replace_str in new_elem:
+                new_elem=new_elem.replace(replace_str,'')
+        if new_elem.startswith('.'):
+            new_elem='0'+new_elem
+        if new_elem.endswith('/'):#<0.06/
+            new_elem=new_elem.replace('/','')
+        if '/' in new_elem:
+            numer,denom=new_elem.split('/')
+            new_elem=str(round(float(numer)/float(denom),3))
+        if new_elem.replace('.','').isdigit():
+            new_elem=round(math.log(float(new_elem),2),2)
+
+        processed_elems.append([raw_elem,new_elem])
+    return processed_elems
+
 def process_metajson(path, species, meta_tidy_fpath, metajson_dict):
     """ """
     metajson_exp={"color_options":{ }}
@@ -100,23 +121,35 @@ def process_metajson(path, species, meta_tidy_fpath, metajson_dict):
             if len(meta_display_choice_dt)!=0:
                 if meta_display_choice_dt[metatype][1]=='yes': #display
                     metajson_exp['color_options'][metatype]["type"]= meta_display_choice_dt[metatype][0]
+                    if metajson_exp['color_options'][metatype]["type"]=='mixed_continuous':
+                        metajson_dict[metatype]=process_mixed_continuous(metajson_dict[metatype])
                 else:
                     metajson_exp['color_options'][metatype]["display"]='no'
             else:# infer the type
                 valid_elem_set=set(metajson_dict[metatype])-set(['unknown'])
                 num_isdigit=0
+                sign_used=0
+                coloring_type=''
+
                 for elem in valid_elem_set:
                     for replace_str in ('>=','<=','>','<','='):
                         #"10.2": remove the 1st decimal point before isdigit()  (10..2 not)
-                        if elem.replace(replace_str,'').replace(' ','').replace(".", "", 1).isdigit():
+                        if replace_str in elem:
+                            sign_used+=1
+                            elem=elem.replace(replace_str,'')
+                        if elem.replace(' ','').replace('.', '', 1).isdigit():
                             num_isdigit+=1
                             break
                 if num_isdigit==len(valid_elem_set):
-                    print metatype, ': undefined coloring type is now set to continuous.'
-                    metajson_exp['color_options'][metatype]["type"]="continuous"
+                    if sign_used==0:
+                        coloring_type="continuous"
+                    else:
+                        coloring_type="mixed_continuous"
+                        metajson_dict[metatype]=process_mixed_continuous(metajson_dict[metatype])
                 else:
-                    print metatype, ': undefined coloring type is now set to discrete.'
-                    metajson_exp['color_options'][metatype]["type"]="discrete"
+                    coloring_type="discrete"
+                metajson_exp['color_options'][metatype]["type"]=coloring_type
+                print metatype, ': undefined coloring type is now set to %s.'%coloring_type
 
     with open(''.join([path,'metaConfiguration.js']),'wb') as meta_js_out:
         meta_js_out.write('var meta_details=')

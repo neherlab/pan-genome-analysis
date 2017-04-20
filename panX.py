@@ -98,9 +98,9 @@ parser.add_argument('-nrna', '--disable_RNA_clustering', type = int, default = 1
 ## split tree via breaking up long branches (resolving over-clustering)
 #parser.add_argument('-sf', '--split_long_branch_factor', type = float, default = 3.0,
 #    help='use (0.1+3.0*core_diversity)/(1+3.0*core_diversity) to decide split_long_branch_cutoff',metavar='')
-parser.add_argument('-fcd', '--factor_core_diversity', type = float, default = 3.0,
+parser.add_argument('-fcd', '--factor_core_diversity', type = float, default = 2.0,
     help='default: factore used to refine raw core genome diversity, \
-    apply (0.1+3.0*core_diversity)/(1+3.0*core_diversity) to decide split_long_branch_cutoff', metavar='')
+    apply (0.1+2.0*core_diversity)/(1+2.0*core_diversity) to decide split_long_branch_cutoff', metavar='')
 parser.add_argument('-slb', '--split_long_branch_cutoff', type = float, default = 0.0,
     help='split long branch cutoff provided by user (by default: 0.0 as not given):',metavar='')
 ## split paralogy
@@ -137,8 +137,8 @@ parser.add_argument('-sitr', '--simple_tree', type = int, default = 0,
 
 parser.add_argument('-sp', '--species_name', type = str, default = '',
     help='default:', metavar='')
-parser.add_argument('-lo', '--large_output', type = int, default = 0,
-    help='default: not split gene presence/absence and gain/loss pattern into separate files for each cluster', metavar='')
+parser.add_argument('-lo', '--large_output', type = int, default = 1,
+    help='default: split gene presence/absence and gain/loss pattern into separate files for each cluster', metavar='')
 parser.add_argument('-rl', '--raw_locus_tag', type = int, default = 0,
     help='default: use strain_ID + locus_tag as new locus_tag; if set to 0, use raw locus_tag from GenBank file', metavar='')
 

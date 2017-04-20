@@ -11,7 +11,7 @@ from Bio.Align import MultipleSeqAlignment
 from sf_miscellaneous import times, read_fasta, \
     load_pickle, write_pickle, write_in_fa, write_json, multips
 
-sys.setrecursionlimit(2000)
+sys.setrecursionlimit(50000)
 
 def make_dir(dname):
     import os

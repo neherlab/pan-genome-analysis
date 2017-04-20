@@ -11,7 +11,7 @@ from sf_geneCluster_align_makeTree import align_and_makeTree, update_geneCluster
 from sf_split_long_branch import update_geneCluster_dt, cut_tree_gather_clades, \
  output_cutted_clusters, quick_align_makeTree, cutTree_outputCluster
 
-sys.setrecursionlimit(2000)
+sys.setrecursionlimit(50000)
 
 def concatenate_cluster_files(clusterID_list, index, file_path):
     """

@@ -11,6 +11,9 @@ Quick start:
 Enter the folder ```pan-genome-analysis```:
 ```git submodule update --init```
 
+Install dependencies and then run the test:
+```sh run-TestSet.sh```
+
 1. Dependencies:
   1. Required software:
     * [DIAMOND](https://github.com/bbuchfink/diamond) (fast protein alignment tool)
@@ -37,7 +40,7 @@ Enter the folder ```pan-genome-analysis```:
   - sh run.sh
   ```
     Description:
-    This calls run-pipeline.py to run each step using scripts located in folder ./scripts/
+    This calls panX.py to run each step using scripts located in folder ./scripts/
     panX.py [-h] -fn folder_name -sl strain_list
                        [-st steps [steps ...]] [-rt raxml_max_time]
                        [-t threads] [-bp blast_file_path]

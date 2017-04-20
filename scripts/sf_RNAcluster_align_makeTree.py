@@ -3,7 +3,7 @@ import numpy as np
 from sf_miscellaneous import times, read_fasta, load_pickle, write_pickle, write_in_fa, write_json, multips
 from sf_geneCluster_align_makeTree import mpm_tree, align_and_makeTree, load_sorted_clusters, update_diversity_cpk
 
-sys.setrecursionlimit(2000)
+sys.setrecursionlimit(50000)
 
 def update_gene_cluster_with_RNA(path, diamond_RNACluster_dt, diamond_geneCluster_dt ):
     ## update gene cluster pickled file

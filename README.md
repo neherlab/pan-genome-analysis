@@ -54,7 +54,7 @@ Install dependencies and then run the test:
   ./data
       YourSpecies               # folder specific to the your pan genome
         - YourSpecies-RefSeq.txt    # INPUT: GenBank accession numbers
-        - inputGenomes              # INPUT: genomes in GenBank format
+        - input_GenBank              # INPUT: genomes in GenBank format
           - strain1.gbk
           - strain2.gbk
           ...
@@ -63,15 +63,11 @@ Install dependencies and then run the test:
           - strainMetainfo.json
           - coreGenomeTree.json
           - geneCluster/       # Folder contain orthologous clusters
-            - GC_000001*_na.aln
-            - GC_000001*_aa.aln
-            - GC_000001*_tree.json
+            - GC000001*_na_aln.fa
+            - GC000001*_aa_aln.fa
+            - GC000001*_tree.json
+            - GC000001*_patterns.json
             ...
-        - panGenome
-          - GC_000001*.fna
-          - GC_000001*.faa
-          - pan-genome.fasta
-          ...
   ```
   In which step of the analysis different files and directories are produced is described in more detail below.
 
@@ -81,9 +77,9 @@ In `data/TestSet`, you will find a small set of five *Mycoplasma genitalium* gen
 To run `pan-genome-analysis` pipeline, you need to execute a series of steps that can be started using the `run-TestSet.sh` script
 To run ...
 ```
-python ./scripts/run-pipeline -fn data/TestSet -sl TestSet-RefSeq.txt -st 1 2
+python ./scripts/run-pipeline -fn data/TestSet -sl TestSet-RefSeq.txt -t 32
 ```
-where the `-st 1 2` specifies the analysis steps you want to run. All steps can be run in order by omitting the `-st` option.
+All steps can be run in order by omitting the `-st` option, whereas using `-st 5 6` will specify the analysis steps you want to run.
 <br />
 
 **Step01: specify the set of strains**<br />
@@ -91,7 +87,7 @@ The pipeline can either download sequences from GenBank or run on genomes you pr
 If using own GenBank files, step02 can be skipped and corresponding GenBank files should be placed in the same folder where strain list is located.<br />
 - Input:<br />
 In folder `./data/TestSet/:`<br />
-TestSet-RefSeq.txt (accession list for download RefSeq strains)<br />
+TestSet-RefSeq.txt<br />
 - Output:<br />
 In folder `./data/TestSet/:`<br />
 strain_list.cpk (cPickled file for the strain list )<br />
@@ -99,11 +95,9 @@ strain_list.cpk (cPickled file for the strain list )<br />
 **Step02: download RefSeq GenBank (*.gbk) file**<br />
 If using own GenBank files, step02 can be skipped. Otherwise, run
 to fetch NCBI RefSeq GenBank (\*.gbk) file from strain list<br />
-- Input:<br />
-In folder `./data/TestSet/:`<br />
+- Input: In folder `./data/TestSet/:`<br />
 strain_list.cpk<br />
-- Output:<br />
-In folder `./data/TestSet/:`<br />
+- Output: In folder `./data/TestSet/:`<br />
 \*.gbk files<br />
 
 **Step03: extract gene sequences from GenBank (*.gbk) file**<br />
@@ -112,25 +106,25 @@ Extract gene sequences in GenBank (\*.gbk) file for preparing nucleotide sequenc
 In folder `./data/TestSet/:`<br />
 \*.gbk file<br />
 - Output:<br />
-In folder `./data/TestSet/:`<br />
-\*_genes_dict.cpk file (nucleotide sequences)<br />
+In folder `./data/TestSet/nucleotide_fna:`<br />
+\*.fna file (nucleotide sequences)<br />
 In folder `./data/TestSet/protein_faa:`<br />
 \*.faa file (amino acid sequences for DIAMOND input)<br />
 
 **Step04: extract metadata from GenBank (\*.gbk) file (Alternative: use manually curated metadata table)**<br />
 Extracting meta-information ( E.g.: country,collection_date, host, strain) or provide a simple tab-separated values (TSV) table.<br />
 
-| strain        | location      | ...   |
-| ------------- |:-------------:| -----:|
-| NC_01         | Germany       | ...   |
-| NC_02         | Switzerland   | ...   |
+| strain | location    | ... |
+| -------|:-----------:| ---:|
+| NC_01  | Germany     | ... |
+| NC_02  | Switzerland | ... |
 
 - Input:<br />
 In folder `./data/TestSet/:`<br />
 \*.gbk file<br />
 - Output:<br />
 In folder `./data/TestSet/:`<br />
-metainfo_curated.tsv and meta-dict-TestSet.js (metadata for visualization)<br />
+metainfo.tsv  (metadata for visualization)<br />
 
 **Step05: compute gene clusters**<br />
 Conduct all-against-all protein sequences comparison by Diamond and cluster genes using MCL<br />
@@ -142,7 +136,7 @@ In folder `./data/TestSet/protein_faa/diamond_matches/:`<br />
 allclusters.cpk (dictionary for gene clusters)<br />
 diamond_geneCluster_dt: {clusterID:[ count_strains,[memb1,...],count_genes }<br />
 
-**Step06: build alignments, gene trees from gene clusters and split paralogs**<br />
+**Step06: build alignments, gene trees from gene clusters and run phylogeny-based post-processing**<br />
 Load nucleotide sequences in gene clusters, construct nucleotide and amino acid alignment, build a gene tree based on nucleotide alignment, split paralogs and export the gene tree in json file for visualization<br />
 - Input:<br />
 In folder `./data/TestSet/protein_faa/diamond_matches/:`<br />
@@ -152,9 +146,9 @@ In folder `./data/TestSet/protein_faa/diamond_matches/:`<br />
 allclusters_final.tsv ( final gene clusters)<br />
 In folder `./data/TestSet/geneCluster/:`<br />
 GC\*.fna (nucleotide fasta)<br />
-GC\*_na.aln (nucleotide alignment)<br />
+GC\*_na_aln.fa (nucleotide alignment)<br />
 GC\*.faa (amino acid fasta)<br />
-GC\*_aa.aln (amino acid alignment)<br />
+GC\*_aa_aln.fa (amino acid alignment)<br />
 GC\*_tree.json (gene tree in json file)<br />
 
 **Step07: construct core gene SNP matrix**<br />
@@ -177,9 +171,10 @@ tree_result.newick<br />
 Use ancestral reconstruction algorithm (treetime) to conduct gain and loss events inference<br />
 - Output:<br />
 In folder `./data/TestSet/geneCluster/:`<br />
-geneGainLossEvent.json (gene gain/loss event)<br />
+genePresence.aln  (gene presence and absence pattern)<br />
+dt_genePresence.cpk (gene presence and absence pattern as cPickled file)<br />
 dt_geneEvents.cpk (number of gene gain/loss events)<br />
-tree_result.newick (final strain tree with inner nodes)<br />
+GC000\*_patterns.json (gene gain/loss pattern for each gene cluster)<br />
 
 **Step10: export gene cluster json file**<br />
 Export json file for gene cluster datatable visualization<br />
@@ -194,7 +189,7 @@ geneCluster.json (gene cluster json for datatable visualization)<br />
 Export json files for tree and metadata visualization<br />
 - Input:<br />
 In folder `./data/TestSet/:`<br />
-metainfo_curated.tsv (metadata table)<br />
+metainfo.tsv (metadata table)<br />
 In folder `./data/TestSet/geneCluster/:`<br />
 tree_result.newick (strain tree)<br />
 - Output:<br />
@@ -203,11 +198,11 @@ coreGenomeTree.json (strain tree visualization)<br />
 strainMetainfo.json (strain metadata table visualization)
 - Data collection for visualization (sending data to server)
 In folder `./data/TestSet/vis/`<br />
-geneGainLossEvent.json
 geneCluster.json
 coreGenomeTree.json
 strainMetainfo.json
 In folder `./data/TestSet/vis/geneCluster/`<br />
-GC\*_na.aln
-GC\*_aa.aln
-GC\*_tree.json
+GC000\*_na_aln.fa
+GC000\*_aa_aln.fa
+GC000\*_tree.json
+GC000\*_patterns.json

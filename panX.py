@@ -144,6 +144,8 @@ parser.add_argument('-rl', '--raw_locus_tag', type = int, default = 0,
 
 parser.add_argument('-mtf', '--meta_tidy_fpath', type = str, default = '',
     help='default: file path for a tidy metadata structure (discrete/continuous data type, etc.)', metavar='')
+parser.add_argument('-rxm', '--raxml_path', type = str, default = '',
+    help='absolute path of raxml', metavar='')
 #parser.add_argument('-dbg', '--debug_module', type = int, default = 1,
 #    help='default: debug module not used', metavar='')
 parser.add_argument('-kt', '--keep_temporary_file', type = int, default = 1,
@@ -200,6 +202,7 @@ myPangenome=pangenome(
     large_output=params.large_output,
     raw_locus_tag=params.raw_locus_tag,
     meta_tidy_fpath=params.meta_tidy_fpath,
+    raxml_path=params.raxml_path,
     keep_temporary_file=params.keep_temporary_file
     )
 

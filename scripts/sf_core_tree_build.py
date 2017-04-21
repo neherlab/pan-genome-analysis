@@ -21,7 +21,7 @@ def midpointRooting(infileName, outfileName):
     with open(outfileName, 'wb') as outfile:
         outfile.write(tree.write(format=1))
 
-def aln_to_Newick(path, raxml_timelimit, threads):
+def aln_to_Newick(path, raxml_timelimit, raxml_path, threads):
     """ function: build core gene SNP tree using SNP alignment
         input: SNP_whole_matrix.aln
         output: tree_result.newick
@@ -46,7 +46,8 @@ def aln_to_Newick(path, raxml_timelimit, threads):
         print '%s%d%s'%('RAxML tree optimization within the timelimit of ',raxml_timelimit, ' minutes')
         # exec for killing process
         end_time = time.time() + int(raxml_timelimit*60) #
-        process = subprocess.Popen('exec raxml -f d -T '+str(threads)+' -j -s SNP_whole_matrix.aln -n topology -c 25 -m GTRCAT -p 344312987 -t initial_tree.newick', shell=True)
+        raxml_program= 'raxml' if raxml_path=='' else raxml_path
+        process = subprocess.Popen('exec '+raxml_program+' -f d -T '+str(threads)+' -j -s SNP_whole_matrix.aln -n topology -c 25 -m GTRCAT -p 344312987 -t initial_tree.newick', shell=True)
         while (time.time() < end_time):
             if os.path.isfile('RAxML_result.topology'):
                 break
@@ -65,7 +66,7 @@ def aln_to_Newick(path, raxml_timelimit, threads):
         shutil.copy('initial_tree.newick', 'raxml_tree.newick')
 
     print 'RAxML branch length optimization and rooting'
-    os.system('raxml -f e -T 6 -s SNP_whole_matrix.aln -n branches -c 25 -m GTRGAMMA -p 344312987 -t raxml_tree.newick')
+    os.system(raxml_program+' -f e -T 6 -s SNP_whole_matrix.aln -n branches -c 25 -m GTRGAMMA -p 344312987 -t raxml_tree.newick')
     shutil.copy('RAxML_result.branches', out_fname)
 
     print ' raxml time-cost:', times(start)

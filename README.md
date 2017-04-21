@@ -5,21 +5,21 @@ Overview:
 panX is based on an automated pan-genome identification pipeline that determines clusters of orthologous genes. The pipeline starts with a set of annotated sequences (e.g. NCBI RefSeq) of a bacterial species.
 The genomes are split into individual genes and all genes from all strains are compared to each other via the fast protein alignment tool [DIAMOND](http://www.nature.com/nmeth/journal/v12/n1/full/nmeth.3176.html) and then clustered into orthologous groups using MCL and panX post-processing procedures. After the construction of gene clusters, genes within clusters are aligned and the corresponding phylogenetic tree is computed, with mutations mapped into each tree and various summary statistics calculated.
 
-###Quick start:
+### Quick start:
 
-```git clone https://github.com/neherlab/pan-genome-analysis.git```
+`git clone https://github.com/neherlab/pan-genome-analysis.git`
 
-Enter the folder ```pan-genome-analysis```:
+Enter the folder `pan-genome-analysis`:
 
-```git submodule update --init```
+`git submodule update --init`
 
 Install dependencies and then run the test:
 
-```sh run-TestSet.sh```
+`sh run-TestSet.sh`
 
 The results can be explored via our interactive [pan-genome-visualization](https://github.com/neherlab/pan-genome-visualization) application.
 
-###Pipeline overivew
+### Pipeline overivew
 
 ![panX](/panX-pipeline.png)
 

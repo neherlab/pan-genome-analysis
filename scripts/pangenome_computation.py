@@ -211,7 +211,7 @@ class pangenome:
 
     def export_coreTree_json(self):
         """ export core tree as json file for core tree visualization"""
-        json_parser(self.path, self.folders_dict, self.species, self.metainfo_fpath, self.large_output, self.meta_tidy_fpath)
+        json_parser(self.path, self.folders_dict, self.fpaths_dict, self.metainfo_fpath, self.large_output, self.meta_tidy_fpath, self.keep_temporary_file)
 
 def harmonize_filename(path, glob_list):
     """ force '-' to be replaced as '_' in input filename """

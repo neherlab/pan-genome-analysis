@@ -4,7 +4,7 @@ from ete2 import Tree
 from itertools import izip
 from sf_miscellaneous import write_json
 import math
-def metadata_process(species, path, infile):
+def metadata_process(path, infile):
     """ extract meta-info from meta-info file
         input:  metainfo.tsv
         return: strain_meta_dict as dictionary storing meta-info for each strain
@@ -48,7 +48,7 @@ def metadata_process(species, path, infile):
             strain_metadata_json.write(json.dumps(metatable_strains_json_dict))
     return strain_meta_dict, headers, metajson_dict
 
-def core_tree_to_json( species, node, path, metadata_process_result, strain_list):
+def core_tree_to_json( node, path, metadata_process_result, strain_list):
     ## tree json with meta-info labels
     strain_meta_dict, headers= metadata_process_result
     node.name = node.name.replace("'", '')
@@ -59,7 +59,7 @@ def core_tree_to_json( species, node, path, metadata_process_result, strain_list
     if node.children: ##branchset
         core_tree_dict["children"] = []
         for child in node.children: ## recursively
-            core_tree_dict["children"].append(core_tree_to_json(species, child, path, metadata_process_result, strain_list))
+            core_tree_dict["children"].append(core_tree_to_json(child, path, metadata_process_result, strain_list))
     core_tree_dict["branch_length"]=float(node.dist)
     if not core_tree_dict["name"].startswith('NODE_'):
         ## accession, strain, antibiotics, collection_date, country, host
@@ -91,7 +91,7 @@ def process_mixed_continuous(meta_detail):
         processed_elems.append([raw_elem,new_elem])
     return processed_elems
 
-def process_metajson(path, species, meta_tidy_fpath, metajson_dict):
+def process_metajson(path, meta_tidy_fpath, metajson_dict):
     """ """
     metajson_exp={"color_options":{ }}
     meta_display_choice_dt={}
@@ -157,7 +157,7 @@ def process_metajson(path, species, meta_tidy_fpath, metajson_dict):
         meta_js_out.write(', meta_display=')
         meta_js_out.write('%s;'%json.dumps(metajson_exp))
 
-def json_parser( path, folders_dict, species, meta_info_file_path, large_output, meta_tidy_fpath ):
+def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path, large_output, meta_tidy_fpath, keep_temporary_file ):
     """ create json files for web-visualiaztion
         input: tree_result.newick, metainfo.tsv
         output: json files for core gene SNP tree and strain metadata table
@@ -172,37 +172,44 @@ def json_parser( path, folders_dict, species, meta_info_file_path, large_output,
     strain_list=[node.name for node in tree.traverse("preorder")]
 
     ## create strain tree json file
-    strain_meta_dict, headers, metajson_dict = metadata_process(species, path, metaFile)
+    strain_meta_dict, headers, metajson_dict = metadata_process(path, metaFile)
     metadata_process_result=(strain_meta_dict, headers)
-    coreTree_dict=core_tree_to_json(species, tree, path, metadata_process_result, strain_list)
+    coreTree_dict=core_tree_to_json(tree, path, metadata_process_result, strain_list)
     coreTree_jsonString=json.dumps(coreTree_dict)
     with open(output_path+'coreGenomeTree.json', 'wb') as core_tree_json:
         core_tree_json.write(coreTree_jsonString)
 
     ## process meta json
-    process_metajson(path, species, meta_tidy_fpath, metajson_dict)
+    process_metajson(path, meta_tidy_fpath, metajson_dict)
 
     ## Data organization
-    ## Move:1. all *.cpk file to ./data/YourSpecies/ folder
-    ##      2. coreGenomeTree.json, strainMetainfo.json to ./data/YourSpecies/vis/ folder
-    ##      3. GC*json file to ./data/YourSpecies/vis/geneCluster/ folder
+    ## Move: visualization-related files into ./vis/geneCluster/ folder
     #os.system('ln -sf %s/*.cpk %s/../'%(output_path,output_path))
     os.chdir(output_path)
-    #visualzition_path='%s%s'%(path,'vis/')
-    os.system('mv coreGenomeTree.json strainMetainfo.json ../vis/')
-    os.system('mv ../metaConfiguration.js ../vis/')
-    os.system('mv *C*_aln.fa *C*_tree.json ../vis/geneCluster/')
-    os.system('mv *C*.nwk ../vis/geneCluster/')
+    vis_path='../vis/'
+    os.system('mv coreGenomeTree.json strainMetainfo.json ../metaConfiguration.js '+vis_path)
+    os.system('mv *C*_aln.fa *C*_tree.json *C*.nwk '+vis_path+'geneCluster/')
     os.system('cp tree_result.newick ../vis/strain_tree.nwk')
     if large_output==1:
-        os.system('mv *C*patterns.json ../vis/geneCluster/')
+        os.system('mv *C*patterns.json '+vis_path+'geneCluster/')
 
-    keep_temporary_file=0
+    ## gzip aln files
+    os.chdir('../vis/geneCluster/')
+    os.system('gzip -f *_aln.fa' )
+
     if keep_temporary_file:
-        strain_protein_fa='./protein_faa/'
-        strain_nucleotide_fa='./nucleotide_fna/'
-        os.system('rm %s'%strain_protein_fa)
-        os.system('rm %s'%strain_nucleotide_fa)
-        # os.system('rm ')
+        # clean up record folders
+        os.chdir('../../../../');
+        print 'clean up temporary files (temporary core gene and post-processed cluster records, etc.)\n'
+        tmp_core= folders_dict['tmp_core_seq_path']
+        cluster_seq_path= folders_dict['cluster_seq_path']
+        deleted= cluster_seq_path+'deleted_clusters/'
+        split_long= cluster_seq_path+'update_long_branch_splits/'
+        resolve_peak= cluster_seq_path+'update_uncluster_splits/'
+        os.system('rm -rf '+' '.join([tmp_core, deleted, split_long, resolve_peak]))
+        # clean up files
+        for key, fpath in fpaths_dict.iteritems():
+            if key=='cluster_final_fpath': continue
+            os.system('rm -f '+fpath)
 
-    print('Pan-genome analysis is finished, your data can be transfered to the local server for data visualization and exploration via link-to-server.py in the main folder.')
+    print('Pan-genome analysis is successfully accomplished, the results can be transferred to the local server for panX data visualization and exploration via link-to-server.py in the main folder.')

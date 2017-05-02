@@ -1,27 +1,17 @@
 #!/bin/sh
 #
-#  Reservation desired
-#$ -R y
+#  Reserve 4 CPUs for this job
+#$ -pe smp 4
 #
-#  Reserve 8 CPUs for this job
-#$ -pe parallel 32
-#
-#  Request 8G of RAM
-#$ -l h_vmem=1G
-#
-#  Request it to run this long HH:MM:SS
-#$ -l h_rt=00:59:00
-#
-#  Use /bin/bash to execute this script
-#$ -S /bin/bash
+#  Request it to run this for HH:MM:SS with ?G per core
+#$ -l runtime=00:59:00,membycore=2G
 #
 #  Run job from current working directory
 #$ -cwd
 #
-#  Send email when the job begins, ends, aborts, or is suspended
-#$ -m beas
+ml Python MAFFT FastTree RAxML MCL
 
-./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -t 32 > TestSet.log
+./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -t 4 > TestSet.log
 ## example for using divide-and-conquer algorithm on large datasets (use parameters -dmdc and -dcs, maybe also -sitr )
 #./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -dmdc 1 -dcs 50 -sitr 1 -t 32 > TestSet.log
 

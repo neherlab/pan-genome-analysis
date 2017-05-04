@@ -27,6 +27,8 @@ parser.add_argument('-gbk', '--gbk_present', type = int, default = 1,
     Otherwise, nucleotide/amino_acid sequence fna/faa files should be provided.', metavar='')
 parser.add_argument('-st', '--steps', nargs='+', type = int, default = ['all'],
     help='select specific steps to run or run all steps by default ', metavar='')
+parser.add_argument('-mo', '--metainfo_organism', action='store_true',
+    help='using this parameter will add organism information in metadata table.')
 parser.add_argument('-rt', '--raxml_max_time', type = int, default = 30,
     help='RAxML tree optimization: maximal runing time (in minutes, default: 30 min)' , metavar='')
 parser.add_argument('-t', '--threads', type = int, default = 1,
@@ -170,6 +172,7 @@ myPangenome=pangenome(
     species=params.strain_list.split('-RefSeq')[0],
     gbk_present=params.gbk_present,
     threads=params.threads,
+    metainfo_organism=params.metainfo_organism,
     raxml_max_time=params.raxml_max_time,
     blast_fpath=params.blast_file_path,
     roary_fpath=params.roary_file_path,

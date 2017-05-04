@@ -196,8 +196,7 @@ def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path, large_out
     ## gzip aln files
     os.chdir('../vis/geneCluster/')
     os.system('gzip -f *_aln.fa' )
-
-    if keep_temporary_file:
+    if not keep_temporary_file:
         # clean up record folders
         os.chdir('../../../../');
         print 'clean up temporary files (temporary core gene and post-processed cluster records, etc.)\n'
@@ -209,7 +208,7 @@ def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path, large_out
         os.system('rm -rf '+' '.join([tmp_core, deleted, split_long, resolve_peak]))
         # clean up files
         for key, fpath in fpaths_dict.iteritems():
-            if key=='cluster_final_fpath': continue
+            if any( key==i for i in ['cluster_fpath','cluster_final_fpath','cluster_cpk_final_fpath']): continue
             os.system('rm -f '+fpath)
 
     print('Pan-genome analysis is successfully accomplished, the results can be transferred to the local server for panX data visualization and exploration via link-to-server.py in the main folder.')

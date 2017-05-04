@@ -1,4 +1,4 @@
-def extract_metadata(path, strain_list, folders_dict, gbk_present):
+def extract_metadata(path, strain_list, folders_dict, gbk_present, metainfo_organism):
     """
     extract metainfo (date/country) from genBank file
     This step is not necessary if the user provides a tab-delimited
@@ -11,7 +11,10 @@ def extract_metadata(path, strain_list, folders_dict, gbk_present):
     from Bio import SeqIO
     with open('%s%s'%(path,'metainfo.tsv'), 'wb') as writeseq:
         #headers: accession, strainName, dateInfo, country, host
-        writeseq.write( "%s\n"%('\t'.join(['accession' , 'strain', 'collection_date', 'country', 'host'])) )
+        header=['accession' , 'strain', 'collection_date', 'country', 'host']
+        if metainfo_organism:
+            header.insert(1, 'organism')
+        writeseq.write( "%s\n"%('\t'.join(header)) )
         if gbk_present==1:
             gbk_path=folders_dict['gbk_path']
             for strainID in strain_list:
@@ -20,6 +23,11 @@ def extract_metadata(path, strain_list, folders_dict, gbk_present):
                     for feature in record.features:
                         host, datacolct, country, strainName ='unknown', 'unknown', 'unknown', 'unknown'
                         if feature.type=='source':
+                            if metainfo_organism:
+                                if 'organism' in feature.qualifiers:
+                                    organismName= feature.qualifiers['organism'][0]
+                                else:
+                                    organismName= 'unknown'
                             if 'strain' in feature.qualifiers:
                                 strainName= feature.qualifiers['strain'][0]
                             if 'host' in feature.qualifiers:
@@ -56,7 +64,10 @@ def extract_metadata(path, strain_list, folders_dict, gbk_present):
                             # just get the year
                             datacolct = datacolct.split('-')[0]
                         break
-                    writeseq.write( "%s\n"%('\t'.join([strainID, strainName, datacolct, country, host])) )
+                    metadata_row=[strainID, strainName, datacolct, country, host]
+                    if metainfo_organism:
+                        metadata_row.insert(1, organismName)
+                    writeseq.write( "%s\n"%('\t'.join(metadata_row)) )
                     break
         else: #gbk files are not provided
             strainName = datacolct = country = host='unknown'

@@ -426,7 +426,11 @@ class mpm_tree(object):
             #node.longName = node.ann.split('-')[0]
             node.name = node.ann.split('-')[0]
             #NZ_CP008870|HV97_RS21955-1-fabG_3-ketoacyl-ACP_reductase
-            node.annotation= node.ann.split('-',2)[2]
+            annotation=node.ann.split('-',2)
+            if len(annotation)==3:
+                node.annotation= annotation[2]
+            else:
+                node.annotation= annotation[0]
 
         ## write tree json
         for n in self.tree.root.find_clades():
@@ -475,7 +479,7 @@ class mpm_tree(object):
 
 def align_and_makeTree( fna_file_list, alignFile_path, simple_tree):
     for gene_cluster_nu_filename in fna_file_list:
-        if 1:#try:
+        try:
             # extract GC_00002 from path/GC_00002.aln
             clusterID = gene_cluster_nu_filename.split('/')[-1].split('.')[0]
             start = time.time();
@@ -521,7 +525,7 @@ def align_and_makeTree( fna_file_list, alignFile_path, simple_tree):
                     cluster_correl_stats_file.write('%s\n'%'\t'.join([
                      str(i) for i in [clusterID, random_alnID, diversity_nuc, \
                         mean_seqLen, std_seqLen, bestSplit_paraNodes, bestSplit_branchLen ] ]))
-        if 0:#except:
+        except:
             print("Aligning and tree building of %s failed"%gene_cluster_nu_filename)
 
 

@@ -115,7 +115,7 @@ def geneCluster_to_json(path, disable_RNA_clustering, store_locus_tag, raw_locus
             duplicated_state='no';dup_detail=''
 
         ## locus_tag
-        if raw_locus_tag==0:
+        if not raw_locus_tag:
             #locus_tag_strain=' '.join([ igl for igl in gene_list ])
             locus_tag_strain=' '.join([ igl.replace('|','_') for igl in gene_list ])
         else:

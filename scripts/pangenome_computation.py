@@ -208,7 +208,7 @@ class pangenome:
 
     def export_geneCluster_json(self):
         """ export gene clusters as json file which is loaded in the cluster datatable """
-        geneCluster_to_json(self.path, self.disable_RNA_clustering, self.large_output, self.raw_locus_tag)
+        geneCluster_to_json(self.path, self.disable_RNA_clustering, self.store_locus_tag, self.raw_locus_tag, self.optional_table_column)
 
     def export_coreTree_json(self):
         """ export core tree as json file for core tree visualization"""

@@ -101,9 +101,11 @@ def estimate_core_gene_diversity(path, folders_dict, strain_list, parallel, core
 
     calculated_core_diversity=tmp_average_core_diversity(tmp_core_seq_path)
     #refined_core_diversity= (0.1+factor*calculated_core_diversity)/(1+factor*calculated_core_diversity) #later: factor as param
-    refined_core_diversity= (0.1+factor_core_diversity*calculated_core_diversity)/(1+factor_core_diversity*calculated_core_diversity)
-    print('average core_diversity: ',calculated_core_diversity,\
-            'refined core_diversity for splitting over_clustered genes: ',refined_core_diversity)
+    refined_core_diversity= round((0.1+factor_core_diversity*calculated_core_diversity)/(1+factor_core_diversity*calculated_core_diversity),4)
+    print('factor used: '+str(factor_core_diversity))
+    print('average core_diversity: '+str(calculated_core_diversity))
+    print('refined core_diversity for splitting over_clustered genes: '+str(refined_core_diversity))
+
     ## move folder tmp_core to the central data folder
     new_clustering_path= '%stmp_core'%path
     if os.path.exists(new_clustering_path):

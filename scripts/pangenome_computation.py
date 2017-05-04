@@ -169,7 +169,8 @@ class pangenome:
             explore_paralog_plot=self.explore_paralog_plot,
             window_size_smoothed=self.window_size_smoothed,
             strain_proportion=self.strain_proportion,
-            sigma_scale=self.sigma_scale
+            sigma_scale=self.sigma_scale,
+            species=self.species
             )
 
         myClusterCollector.estimate_raw_core_diversity()

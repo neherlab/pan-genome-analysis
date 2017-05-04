@@ -107,7 +107,7 @@ def cut_all_trees_from_merged_clusters(parallel, path, cut_branch_threshold, sim
     merged_cluster_filelist=glob.glob(geneCluster_fasta_path+'GC_un*.fna')
     ## parallelization of "post-clustering workflow for merged unclustered records"
     multips(cutTree_outputCluster, parallel, merged_cluster_filelist, geneCluster_fasta_path,
-        cut_branch_threshold, parallel, treefile_used=False)
+        cut_branch_threshold, treefile_used=False)
 
     ## gather new clusters from refined_clusters.txt
     #if os.path.exists(''.join([geneCluster_fasta_path,'refined_clusters.txt'])):
@@ -115,7 +115,7 @@ def cut_all_trees_from_merged_clusters(parallel, path, cut_branch_threshold, sim
         new_fa_files_list=[ clus.rstrip() for clus in refined_clusters ]
 
     ## parallelization of "align and make tree on new cluster"
-    multips(align_and_makeTree, parallel, new_fa_files_list, geneCluster_fasta_path, parallel, simple_tree)
+    multips(align_and_makeTree, parallel, new_fa_files_list, geneCluster_fasta_path, simple_tree)
 
 def postprocess_unclustered_genes(parallel, path, nstrains, simple_tree, split_long_branch_cutoff,
     window_size_smoothed=5, strain_proportion=0.3 , sigma_scale=3):

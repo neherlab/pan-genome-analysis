@@ -205,7 +205,7 @@ class mpm_tree(object):
         SeqIO.write(aa_seqs.values(), tmpfname,'fasta')
 
         if alignment_tool=='mafft':
-            os.system('mafft --amino temp_in.fasta 1> temp_out.fasta 2> mafft.log')
+            os.system('mafft --reorder --amino --anysymbol temp_in.fasta 1> temp_out.fasta 2> mafft.log')
             aln_aa = AlignIO.read('temp_out.fasta', "fasta")
         elif alignment_tool=='muscle':
             from Bio.Align.Applications import MuscleCommandline
@@ -229,7 +229,7 @@ class mpm_tree(object):
         os.chdir(self.run_dir)
 
         SeqIO.write(self.seqs.values(), "temp_in.fasta", "fasta")
-        os.system('mafft --anysymbol temp_in.fasta 1> temp_out.fasta 2> mafft.log')
+        os.system('mafft --reorder --anysymbol temp_in.fasta 1> temp_out.fasta 2> mafft.log')
 
         self.aln = AlignIO.read('temp_out.fasta', 'fasta')
         os.chdir('..')

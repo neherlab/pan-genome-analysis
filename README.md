@@ -2,10 +2,10 @@
 Author: Wei Ding, Franz Baumdicker and Richard Neher
 
 Overview:
-panX is based on an automated pan-genome identification pipeline that determines clusters of orthologous genes. The pipeline starts with a set of annotated sequences (e.g. NCBI RefSeq) of a bacterial species.
+**panX** is based on an automated pan-genome identification pipeline that determines clusters of orthologous genes. The pipeline starts with a set of annotated sequences (e.g. NCBI RefSeq) of a bacterial species.
 The genomes are split into individual genes and all genes from all strains are compared to each other via the fast protein alignment tool [DIAMOND](http://www.nature.com/nmeth/journal/v12/n1/full/nmeth.3176.html) and then clustered into orthologous groups using MCL and panX post-processing procedures. After the construction of gene clusters, genes within clusters are aligned and the corresponding phylogenetic tree is computed, with mutations mapped into each tree and various summary statistics calculated.
 
-### Quick start:
+### **Quick start:**
 
 `git clone https://github.com/neherlab/pan-genome-analysis.git`
 
@@ -19,7 +19,7 @@ Install dependencies and then run the test:
 
 The results can be explored via our interactive [pan-genome-visualization](https://github.com/neherlab/pan-genome-visualization) application.
 
-### Pipeline overivew
+### **Pipeline overivew:**
 
 ![panX](/panX-pipeline.png)
 
@@ -81,14 +81,14 @@ The results can be explored via our interactive [pan-genome-visualization](https
   In which step of the analysis different files and directories are produced is described in more detail below.
 
 
-##**Step-by-Step tutorial:**<br />
+### **Step-by-Step tutorial:**<br />
 In `data/TestSet`, you will find a small set of five *Mycoplasma genitalium* genomes that is used in this tutorial. Your own data should also reside in such a folder within `data/` -- we will refer to this folder as *run directory* below. The name of the run directory is used as a species name in down-stream analysis.
 To run `pan-genome-analysis` pipeline, you need to execute a series of steps that can be started using the `run-TestSet.sh` script
 To run ...
 ```
 python ./scripts/run-pipeline -fn data/TestSet -sl TestSet-RefSeq.txt -t 32
 ```
-All steps can be run in order by omitting the `-st` option, whereas using `-st 5 6` will specify the analysis steps you want to run.
+All steps can be run in order by omitting the `-st` option, whereas using `-st 5 6` will specify the analysis steps you want to run. `-t ` specifies the number of CPU cores.
 <br />
 
 **Step01: specify the set of strains**<br />

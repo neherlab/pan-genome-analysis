@@ -131,8 +131,8 @@ def extract_sequences(path, strain_list, folders_dict, gbk_present, disable_RNA_
     RNA_dict= defaultdict(dict)
 
     ## clean up folder when data from previous run exist.
-    os.system('rm '+protein_path+' *.faa')
-    os.system('rm '+nucleotide_path+' *.fna')
+    os.system('rm '+protein_path+'*.faa')
+    os.system('rm '+nucleotide_path+'*.fna')
 
     if gbk_present==1:
         ## process gbk file

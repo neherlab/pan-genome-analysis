@@ -9,9 +9,16 @@
 #  Run job from current working directory
 #$ -cwd
 #
-ml Python MAFFT FastTree RAxML MCL
 
-./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -t 4 > TestSet.log
+ml purge
+ml Python MAFFT FastTree RAxML MCL
+export PYTHONPATH=/scicore/home/neher/neher/.local/lib/python2.7/site-packages:$PYTHONPATH
+
+./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -st 1 2 3 4 5 -t 4 > TestSet.log
+ml purge
+ml Python MAFFT FastTree RAxML
+./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -st 6 7 8 9 10 11 12 -t 4 > TestSet.log
+
 ## example for using divide-and-conquer algorithm on large datasets (use parameters -dmdc and -dcs, maybe also -sitr )
 #./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -dmdc 1 -dcs 50 -sitr 1 -t 32 > TestSet.log
 

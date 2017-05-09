@@ -6,7 +6,7 @@ from sf_coreTree_json import Metadata
 
 class PresenceAbsenceAssociation(object):
     """docstring for Association"""
-    def __init__(self, tree, meta_info, presence_absence):
+    def __init__(self, tree, meta_info):
         super(PresenceAbsenceAssociation, self).__init__()
         self.meta_info = meta_info
         if type(tree)==str and os.path.isfile(tree):
@@ -14,6 +14,52 @@ class PresenceAbsenceAssociation(object):
         else:
             self.tree = tree
 
+    def set_gain_loss(self, gain_loss):
+        clade = 0
+        for n in self.tree.find_clades(order='preorder'):
+            if n==self.tree.root:
+                continue
+            n.present = 'present' if gain_loss[clade] in [1, 3] else 'absent'
+            n.event = (gain_loss[clade] in [1, 2])
+            clade+=1
+
+        rn = self.tree.root
+        rn.present = 'present' if np.mean([c.present=='present' for c in rn])>=0.5 else 'absent'
+        rn.event = True
+
+    def calc_association(self,meta_column, transform=None, pc=3):
+        '''
+        calculate the mean value of the phenotype of leaves upstream and down stream
+        of each branch in the tree.
+        '''
+        if transform is None:
+            transform = lambda x:x
+        for n in self.tree.find_clades(order='postorder'):
+            if n.is_terminal():
+                n.strain = n.name.split('|')[0]
+                n.meta_value = transform(self.meta_info[n.strain][meta_column])
+                if not np.isnan(n.meta_value):
+                    n.meta_count = 1
+                    n.meta_sq_value = n.meta_value*n.meta_value
+                else:
+                    n.meta_count = 0
+                    n.meta_sq_value = np.nan
+
+            else:
+                n.meta_count = np.sum([c.meta_count for c in n if c.meta_count and not c.event])
+                n.meta_value = np.sum([c.meta_value for c in n if c.meta_count and not c.event])
+                n.meta_sq_value = np.sum([c.meta_sq_value for c in n if c.meta_count and not c.event])
+
+        self.averages = {'present':[], 'absent':[]}
+        rn = self.tree.root
+        if rn.meta_count:
+            self.averages[rn.present].append(rn.meta_value/rn.meta_count)
+        for n in self.tree.find_clades(order='preorder'):
+            if n.event and n.meta_count:
+                self.averages[n.present].append(n.meta_value/n.meta_count)
+
+        from scipy.stats import ttest_ind
+        return (np.mean(self.averages['present']) - np.mean(self.averages['absent']))*(len(self.averages['present']) + len(self.averages['present']))
 
 
 class BranchAssociation(object):
@@ -130,6 +176,43 @@ def infer_branch_associations(path):
                     assoc.calc_up_down_averages(d["meta_category"], transform = t)
                     max_assoc = assoc.calc_significance()
                     association_dict[clusterID][d["meta_category"]] = max_assoc
+
+    association_df = pd.DataFrame(association_dict).T
+
+
+def load_gain_loss(path, clusterID):
+    with open('%s/geneCluster/%s_patterns.json'%(path, clusterID), 'r') as ifile:
+        tmp = ifile.readlines()[-1].strip().split(':')[-1].split('"')[-2]
+    return map(int, list(tmp))
+
+
+def infer_gain_loss_associations(path):
+    from sf_geneCluster_align_makeTree import load_sorted_clusters
+    from sf_coreTree_json import metadata_load
+    metaFile= '%s%s'%(path,'metainfo.tsv')
+    data_description = '%s%s'%(path,'meta_tidy.tsv')
+    association_dict = defaultdict(dict)
+    metadata = Metadata(metaFile, data_description)
+    metadata_dict = metadata.to_dict()
+
+    sorted_genelist = load_sorted_clusters(path)
+    ## sorted_genelist: [(clusterID, [ count_strains,[memb1,...],count_genes]),...]
+    # TODO fix vis
+    tree = Phylo.read("%s/vis/strain_tree.nwk"%(path), 'newick')
+    assoc = PresenceAbsenceAssociation(tree, metadata_dict)
+    for clusterID, gene in sorted_genelist:
+        if gene[-1]>10 and gene[-1]<600:
+            print(clusterID)
+            gl = load_gain_loss(path, clusterID)
+            for col, d  in M.data_description.iterrows():
+                if d['associate']=='yes':
+                    #if 'log_scale' in d and d['log_scale']=='yes':
+                    t = lambda x:np.log(x)
+                    #else:
+                    #    t = lambda x:x
+                    assoc.set_gain_loss(gl)
+                    ttest_result = assoc.calc_association(d["meta_category"], transform = t)
+                    association_dict[clusterID][d["meta_category"]] = ttest_result
 
     association_df = pd.DataFrame(association_dict).T
 

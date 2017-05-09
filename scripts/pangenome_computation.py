@@ -206,6 +206,11 @@ class pangenome:
         """
         process_gain_loss(self.path, self.large_output)
 
+    def inferAssociations(self):
+        from sf_association import infer_branch_associations
+        infer_branch_associations(self.path, [])
+        # TODO: gain loss associations
+
     def export_geneCluster_json(self):
         """ export gene clusters as json file which is loaded in the cluster datatable """
         geneCluster_to_json(self.path, self.disable_RNA_clustering, self.store_locus_tag, self.raw_locus_tag, self.optional_table_column)
@@ -213,6 +218,8 @@ class pangenome:
     def export_coreTree_json(self):
         """ export core tree as json file for core tree visualization"""
         json_parser(self.path, self.folders_dict, self.fpaths_dict, self.metainfo_fpath, self.large_output, self.meta_tidy_fpath, self.keep_temporary_file)
+
+
 
 def harmonize_filename(path, glob_list):
     """ force '-' to be replaced as '_' in input filename """

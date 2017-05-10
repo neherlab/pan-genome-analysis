@@ -3,6 +3,7 @@ import numpy as np
 from Bio import Phylo
 from collections import defaultdict
 from sf_coreTree_json import Metadata
+from sf_miscellaneous import write_pickle
 
 class PresenceAbsenceAssociation(object):
     """docstring for Association"""
@@ -59,7 +60,7 @@ class PresenceAbsenceAssociation(object):
                 self.averages[n.present].append(n.meta_value/n.meta_count)
 
         from scipy.stats import ttest_ind
-        return (np.mean(self.averages['present']) - np.mean(self.averages['absent']))*(len(self.averages['present']) + len(self.averages['present']))
+        return (np.mean(self.averages['present']) - np.mean(self.averages['absent']))*np.sqrt(len(self.averages['present']) + len(self.averages['present']))
 
 
 class BranchAssociation(object):
@@ -167,7 +168,7 @@ def infer_branch_associations(path):
             print(clusterID)
             tree = Phylo.read("%s/geneCluster/%s.nwk"%(path, clusterID), 'newick')
             assoc = BranchAssociation(tree, metadata_dict)
-            for col, d  in M.data_description.iterrows():
+            for col, d  in metadata.data_description.iterrows():
                 if d['associate']=='yes':
                     #if 'log_scale' in d and d['log_scale']=='yes':
                     t = lambda x:np.log(x)
@@ -177,7 +178,7 @@ def infer_branch_associations(path):
                     max_assoc = assoc.calc_significance()
                     association_dict[clusterID][d["meta_category"]] = max_assoc
 
-    association_df = pd.DataFrame(association_dict).T
+    write_pickle("%s/branch_association.cpk"%path. association_dict)
 
 
 def load_gain_loss(path, clusterID):
@@ -214,6 +215,5 @@ def infer_gain_loss_associations(path):
                     ttest_result = assoc.calc_association(d["meta_category"], transform = t)
                     association_dict[clusterID][d["meta_category"]] = ttest_result
 
-    association_df = pd.DataFrame(association_dict).T
-
+    write_pickle("%s/presence_absence_association.cpk"%path, association_dict)
 

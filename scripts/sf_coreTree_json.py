@@ -5,6 +5,7 @@ from itertools import izip
 from sf_miscellaneous import write_json
 import math
 import pandas as pd
+import numpy as np
 
 
 class Metadata(object):

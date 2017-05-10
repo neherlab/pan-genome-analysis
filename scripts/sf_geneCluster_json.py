@@ -64,8 +64,9 @@ def optional_geneCluster_properties(gene_list):
         []
 
 
-def geneCluster_associations(associations):
-    return ["%s:%f"%(k,v) for k,v in associations]
+def geneCluster_associations(associations, suffix='BA'):
+    return ['"%s %s":%1.2f'%(k.split()[0], suffix , np.abs(v)) for k,v in associations.iteritems() if not np.isnan(v)]
+
 
 def geneCluster_to_json(path, disable_RNA_clustering, store_locus_tag,
                         raw_locus_tag, optional_table_column):
@@ -98,11 +99,16 @@ def geneCluster_to_json(path, disable_RNA_clustering, store_locus_tag,
     ## load gain/loss event count dictionary
     dt_geneEvents = load_pickle(geneCluster_path+'dt_geneEvents.cpk')
     ## load association
-    branch_associations_path = path+'branch_associations.cpk'
+    branch_associations_path = path+'branch_association.cpk'
     if os.path.isfile(branch_associations_path):
-        associations = load_pickle(branch_associations_path)
+        branch_associations = load_pickle(branch_associations_path)
     else:
-        associations={}
+        branch_associations={}
+    presence_absence_associations_path = path+'presence_absence_association.cpk'
+    if os.path.isfile(presence_absence_associations_path):
+        presence_absence_associations = load_pickle(presence_absence_associations_path)
+    else:
+        presence_absence_associations={}
 
     ## load list of clustered sorted by strain count
     sorted_genelist = load_sorted_clusters(path)
@@ -112,8 +118,8 @@ def geneCluster_to_json(path, disable_RNA_clustering, store_locus_tag,
     for gid, (clusterID, gene) in enumerate(sorted_genelist):
         strain_count, gene_list, gene_count = gene
         # #print strain_count, gene_count
-        # if gid!=0: ## begin
-        #     geneClusterJSON_outfile.write(',\n')
+        if gid!=0: ## begin
+            geneClusterJSON_outfile.write(',\n')
 
         ## annotation majority
         allAnn, majority_annotation = consolidate_annotation(path, gene_list, geneID_to_descriptions)
@@ -171,12 +177,14 @@ def geneCluster_to_json(path, disable_RNA_clustering, store_locus_tag,
 
         if optional_table_column:
             cluster_json_line.extend(optional_geneCluster_properties(gene_list))
-        if clusterID in associations:
-            cluster_json_line.extend(geneCluster_associations(associations[clusterID]))
+        if clusterID in branch_associations:
+            cluster_json_line.extend(geneCluster_associations(branch_associations[clusterID], suffix='BA'))
+        if clusterID in presence_absence_associations:
+            cluster_json_line.extend(geneCluster_associations(presence_absence_associations[clusterID], suffix='PA'))
 
         #write file
         cluster_json_line=','.join(cluster_json_line)
-        geneClusterJSON_outfile.write('{'+cluster_json_line+'},\n')
+        geneClusterJSON_outfile.write('{'+cluster_json_line+'}')
 
     # close files
     geneClusterJSON_outfile.write(']')

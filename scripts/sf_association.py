@@ -60,7 +60,7 @@ class PresenceAbsenceAssociation(object):
                 self.averages[n.present].append(n.meta_value/n.meta_count)
 
         from scipy.stats import ttest_ind
-        return (np.mean(self.averages['present']) - np.mean(self.averages['absent']))*np.sqrt(len(self.averages['present']) + len(self.averages['present']))
+        return (np.mean(self.averages['present']) - np.mean(self.averages['absent']))*np.sqrt(1.0/(1.0/len(self.averages['present']) + 1.0/len(self.averages['present'])))
 
 
 class BranchAssociation(object):
@@ -178,7 +178,7 @@ def infer_branch_associations(path):
                     max_assoc = assoc.calc_significance()
                     association_dict[clusterID][d["meta_category"]] = max_assoc
 
-    write_pickle("%s/branch_association.cpk"%path. association_dict)
+    write_pickle("%s/branch_association.cpk"%path, association_dict)
 
 
 def load_gain_loss(path, clusterID):
@@ -187,7 +187,7 @@ def load_gain_loss(path, clusterID):
     return map(int, list(tmp))
 
 
-def infer_gain_loss_associations(path):
+def infer_presence_absence_associations(path):
     from sf_geneCluster_align_makeTree import load_sorted_clusters
     from sf_coreTree_json import metadata_load
     metaFile= '%s%s'%(path,'metainfo.tsv')
@@ -205,7 +205,7 @@ def infer_gain_loss_associations(path):
         if gene[-1]>10 and gene[-1]<600:
             print(clusterID)
             gl = load_gain_loss(path, clusterID)
-            for col, d  in M.data_description.iterrows():
+            for col, d  in metadata.data_description.iterrows():
                 if d['associate']=='yes':
                     #if 'log_scale' in d and d['log_scale']=='yes':
                     t = lambda x:np.log(x)

@@ -422,7 +422,7 @@ class mpm_tree(object):
                 consensus = np.array(alpha)[freq.argmax(axis=0)]
                 aln_array = np.array(self.aln)
                 aln_array[aln_array==consensus]='.'
-                new_seqs = []
+                new_seqs = [SeqRecord(seq="".join(consensus), name="consensus", id="consensus")]
                 for si, seq in enumerate(self.aln):
                     new_seqs.append(SeqRecord(seq="".join(aln_array[si]), name=seq.name,
                                        id=seq.id, description=seq.description))

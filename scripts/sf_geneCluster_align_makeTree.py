@@ -12,6 +12,8 @@ from sf_miscellaneous import times, read_fasta, \
     load_pickle, write_pickle, write_in_fa, write_json, multips
 
 sys.setrecursionlimit(50000)
+nuc_alpha = 'ACGT-N'
+aa_alpha = 'ACDEFGHIKLMNPQRSTVWY*-X'
 
 def make_dir(dname):
     import os
@@ -86,7 +88,6 @@ def calc_af(aln, alpha):
     af[-1] = 1.0 - af[:-1].sum(axis=0)
     return af
 
-nuc_alpha = 'ACGT-N'; aa_alpha = 'ACDEFGHIKLMNPQRSTVWY*-X'
 def resolve_polytomies(tree):
     for node in tree.get_nonterminals('preorder'):
         node.confidence = None
@@ -414,6 +415,23 @@ class mpm_tree(object):
                 for mut in node.mutations:
                     self.mut_to_branch[mut].append(node)
 
+    def reduce_alignments(self):
+        for attr, aln, alpha, freq in [["aln_reduced", self.aln, nuc_alpha, self.af_nuc],
+                                 ["aa_aln_reduced", self.aa_aln, aa_alpha, calc_af(self.aa_aln, aa_alpha)]]:
+            try:
+                consensus = np.array(list(alpha))[freq.argmax(axis=0)]
+                aln_array = np.array(aln)
+                aln_array[aln_array==consensus]='.'
+                new_seqs = [SeqRecord(seq=Seq("".join(consensus)), name="consensus", id="consensus")]
+                for si, seq in enumerate(aln):
+                    new_seqs.append(SeqRecord(seq=Seq("".join(aln_array[si])), name=seq.name,
+                                       id=seq.id, description=seq.description))
+                self.__setattr__(attr, MultipleSeqAlignment(new_seqs))
+
+            except:
+                print("sf_geneCluster_align_MakeTree: aligment reduction failed")
+
+
     #def export(self, path = '', extra_attr = ['aa_muts','ann','branch_length','name','longName'], RNA_specific=False):
     def export(self, path = '', extra_attr = ['aa_muts','annotation','branch_length','name','accession'], RNA_specific=False):
         ## write tree
@@ -441,16 +459,19 @@ class mpm_tree(object):
         write_json(tree_json, timetree_fname, indent=None)
 
         ## msa compatible
+        self.reduce_alignments()
         for i_aln in self.aln:
             i_aln.id=i_aln.id.replace('|','-',1)
 
         AlignIO.write(self.aln, path+self.clusterID+'_na_aln.fa', 'fasta')
+        AlignIO.write(self.aln_reduced, path+self.clusterID+'_na_aln_reduced.fa', 'fasta')
 
         if RNA_specific==False:
             for i_aa_aln in self.aa_aln:
                 i_aa_aln.id=i_aa_aln.id.replace('|','-',1)
 
             AlignIO.write(self.aa_aln, path+self.clusterID+'_aa_aln.fa', 'fasta')
+            AlignIO.write(self.aa_aln_reduced, path+self.clusterID+'_aa_aln_reduced.fa', 'fasta')
 
         ## write seq json
         write_seq_json=0
@@ -512,8 +533,9 @@ def align_and_makeTree( fna_file_list, alignFile_path, simple_tree):
                     myTree.refine()
                 else:
                     myTree.build(raxml=False,treetime_used=False)
+                myTree.diversity_statistics_nuc()
                 myTree.export(path=alignFile_path)
-                myTree.diversity_statistics_nuc()#myTree.diversity_statistics_aa()
+                #myTree.diversity_statistics_aa()
                 #random_alnID=myTree.seqs.keys()[0].split('-')[0]
                 diversity_nuc= round(myTree.diversity_nuc,3)#diversity_aa=round(myTree.diversity_aa,3)
                 #bestSplit_paraNodes,bestSplit_branchLen = myTree.paralogy_statistics()

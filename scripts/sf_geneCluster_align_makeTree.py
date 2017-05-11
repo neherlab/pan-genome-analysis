@@ -419,17 +419,17 @@ class mpm_tree(object):
         for attr, aln, alpha, freq in [["aln_reduced", self.aln, nuc_alpha, self.af_nuc],
                                  ["aa_aln_reduced", self.aa_aln, aa_alpha, calc_af(self.aa_aln, aa_alpha)]]:
             try:
-                consensus = np.array(alpha)[freq.argmax(axis=0)]
-                aln_array = np.array(self.aln)
+                consensus = np.array(list(alpha))[freq.argmax(axis=0)]
+                aln_array = np.array(aln)
                 aln_array[aln_array==consensus]='.'
-                new_seqs = [SeqRecord(seq="".join(consensus), name="consensus", id="consensus")]
-                for si, seq in enumerate(self.aln):
-                    new_seqs.append(SeqRecord(seq="".join(aln_array[si]), name=seq.name,
+                new_seqs = [SeqRecord(seq=Seq("".join(consensus)), name="consensus", id="consensus")]
+                for si, seq in enumerate(aln):
+                    new_seqs.append(SeqRecord(seq=Seq("".join(aln_array[si])), name=seq.name,
                                        id=seq.id, description=seq.description))
                 self.__setattr__(attr, MultipleSeqAlignment(new_seqs))
+
             except:
                 print("sf_geneCluster_align_MakeTree: aligment reduction failed")
-
 
 
     #def export(self, path = '', extra_attr = ['aa_muts','ann','branch_length','name','longName'], RNA_specific=False):
@@ -465,7 +465,6 @@ class mpm_tree(object):
 
         AlignIO.write(self.aln, path+self.clusterID+'_na_aln.fa', 'fasta')
         AlignIO.write(self.aln_reduced, path+self.clusterID+'_na_aln_reduced.fa', 'fasta')
-
 
         if RNA_specific==False:
             for i_aa_aln in self.aa_aln:
@@ -534,8 +533,9 @@ def align_and_makeTree( fna_file_list, alignFile_path, simple_tree):
                     myTree.refine()
                 else:
                     myTree.build(raxml=False,treetime_used=False)
+                myTree.diversity_statistics_nuc()
                 myTree.export(path=alignFile_path)
-                myTree.diversity_statistics_nuc()#myTree.diversity_statistics_aa()
+                #myTree.diversity_statistics_aa()
                 #random_alnID=myTree.seqs.keys()[0].split('-')[0]
                 diversity_nuc= round(myTree.diversity_nuc,3)#diversity_aa=round(myTree.diversity_aa,3)
                 #bestSplit_paraNodes,bestSplit_branchLen = myTree.paralogy_statistics()

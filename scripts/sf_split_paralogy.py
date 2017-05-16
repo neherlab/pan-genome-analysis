@@ -5,7 +5,7 @@ from Bio import Phylo
 from sf_miscellaneous import read_fasta, write_in_fa, load_pickle, multips
 from sf_geneCluster_align_makeTree import align_and_makeTree, find_best_split, update_diversity_cpk, load_sorted_clusters, update_geneCluster_cpk, mem_check
 
-def split_cluster(tree, max_branch_length, max_paralogs):
+def split_cluster(tree, nstrains, max_branch_length, max_paralogs):
     '''
     determine which clusters to split
     return tree/false depending on whether the cluster should be split or not
@@ -14,7 +14,11 @@ def split_cluster(tree, max_branch_length, max_paralogs):
     best_split = find_best_split(tree)
     # explore linear discriminator
     #return best_split.branch_length/max_branch_length + float(len(best_split.para_nodes))/max_paralogs > 1.0 and len(best_split.para_nodes) > 1
-    return best_split.branch_length/max_branch_length > 1.0 and float(len(best_split.para_nodes))/max_paralogs >= 1.0
+    core_genome_diversity=max_branch_length
+    to_split= True if len(best_split.para_nodes)>=nstrains and best_split.split_bl> core_genome_diversity else False
+    to_split= True if len(best_split.para_nodes)>max_paralogs and (len(best_split.leaf)==nstrains or len(best_split.not_leafs)) and best_split.split_bl>core_genome_diversity else False
+    #return best_split.branch_length/max_branch_length > 1.0 and float(len(best_split.para_nodes))/max_paralogs >= 1.0
+    return to_split
 
 def explore_paralogs(path, nstrains, paralog_branch_cutoff, paralog_frac_cutoff=0.3, plot=0):
     '''
@@ -181,7 +185,7 @@ def postprocess_paralogs(parallel, path, nstrains, simple_tree, geneCluster_dt,
         best_split = find_best_split(tree)
 
         if best_split is not None:
-            do_split = split_cluster(tree,
+            do_split = split_cluster(tree, nstrains,
                                      max_branch_length = paralog_branch_cutoff,
                                      #max_branch_length = paralog_branch_cutoff*mean_branch_length,
                                      max_paralogs = paralog_frac_cutoff*nstrains)

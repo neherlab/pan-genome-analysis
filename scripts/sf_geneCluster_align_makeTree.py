@@ -641,10 +641,14 @@ def find_best_split(tree):
             child.not_leafs = set(node.not_leafs).union(*[c.leafs for c in node if c!=child])
             child.para_nodes = set.intersection(child.not_leafs, child.leafs)
 
-            if len(child.para_nodes)>best_split[1]:
-                best_split = [child, len(child.para_nodes), child.branch_length]
-            elif len(child.para_nodes)==best_split[1] and child.branch_length>best_split[2]:
-                best_split = [child, len(child.para_nodes), child.branch_length]
+            ## calcuate split branch length
+            ## if the parent of the best split is the root, the branch_length is the sum of the two children of the root.
+            child.split_bl = child.branch_length+ min([c.branch_length for c in child.up for c in child.up if c!=child]) if child.up.up is None else child.branch_length
+            more_para_nodes = len(child.para_nodes)>best_split[1]
+            longer_branch  = len(child.para_nodes)==best_split[1] and child.split_bl>best_split[2]
+            if more_para_nodes or longer_branch:
+                best_split = [child, len(child.para_nodes), child.split_bl]
+
     return best_split[0]
 
 def update_diversity_cpk(path):

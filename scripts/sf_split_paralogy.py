@@ -15,8 +15,9 @@ def split_cluster(tree, nstrains, max_branch_length, max_paralogs):
     # explore linear discriminator
     #return best_split.branch_length/max_branch_length + float(len(best_split.para_nodes))/max_paralogs > 1.0 and len(best_split.para_nodes) > 1
     core_genome_diversity=max_branch_length
-    to_split= True if len(best_split.para_nodes)>=nstrains and best_split.split_bl> core_genome_diversity else False
-    to_split= True if len(best_split.para_nodes)>max_paralogs and (len(best_split.leaf)==nstrains or len(best_split.not_leafs)) and best_split.split_bl>core_genome_diversity else False
+    condition1= True if len(best_split.para_nodes)>=nstrains and best_split.split_bl> core_genome_diversity else False
+    condition2= True if len(best_split.para_nodes)>max_paralogs and (len(best_split.leaf)==nstrains or len(best_split.not_leafs)==nstrains) and best_split.split_bl>core_genome_diversity else False
+    to_split= True if condition1 or condition2 else False
     #return best_split.branch_length/max_branch_length > 1.0 and float(len(best_split.para_nodes))/max_paralogs >= 1.0
     return to_split
 

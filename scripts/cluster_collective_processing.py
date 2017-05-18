@@ -14,11 +14,14 @@ class clusterCollector(object):
         """ computing raw core gene diversity which's refined as post-processing cutoff """
         if self.split_long_branch_cutoff==0.0:
             self.split_long_branch_cutoff= estimate_core_gene_diversity(self.path,
-                self.folders_dict, self.strain_list, self.threads, self.core_genome_threshold, self.factor_core_diversity, self.species)
+                self.folders_dict, self.strain_list, self.threads,
+                self.core_genome_threshold, self.factor_core_diversity, self.species)
 
     def make_geneCluster_alignment_and_tree(self):
         """ align genes in gene cluster and building gene tree """
-        cluster_align_makeTree(self.path, self.folders_dict, self.threads, self.disable_cluster_postprocessing, self.simple_tree)
+        cluster_align_makeTree(self.path, self.folders_dict, self.threads,
+                        self.disable_cluster_postprocessing, self.simple_tree,
+                        scratch=self.scratch)
 
     def postprocessing_split_long_branch(self):
         """ postprocessing: split long branch via refined core gene diversity """

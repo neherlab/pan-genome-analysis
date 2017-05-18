@@ -166,19 +166,23 @@ class mpm_tree(object):
     class that aligns a set of sequences and infers a tree
     '''
 
-    def __init__(self, cluster_seq_filepath, **kwarks):
+    def __init__(self, cluster_seq_filepath, **kwargs):
         self.clusterID= cluster_seq_filepath.split('/')[-1].split('.fna')[0]
-        if 'speciesID' in kwarks:
-            folderID=kwarks['speciesID']
+        if 'speciesID' in kwargs:
+            folderID=kwargs['speciesID']
         else:
             folderID= cluster_seq_filepath.split('/')[-3]
         self.seqs = {x.id:x for x in SeqIO.parse(cluster_seq_filepath, 'fasta')}
-        if 'run_dir' not in kwarks:
+        if 'run_dir' not in kwargs:
             import random
+            if 'scratch' in kwargs:
+                prefix = kwargs['scratch']
+            else:
+                prefix=''
             #self.run_dir = '_'.join(['tmp', self.clusterID])
-            self.run_dir = '_'.join([folderID, 'temp', time.strftime('%H%M%S',time.gmtime()), str(random.randint(0,100000000))])
+            self.run_dir = prefix + '_'.join([folderID, 'temp', time.strftime('%H%M%S',time.gmtime()), str(random.randint(0,100000000))])
         else:
-            self.run_dir = kwarks['run_dir']
+            self.run_dir = kwargs['run_dir']
         self.nuc=True
 
     def codon_align(self, alignment_tool="mafft", prune=True, discard_premature_stops=False):
@@ -499,7 +503,7 @@ class mpm_tree(object):
 ### functions to run the tree building and alignment routines
 ################################################################################
 
-def align_and_makeTree( fna_file_list, alignFile_path, simple_tree):
+def align_and_makeTree( fna_file_list, alignFile_path, simple_tree, scratch=''):
     for gene_cluster_nu_filename in fna_file_list:
         try:
             # extract GC_00002 from path/GC_00002.aln
@@ -525,7 +529,7 @@ def align_and_makeTree( fna_file_list, alignFile_path, simple_tree):
                 geneDiversity_file.write('%s\t%s\n'%(clusterID,'0.0'))
             else: # align and build tree
                 print gene_cluster_nu_filename
-                myTree = mpm_tree(gene_cluster_nu_filename)
+                myTree = mpm_tree(gene_cluster_nu_filename, scratch=scratch)
                 myTree.codon_align()
                 myTree.translate()
                 if simple_tree==0:
@@ -590,7 +594,7 @@ def create_geneCluster_fa(path,folders_dict):
                 write_in_fa(gene_cluster_nu_write, geneSeqID, gene_na_dict[strain_name][gene_memb] )
                 write_in_fa(gene_cluster_aa_write, geneSeqID, gene_aa_dict[strain_name][gene_memb])
 
-def cluster_align_makeTree( path, folders_dict, parallel, disable_cluster_postprocessing, simple_tree):
+def cluster_align_makeTree( path, folders_dict, parallel, disable_cluster_postprocessing, simple_tree, **kwargs):
     """
     create gene clusters as nucleotide/ amino_acid fasta files
     and build individual gene trees based on fna files
@@ -612,7 +616,7 @@ def cluster_align_makeTree( path, folders_dict, parallel, disable_cluster_postpr
 
     fna_file_list=glob.glob(cluster_seqs_path+"*.fna")
     multips(align_and_makeTree, parallel, fna_file_list,
-        cluster_seqs_path, simple_tree)
+        cluster_seqs_path, simple_tree, **kwargs)
 
     ## if cluster_postprocessing skipped, rename allclusters.cpk as the final cluster file
     if disable_cluster_postprocessing==1:

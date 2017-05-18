@@ -23,7 +23,7 @@ class pangenome:
     genomes by first finding homologous genes using diamond, clustering those
     using MCL, and post-processing these clusters by building phylogenies using
     fasttree. Finally, alignments, meta data, and annotated phylogenies are
-    exported fro visualization in a web browser.
+    exported for visualization in a web browser.
     """
     def __init__(self, **kwargs):
         for k, v in kwargs.iteritems():
@@ -170,7 +170,8 @@ class pangenome:
             window_size_smoothed=self.window_size_smoothed,
             strain_proportion=self.strain_proportion,
             sigma_scale=self.sigma_scale,
-            species=self.species
+            species=self.species,
+            scratch=self.scratch
             )
 
         myClusterCollector.estimate_raw_core_diversity()
@@ -182,7 +183,7 @@ class pangenome:
 
     def make_RNACluster_alignment_and_tree(self):
         """ aligning RNA clusters and building RNA tree """
-        RNAclusters_align_makeTree(self.path, self.folders_dict, self.threads)
+        RNAclusters_align_makeTree(self.path, self.folders_dict, self.threads, scratch=self.scratch)
 
     def create_SNP_alignment(self):
         """ build pseudo-alignment based on core gene SNPs """

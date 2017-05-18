@@ -31,6 +31,8 @@ parser.add_argument('-rt', '--raxml_max_time', type = int, default = 30,
     help='RAxML tree optimization: maximal runing time (in minutes, default: 30 min)' , metavar='')
 parser.add_argument('-t', '--threads', type = int, default = 1,
     help='number of threads', metavar='')
+parser.add_argument('--scratch', type = str, default = '',
+    help='file system location for temporary files')
 
 #/*==================================
 #            clustering
@@ -208,7 +210,8 @@ myPangenome=pangenome(
     meta_tidy_fpath=params.meta_tidy_fpath,
     raxml_path=params.raxml_path,
     optional_table_column=params.optional_table_column,
-    keep_temporary_file=params.keep_temporary_file
+    keep_temporary_file=params.keep_temporary_file,
+    scratch=params.scratch
     )
 
 if 1 in params.steps:#step 01:

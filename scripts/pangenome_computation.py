@@ -23,7 +23,7 @@ class pangenome:
     genomes by first finding homologous genes using diamond, clustering those
     using MCL, and post-processing these clusters by building phylogenies using
     fasttree. Finally, alignments, meta data, and annotated phylogenies are
-    exported fro visualization in a web browser.
+    exported for visualization in a web browser.
     """
     def __init__(self, **kwargs):
         for k, v in kwargs.iteritems():
@@ -169,7 +169,9 @@ class pangenome:
             explore_paralog_plot=self.explore_paralog_plot,
             window_size_smoothed=self.window_size_smoothed,
             strain_proportion=self.strain_proportion,
-            sigma_scale=self.sigma_scale
+            sigma_scale=self.sigma_scale,
+            species=self.species,
+            scratch=self.scratch
             )
 
         myClusterCollector.estimate_raw_core_diversity()
@@ -181,7 +183,7 @@ class pangenome:
 
     def make_RNACluster_alignment_and_tree(self):
         """ aligning RNA clusters and building RNA tree """
-        RNAclusters_align_makeTree(self.path, self.folders_dict, self.threads)
+        RNAclusters_align_makeTree(self.path, self.folders_dict, self.threads, scratch=self.scratch)
 
     def create_SNP_alignment(self):
         """ build pseudo-alignment based on core gene SNPs """
@@ -205,13 +207,20 @@ class pangenome:
         """
         process_gain_loss(self.path, self.large_output)
 
+    def inferAssociations(self):
+        from sf_association import infer_branch_associations
+        infer_branch_associations(self.path, [])
+        # TODO: gain loss associations
+
     def export_geneCluster_json(self):
         """ export gene clusters as json file which is loaded in the cluster datatable """
-        geneCluster_to_json(self.path, self.disable_RNA_clustering, self.large_output, self.raw_locus_tag)
+        geneCluster_to_json(self.path, self.disable_RNA_clustering, self.store_locus_tag, self.raw_locus_tag, self.optional_table_column)
 
     def export_coreTree_json(self):
         """ export core tree as json file for core tree visualization"""
-        json_parser(self.path, self.folders_dict, self.species, self.metainfo_fpath, self.large_output, self.meta_tidy_fpath)
+        json_parser(self.path, self.folders_dict, self.fpaths_dict, self.metainfo_fpath, self.large_output, self.meta_tidy_fpath, self.keep_temporary_file)
+
+
 
 def harmonize_filename(path, glob_list):
     """ force '-' to be replaced as '_' in input filename """

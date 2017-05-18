@@ -12,6 +12,8 @@ from sf_miscellaneous import times, read_fasta, \
     load_pickle, write_pickle, write_in_fa, write_json, multips
 
 sys.setrecursionlimit(50000)
+nuc_alpha = 'ACGT-N'
+aa_alpha = 'ACDEFGHIKLMNPQRSTVWY*-X'
 
 def make_dir(dname):
     import os
@@ -86,7 +88,6 @@ def calc_af(aln, alpha):
     af[-1] = 1.0 - af[:-1].sum(axis=0)
     return af
 
-nuc_alpha = 'ACGT-N'; aa_alpha = 'ACDEFGHIKLMNPQRSTVWY*-X'
 def resolve_polytomies(tree):
     for node in tree.get_nonterminals('preorder'):
         node.confidence = None
@@ -165,18 +166,23 @@ class mpm_tree(object):
     class that aligns a set of sequences and infers a tree
     '''
 
-    def __init__(self, cluster_seq_filepath, **kwarks):
+    def __init__(self, cluster_seq_filepath, **kwargs):
         self.clusterID= cluster_seq_filepath.split('/')[-1].split('.fna')[0]
-        self.threads=kwarks['threads']
-        speciesID= cluster_seq_filepath.split('/')[-2]
-        self.seqs = {x.id:x for x in SeqIO.parse(cluster_seq_filepath, 'fasta')}
-        if 'run_dir' not in kwarks:
-            import random
-            #self.run_dir = '_'.join([speciesID, 'tmp', self.clusterID])
-            #self.run_dir = '_'.join([speciesID, 'temp', time.strftime('%Y%m%d-%H%M%S',time.gmtime()), str(random.randint(0,100000000))])
-            self.run_dir = '_'.join([speciesID, 'temp', time.strftime('%H%M%S',time.gmtime()), str(random.randint(0,100000000))])
+        if 'speciesID' in kwargs:
+            folderID=kwargs['speciesID']
         else:
-            self.run_dir = kwarks['run_dir']
+            folderID= cluster_seq_filepath.split('/')[-3]
+        self.seqs = {x.id:x for x in SeqIO.parse(cluster_seq_filepath, 'fasta')}
+        if 'run_dir' not in kwargs:
+            import random
+            if 'scratch' in kwargs:
+                prefix = kwargs['scratch']
+            else:
+                prefix=''
+            #self.run_dir = '_'.join(['tmp', self.clusterID])
+            self.run_dir = prefix + '_'.join([folderID, 'temp', time.strftime('%H%M%S',time.gmtime()), str(random.randint(0,100000000))])
+        else:
+            self.run_dir = kwargs['run_dir']
         self.nuc=True
 
     def codon_align(self, alignment_tool="mafft", prune=True, discard_premature_stops=False):
@@ -204,8 +210,7 @@ class mpm_tree(object):
         SeqIO.write(aa_seqs.values(), tmpfname,'fasta')
 
         if alignment_tool=='mafft':
-            #os.system(''.join(['mafft --thread ', str(self.threads),' --amino temp_in.fasta 1> temp_out.fasta 2> mafft.log']))
-            os.system('mafft --amino temp_in.fasta 1> temp_out.fasta 2> mafft.log')
+            os.system('mafft --reorder --amino --anysymbol temp_in.fasta 1> temp_out.fasta 2> mafft.log')
             aln_aa = AlignIO.read('temp_out.fasta', "fasta")
         elif alignment_tool=='muscle':
             from Bio.Align.Applications import MuscleCommandline
@@ -229,8 +234,7 @@ class mpm_tree(object):
         os.chdir(self.run_dir)
 
         SeqIO.write(self.seqs.values(), "temp_in.fasta", "fasta")
-        os.system(''.join(['mafft --thread ',str(self.threads),' --anysymbol temp_in.fasta 1> temp_out.fasta 2> mafft.log']))
-        #os.system('mafft --anysymbol temp_in.fasta 1> temp_out.fasta 2> mafft.log')
+        os.system('mafft --reorder --anysymbol temp_in.fasta 1> temp_out.fasta 2> mafft.log')
 
         self.aln = AlignIO.read('temp_out.fasta', 'fasta')
         os.chdir('..')
@@ -415,6 +419,23 @@ class mpm_tree(object):
                 for mut in node.mutations:
                     self.mut_to_branch[mut].append(node)
 
+    def reduce_alignments(self):
+        for attr, aln, alpha, freq in [["aln_reduced", self.aln, nuc_alpha, self.af_nuc],
+                                 ["aa_aln_reduced", self.aa_aln, aa_alpha, calc_af(self.aa_aln, aa_alpha)]]:
+            try:
+                consensus = np.array(alpha)[freq.argmax(axis=0)]
+                aln_array = np.array(self.aln)
+                aln_array[aln_array==consensus]='.'
+                new_seqs = [SeqRecord(seq="".join(consensus), name="consensus", id="consensus")]
+                for si, seq in enumerate(self.aln):
+                    new_seqs.append(SeqRecord(seq="".join(aln_array[si]), name=seq.name,
+                                       id=seq.id, description=seq.description))
+                self.__setattr__(attr, MultipleSeqAlignment(new_seqs))
+            except:
+                print("sf_geneCluster_align_MakeTree: aligment reduction failed")
+
+
+
     #def export(self, path = '', extra_attr = ['aa_muts','ann','branch_length','name','longName'], RNA_specific=False):
     def export(self, path = '', extra_attr = ['aa_muts','annotation','branch_length','name','accession'], RNA_specific=False):
         ## write tree
@@ -427,7 +448,11 @@ class mpm_tree(object):
             #node.longName = node.ann.split('-')[0]
             node.name = node.ann.split('-')[0]
             #NZ_CP008870|HV97_RS21955-1-fabG_3-ketoacyl-ACP_reductase
-            node.annotation= node.ann.split('-',2)[2]
+            annotation=node.ann.split('-',2)
+            if len(annotation)==3:
+                node.annotation= annotation[2]
+            else:
+                node.annotation= annotation[0]
 
         ## write tree json
         for n in self.tree.root.find_clades():
@@ -438,16 +463,20 @@ class mpm_tree(object):
         write_json(tree_json, timetree_fname, indent=None)
 
         ## msa compatible
+        self.reduce_alignments()
         for i_aln in self.aln:
             i_aln.id=i_aln.id.replace('|','-',1)
 
         AlignIO.write(self.aln, path+self.clusterID+'_na_aln.fa', 'fasta')
+        AlignIO.write(self.aln_reduced, path+self.clusterID+'_na_aln_reduced.fa', 'fasta')
+
 
         if RNA_specific==False:
             for i_aa_aln in self.aa_aln:
                 i_aa_aln.id=i_aa_aln.id.replace('|','-',1)
 
             AlignIO.write(self.aa_aln, path+self.clusterID+'_aa_aln.fa', 'fasta')
+            AlignIO.write(self.aa_aln_reduced, path+self.clusterID+'_aa_aln_reduced.fa', 'fasta')
 
         ## write seq json
         write_seq_json=0
@@ -474,7 +503,7 @@ class mpm_tree(object):
 ### functions to run the tree building and alignment routines
 ################################################################################
 
-def align_and_makeTree( fna_file_list, alignFile_path, parallel, simple_tree):
+def align_and_makeTree( fna_file_list, alignFile_path, simple_tree, scratch=''):
     for gene_cluster_nu_filename in fna_file_list:
         try:
             # extract GC_00002 from path/GC_00002.aln
@@ -500,7 +529,7 @@ def align_and_makeTree( fna_file_list, alignFile_path, parallel, simple_tree):
                 geneDiversity_file.write('%s\t%s\n'%(clusterID,'0.0'))
             else: # align and build tree
                 print gene_cluster_nu_filename
-                myTree = mpm_tree(gene_cluster_nu_filename, threads=parallel)
+                myTree = mpm_tree(gene_cluster_nu_filename, scratch=scratch)
                 myTree.codon_align()
                 myTree.translate()
                 if simple_tree==0:
@@ -565,7 +594,7 @@ def create_geneCluster_fa(path,folders_dict):
                 write_in_fa(gene_cluster_nu_write, geneSeqID, gene_na_dict[strain_name][gene_memb] )
                 write_in_fa(gene_cluster_aa_write, geneSeqID, gene_aa_dict[strain_name][gene_memb])
 
-def cluster_align_makeTree( path, folders_dict, parallel, disable_cluster_postprocessing, simple_tree ):
+def cluster_align_makeTree( path, folders_dict, parallel, disable_cluster_postprocessing, simple_tree, **kwargs):
     """
     create gene clusters as nucleotide/ amino_acid fasta files
     and build individual gene trees based on fna files
@@ -587,7 +616,7 @@ def cluster_align_makeTree( path, folders_dict, parallel, disable_cluster_postpr
 
     fna_file_list=glob.glob(cluster_seqs_path+"*.fna")
     multips(align_and_makeTree, parallel, fna_file_list,
-        cluster_seqs_path, parallel, simple_tree)
+        cluster_seqs_path, simple_tree, **kwargs)
 
     ## if cluster_postprocessing skipped, rename allclusters.cpk as the final cluster file
     if disable_cluster_postprocessing==1:

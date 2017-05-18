@@ -1,3 +1,4 @@
+import numpy as np
 import os, sys,glob, time
 from sf_miscellaneous import load_pickle, write_pickle, read_fasta, write_in_fa ,times
 from sf_geneCluster_align_makeTree import load_sorted_clusters
@@ -48,56 +49,90 @@ def consolidate_geneName(path,all_gene_names, geneID_to_description_dict):
     #print all_geneName, ' ?', majority
     return all_geneName, majority
 
-def geneCluster_to_json(path, disable_RNA_clustering, large_output, raw_locus_tag):
+def optional_geneCluster_properties(gene_list):
+    strain_to_locustag = dict([igl.split('|')[:2] for igl in gene_list])
+    ## add optional table column
+    if optional_table_column:
+        new_column_attr='PAO1'
+        if 'NC_002516' in strain_to_locustag:
+            new_column_data=strain_to_locustag['NC_002516']
+        else: new_column_data=''
+
+    if optional_table_column:
+        return ['"'+new_column_attr+'":"'+new_column_data+'"']
+    else:
+        []
+
+
+def geneCluster_associations(associations, suffix='BA'):
+    return ['"%s %s":%1.2f'%(k.split()[0], suffix , np.abs(v)) for k,v in associations.iteritems() if not np.isnan(v)]
+
+
+def geneCluster_to_json(path, disable_RNA_clustering, store_locus_tag,
+                        raw_locus_tag, optional_table_column):
     """
     create json file for gene cluster table visualzition
     input:  path to genecluster output
     output: geneCluster.json
     """
-    # load geneID_to_description_dict
-    geneID_to_description_dict=load_pickle(path+'geneID_to_description.cpk')
+    # define path and make output directory
+    geneCluster_path='%s%s'%(path,'geneCluster/')
+    output_path='%s%s'%(path,'vis/')
+    os.system('mkdir %s; mkdir %sgeneCluster/'%(output_path,output_path))
+
+    # open files
+    geneClusterJSON_outfile=open(output_path+'geneCluster.json', 'wb')
+    ##store locus_tags in a separate file for large dataset
+    if store_locus_tag:
+        locus_tag_outfile=open(path+'search_locus_tag.tsv', 'wb')
+
+
+    ### load precomputed annotations, diversity, associations etc
+    # load geneID_to_descriptions
+    geneID_to_descriptions=load_pickle(path+'geneID_to_description.cpk')
+
     if disable_RNA_clustering==0:
         # load RNAID_to_description_file
-        geneID_to_description_dict.update(load_pickle(path+'RNAID_to_description.cpk'))
-    output_path='%s%s'%(path,'geneCluster/')
-    visualzition_path='%s%s'%(path,'vis/')
-    os.system('mkdir %s; mkdir %sgeneCluster/'%(visualzition_path,visualzition_path))
-    write_file_lst_json=open(visualzition_path+'geneCluster.json', 'wb')
-    gene_diversity_Dt=load_pickle(output_path+'gene_diversity.cpk')
-    if large_output==1:
-        locus_tag_outfile=open(path+'search_locus_tag.tsv', 'wb')
-    ## sorted clusters
-    sorted_genelist= load_sorted_clusters(path)
+        geneID_to_descriptions.update(load_pickle(path+'RNAID_to_description.cpk'))
 
-    ## prepare geneId_Dt_to_locusTag
-
-    #geneId_Dt_to_locusTag=defaultdict(list)
-    #geneId_Dt_to_locusTag={v:k for k,v in locusTag_to_geneId_Dt.items()}
-
+    gene_diversity_Dt = load_pickle(geneCluster_path+'gene_diversity.cpk')
     ## load gain/loss event count dictionary
-    dt_geneEvents= load_pickle(output_path+'dt_geneEvents.cpk')
+    dt_geneEvents = load_pickle(geneCluster_path+'dt_geneEvents.cpk')
+    ## load association
+    branch_associations_path = path+'branch_association.cpk'
+    if os.path.isfile(branch_associations_path):
+        branch_associations = load_pickle(branch_associations_path)
+    else:
+        branch_associations={}
+    presence_absence_associations_path = path+'presence_absence_association.cpk'
+    if os.path.isfile(presence_absence_associations_path):
+        presence_absence_associations = load_pickle(presence_absence_associations_path)
+    else:
+        presence_absence_associations={}
 
-    write_file_lst_json.write('[')
+    ## load list of clustered sorted by strain count
+    sorted_genelist = load_sorted_clusters(path)
+
+    geneClusterJSON_outfile.write('[')
     ## sorted_genelist: [(clusterID, [ count_strains,[memb1,...],count_genes]),...]
     for gid, (clusterID, gene) in enumerate(sorted_genelist):
         strain_count, gene_list, gene_count = gene
-        #print strain_count, gene_count
+        # #print strain_count, gene_count
         if gid!=0: ## begin
-            write_file_lst_json.write(',\n')
+            geneClusterJSON_outfile.write(',\n')
 
         ## annotation majority
-        allAnn, majority_annotation = consolidate_annotation(path, gene_list, geneID_to_description_dict)
+        allAnn, majority_annotation = consolidate_annotation(path, gene_list, geneID_to_descriptions)
 
         ## geneName majority
-        all_geneName, majority_geneName =  consolidate_geneName(path,gene_list, geneID_to_description_dict)
+        all_geneName, majority_geneName =  consolidate_geneName(path, gene_list, geneID_to_descriptions)
 
         ## extract gain/loss event count
         gene_event= dt_geneEvents[gid]
 
         ## average length
-        geneLength_list= [ len(igene) for igene in read_fasta(output_path+'%s%s'%(clusterID,'.fna')).values() ]
-        geneClusterLength = sum(geneLength_list) // len(geneLength_list)
-        #print geneLength_list,geneClusterLength
+        seqs = read_fasta(geneCluster_path+'%s%s'%(clusterID,'.fna')).values()
+        geneClusterLength = int(np.mean([ len(igene) for igene in seqs]))
 
         ## msa
         #geneCluster_aln='%s%s'%(clusterID,'_aa.aln')
@@ -109,28 +144,49 @@ def geneCluster_to_json(path, disable_RNA_clustering, large_output, raw_locus_ta
             dup_list=[ ig.split('|')[0] for ig in gene_list]
             # "#" to delimit (gene/gene_count)key/value ; "@" to seperate genes
             # Counter({'g1': 2, 'g2': 1})
-            dup_detail=''.join(['%s#%s@'%(kd,vd) for kd, vd in dict(Counter(dup_list)).items() if vd>1 ])[:-1]
+            dup_detail=''.join(['%s#%s@'%(kd,vd) for kd, vd in Counter(dup_list).iteritems() if vd>1 ])[:-1]
         else:
             duplicated_state='no';dup_detail=''
 
         ## locus_tag
+        if raw_locus_tag: # make a string of all locus tags [1] in igl.split('|')
+            all_locus_tags=' '.join([ igl.split('|')[1] for igl in gene_list ])
+        else: # in addition to locus tag, keep strain name (but replace '|')
+            all_locus_tags=' '.join([ igl.replace('|','_') for igl in gene_list ])
 
-        if raw_locus_tag==0:
-            #locus_tag_strain=' '.join([ igl for igl in gene_list ])
-            locus_tag_strain=' '.join([ igl.replace('|','_') for igl in gene_list ])
-        else:
-            locus_tag_strain=' '.join([ igl.split('|')[1] for igl in gene_list ])
-        if large_output==1:# reduce table size
-            locus_tag_outfile.write('%s\t%s\n'%(clusterID,locus_tag_strain))
-            locus_tag_strain=' '
-        #locus_tag_strain=' '.join([ '%s_%s'%(igl.split('|')[0],geneId_Dt_to_locusTag[igl]) for igl in gene[1][1] ])
+        ## optionally store locus tags to file, remove from geneClusterJSON
+        if store_locus_tag:
+            locus_tag_outfile.write('%s\t%s\n'%(clusterID,all_locus_tags))
+            all_locus_tags=''
 
-        ## write json
-        newline='{"geneId":%d,"geneLen":%d,"count": %d,"dupli":"%s","dup_detail": "%s","ann":"%s","msa":"%s","divers":"%s","event":"%s","allAnn":"%s", "GName":"%s", "allGName":"%s", "locus":"%s"}'
-        #'{"Id":%d,"len":%d,"cou": %d,"dup":"%s","allDup": "%s","ann":"%s","msa":"%s","div":"%s","eve":"%s","allAnn":"%s", "GName":"%s", "allGName":"%s", "loc":"%s"}'
-        write_file_lst_json.write(newline%(gid+1, geneClusterLength, strain_count, duplicated_state,
-                                           dup_detail,majority_annotation, geneCluster_aln,
-                                           gene_diversity_Dt[clusterID],gene_event, allAnn, majority_geneName, all_geneName, locus_tag_strain))
-    write_file_lst_json.write(']')
-    write_file_lst_json.close()
-    if large_output==1: locus_tag_outfile.close()
+        ## default cluster json fields
+        cluster_json_line=['"geneId":'+str(gid+1),
+                            '"geneLen":'+str(geneClusterLength),
+                            '"count":'+str(strain_count),
+                            '"dupli":"'+duplicated_state+'"',
+                            '"dup_detail":"'+dup_detail+'"',
+                            '"ann":"'+majority_annotation+'"',
+                            '"msa":"'+geneCluster_aln+'"',
+                            '"divers":"'+gene_diversity_Dt[clusterID]+'"',
+                            '"event":"'+str(gene_event)+'"',
+                            '"allAnn":"'+allAnn+'"',
+                            '"GName":"'+majority_geneName+'"',
+                            '"allGName":"'+all_geneName+'"',
+                            '"locus":"'+all_locus_tags+'"'
+                            ]
+
+        if optional_table_column:
+            cluster_json_line.extend(optional_geneCluster_properties(gene_list))
+        if clusterID in branch_associations:
+            cluster_json_line.extend(geneCluster_associations(branch_associations[clusterID], suffix='BA'))
+        if clusterID in presence_absence_associations:
+            cluster_json_line.extend(geneCluster_associations(presence_absence_associations[clusterID], suffix='PA'))
+
+        #write file
+        cluster_json_line=','.join(cluster_json_line)
+        geneClusterJSON_outfile.write('{'+cluster_json_line+'}')
+
+    # close files
+    geneClusterJSON_outfile.write(']')
+    geneClusterJSON_outfile.close()
+    if store_locus_tag: locus_tag_outfile.close()

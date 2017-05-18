@@ -55,8 +55,9 @@ def extract_metadata(path, strain_list, folders_dict, gbk_present):
 
                             # just get the year
                             datacolct = datacolct.split('-')[0]
-                            break
+                        break
                     writeseq.write( "%s\n"%('\t'.join([strainID, strainName, datacolct, country, host])) )
+                    break
         else: #gbk files are not provided
             strainName = datacolct = country = host='unknown'
             for strainID in strain_list:

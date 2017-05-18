@@ -202,7 +202,6 @@ def postprocess_paralogs(parallel, path, nstrains, simple_tree, geneCluster_dt,
 
     print 'new_split_fasta_files', time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()), new_fa_files_set
     ## make new aln and tree
-    mem_check('0 multips(align_and_')
-    multips(align_and_makeTree, parallel, list(new_fa_files_set), file_path, parallel, simple_tree)
-    mem_check('1 multips(align_and_')
+    #mem_check('multips(align_and_')
+    multips(align_and_makeTree, parallel, list(new_fa_files_set), file_path, simple_tree)
     return n_split_clusters, new_fa_files_set

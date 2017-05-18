@@ -136,6 +136,7 @@ def process_gain_loss(path, large_output):
         minimalindex = (res1.fun,res2.fun,res3.fun).index(min(res1.fun,res2.fun,res3.fun))
         res = (res1,res2,res3)[minimalindex]
         change_gtr_parameters_forgainloss(tree,res.x[0],res.x[1])
+        print('estimated gain/loss rate: ',res.x[0],res.x[1])
         tree.reconstruct_anc(method='ml')
         export_gain_loss(tree,path,large_output)
     else:

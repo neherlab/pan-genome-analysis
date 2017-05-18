@@ -31,6 +31,8 @@ parser.add_argument('-rt', '--raxml_max_time', type = int, default = 30,
     help='RAxML tree optimization: maximal runing time (in minutes, default: 30 min)' , metavar='')
 parser.add_argument('-t', '--threads', type = int, default = 1,
     help='number of threads', metavar='')
+parser.add_argument('--scratch', type = str, default = '',
+    help='file system location for temporary files')
 
 #/*==================================
 #            clustering
@@ -139,17 +141,20 @@ parser.add_argument('-sp', '--species_name', type = str, default = '',
     help='default:', metavar='')
 parser.add_argument('-lo', '--large_output', type = int, default = 1,
     help='default: split gene presence/absence and gain/loss pattern into separate files for each cluster', metavar='')
-parser.add_argument('-rl', '--raw_locus_tag', type = int, default = 0,
-    help='default: use strain_ID + locus_tag as new locus_tag; if set to 0, use raw locus_tag from GenBank file', metavar='')
-
+parser.add_argument('-slt', '--store_locus_tag', action='store_true',
+    help='using this parameter will store locus_tags in a separate file instead of saving locus_tags in gene cluster json file for large dataset.')
+parser.add_argument('-rlt', '--raw_locus_tag', action='store_true',
+    help='default: use strain_ID + locus_tag as new locus_tag; if set to 0, use raw locus_tag from GenBank file')
+parser.add_argument('-otc', '--optional_table_column', action='store_true',
+    help='using this parameter will add customized column in gene cluster json file for visualization.')
 parser.add_argument('-mtf', '--meta_tidy_fpath', type = str, default = '',
     help='default: file path for a tidy metadata structure (discrete/continuous data type, etc.)', metavar='')
 parser.add_argument('-rxm', '--raxml_path', type = str, default = '',
     help='absolute path of raxml', metavar='')
 #parser.add_argument('-dbg', '--debug_module', type = int, default = 1,
 #    help='default: debug module not used', metavar='')
-parser.add_argument('-kt', '--keep_temporary_file', type = int, default = 1,
-    help='default: keep temporary files', metavar='')
+parser.add_argument('-kt', '--keep_temporary_file', action='store_true',
+    help='default: not keep temporary files')
 
 params = parser.parse_args()
 path = params.folder_name
@@ -200,10 +205,13 @@ myPangenome=pangenome(
     enable_gain_loss=params.enable_gain_loss,
     simple_tree=params.simple_tree,
     large_output=params.large_output,
+    store_locus_tag=params.store_locus_tag,
     raw_locus_tag=params.raw_locus_tag,
     meta_tidy_fpath=params.meta_tidy_fpath,
     raxml_path=params.raxml_path,
-    keep_temporary_file=params.keep_temporary_file
+    optional_table_column=params.optional_table_column,
+    keep_temporary_file=params.keep_temporary_file,
+    scratch=params.scratch
     )
 
 if 1 in params.steps:#step 01:

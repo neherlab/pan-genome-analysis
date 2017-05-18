@@ -155,6 +155,7 @@ class pangenome:
 
     def process_clusters(self):
         """"""
+        print("process cluster", self.scratch)
         myClusterCollector= clusterCollector(
             path=self.path, folders_dict=self.folders_dict,
             strain_list=self.strain_list,
@@ -183,6 +184,7 @@ class pangenome:
 
     def make_RNACluster_alignment_and_tree(self):
         """ aligning RNA clusters and building RNA tree """
+        print("rna cluster", self.scratch)
         RNAclusters_align_makeTree(self.path, self.folders_dict, self.threads, scratch=self.scratch)
 
     def create_SNP_alignment(self):

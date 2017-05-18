@@ -44,7 +44,7 @@ def create_RNACluster_fa(path,folders_dict):
         RNA_cluster_nu_write.close()
     return diamond_RNACluster_dt
 
-def single_RNACluster_align_and_makeTree(fa_files_list, alignFile_path, parallel, scratch=scratch):
+def single_RNACluster_align_and_makeTree(fa_files_list, alignFile_path, parallel, scratch=''):
     for RNA_cluster_nu_filename in fa_files_list:
         try:
             # extract GC_RNA002 from path/GC_RNA002.aln

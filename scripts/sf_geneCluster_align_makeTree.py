@@ -175,8 +175,8 @@ class mpm_tree(object):
         self.seqs = {x.id:x for x in SeqIO.parse(cluster_seq_filepath, 'fasta')}
         if 'run_dir' not in kwargs:
             import random
-            if 'scratch' in kwargs:
-                prefix = kwargs['scratch']
+            if 'scratch' in kwargs and len(kwargs['scratch']):
+                prefix = kwargs['scratch'].rstrip('/')+'/'
             else:
                 prefix=''
             #self.run_dir = '_'.join(['tmp', self.clusterID])
@@ -193,6 +193,7 @@ class mpm_tree(object):
         Parameters:
         - alignment_tool: ['mafft', 'muscle'] the commandline tool to use
         '''
+        cwd = os.getcwd()
         make_dir(self.run_dir)
         os.chdir(self.run_dir)
 
@@ -223,13 +224,15 @@ class mpm_tree(object):
 
         #generate nucleotide alignment
         self.aln = pad_nucleotide_sequences(aln_aa, self.seqs)
-        os.chdir('..')
-        remove_dir(self.run_dir)
+        os.chdir(cwd)
+        if not "scratch" in self.run_dir:
+            remove_dir(self.run_dir)
 
     def align(self):
         '''
         align sequencences in self.seqs using mafft
         '''
+        cwd = os.getcwd()
         make_dir(self.run_dir)
         os.chdir(self.run_dir)
 
@@ -237,8 +240,9 @@ class mpm_tree(object):
         os.system('mafft --reorder --anysymbol temp_in.fasta 1> temp_out.fasta 2> mafft.log')
 
         self.aln = AlignIO.read('temp_out.fasta', 'fasta')
-        os.chdir('..')
-        remove_dir(self.run_dir)
+        os.chdir(cwd)
+        if not "scratch" in self.run_dir:
+            remove_dir(self.run_dir)
 
 
     def build(self, root='midpoint', raxml=True, raxml_time_limit=0.5, treetime_used=True):
@@ -247,6 +251,7 @@ class mpm_tree(object):
         based on nextflu tree building pipeline
         '''
         import subprocess
+        cwd = os.getcwd()
         make_dir(self.run_dir)
         os.chdir(self.run_dir)
         AlignIO.write(self.aln, 'origin.fasta', 'fasta')
@@ -322,8 +327,9 @@ class mpm_tree(object):
             else:
                 node.name='NODE_0'
 
-        os.chdir('..')
-        remove_dir(self.run_dir)
+        os.chdir(cwd)
+        if not "scratch" in self.run_dir:
+            remove_dir(self.run_dir)
         self.is_timetree=False
 
     def ancestral(self, translate_tree = False):
@@ -528,7 +534,7 @@ def align_and_makeTree( fna_file_list, alignFile_path, simple_tree, scratch=''):
 
                 geneDiversity_file.write('%s\t%s\n'%(clusterID,'0.0'))
             else: # align and build tree
-                print gene_cluster_nu_filename
+                print gene_cluster_nu_filename, scratch
                 myTree = mpm_tree(gene_cluster_nu_filename, scratch=scratch)
                 myTree.codon_align()
                 myTree.translate()

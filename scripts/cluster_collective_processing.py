@@ -15,7 +15,7 @@ class clusterCollector(object):
         if self.split_long_branch_cutoff==0.0:
             self.split_long_branch_cutoff= estimate_core_gene_diversity(self.path,
                 self.folders_dict, self.strain_list, self.threads,
-                self.core_genome_threshold, self.factor_core_diversity, self.species)
+                self.core_genome_threshold, self.factor_core_diversity, self.species, scratch=self.scratch)
 
     def make_geneCluster_alignment_and_tree(self):
         """ align genes in gene cluster and building gene tree """

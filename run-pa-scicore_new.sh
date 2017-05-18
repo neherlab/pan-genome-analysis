@@ -7,7 +7,7 @@
 #
 #  Request it to run this for HH:MM:SS with ?G per core
 #$ -l runtime=00:59:00,membycore=2G
-#SBATCH --time=00:02:00
+#SBATCH --time=05:59:00
 #
 #  Run job from current working directory
 #$ -cwd
@@ -21,11 +21,19 @@ ml purge
 ml Python MAFFT FastTree RAxML
 ml MCL/14.137-goolf-1.7.20
 echo ${TMPDIR}
-./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -st 1 2 3 4 5 -t 16 --scratch ${TMPDIR} > TestSet1.log
+
+cp -r ./data/P_aeruginosa ${TMPDIR}/P_aeruginosa
+./panX.py -fn ${TMPDIR}/P_aeruginosa -sl P_aeruginosa-RefSeq.txt -st 1 2 3 4 5 -t 16 --scratch ${TMPDIR} > P_aeruginosa1.log
+
+ls ${TMPDIR}/P_aeruginosa/geneCluster > test.log
 
 ml purge
 ml Python MAFFT FastTree RAxML
-./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -st 6 7 8 9 10 11 -t 16  --scratch ${TMPDIR}  > TestSet2.log
+./panX.py -fn ${TMPDIR}/P_aeruginosa -sl P_aeruginosa-RefSeq.txt -st 6 7 8 9 10 11 -t 16  --scratch ${TMPDIR}  > P_aeruginosa2.log
+
+tar czf ${TMPDIR}/P_aeruginosa/vis.tar.gz ${TMPDIR}/P_aeruginosa/vis
+
+cp ${TMPDIR}/P_aeruginosa/vis.tar.gz ./data/P_aeruginosa/
 
 #/etc/slurm/scripts/epilog.sh
 ## example for using divide-and-conquer algorithm on large datasets (use parameters -dmdc and -dcs, maybe also -sitr )

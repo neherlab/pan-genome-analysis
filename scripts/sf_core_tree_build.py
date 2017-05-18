@@ -21,14 +21,16 @@ def midpointRooting(infileName, outfileName):
     with open(outfileName, 'wb') as outfile:
         outfile.write(tree.write(format=1))
 
-def aln_to_Newick(path, raxml_timelimit, raxml_path, threads):
+def aln_to_Newick(path, raxml_timelimit, raxml_path, threads, scratch=''):
     """ function: build core gene SNP tree using SNP alignment
         input: SNP_whole_matrix.aln
         output: tree_result.newick
     """
-    output_path = '_'.join(['temp_coretree', time.strftime('%Y%m%d-%H%M%S',time.gmtime()), str(random.randint(0,1000000))])
+    output_path = (scratch.rstrip('/')+'/' if len(scratch) else '') + '_'.join(['temp_coretree', time.strftime('%Y%m%d-%H%M%S',time.gmtime()), str(random.randint(0,1000000))])
+    print(path, '../%s/SNP_whole_matrix.aln'%output_path, glob.glob('../%s/SNP_whole_matrix.aln'%output_path))
+    cwd = os.getcwd()
     os.system('mkdir %s'%output_path)
-    os.system('ln -sf ../%s/SNP_whole_matrix.aln %s'%(path+'geneCluster',output_path))
+    os.system('ln -sf %s/SNP_whole_matrix.aln %s'%(path+'geneCluster',output_path))
     os.chdir(output_path)
 
     ## run fasttree
@@ -71,9 +73,10 @@ def aln_to_Newick(path, raxml_timelimit, raxml_path, threads):
 
     print ' raxml time-cost:', times(start)
     midpointRooting(out_fname,'tree_result.newick')
-    shutil.copy('tree_result.newick', '../%s/tree_result.newick'%(path+'geneCluster') )
-    os.chdir('../')
-    os.system('rm -r %s'%output_path)
+    shutil.copy('tree_result.newick', '%s/tree_result.newick'%(path+'geneCluster') )
+    os.chdir(cwd)
+    if not 'scratch' in output_path:
+        os.system('rm -r %s'%output_path)
 
     # if 0: phyloTree based visualization
     #     simple_tree=0

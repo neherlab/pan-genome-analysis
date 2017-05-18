@@ -118,7 +118,7 @@ def create_split_cluster_files(file_path, fname,
     return split_fa_files_set
 
 def postprocess_paralogs_iterative(parallel, path, nstrains, simple_tree,
-   	paralog_branch_cutoff, paralog_frac_cutoff=0.3, plot=0):
+   	paralog_branch_cutoff, paralog_frac_cutoff=0.3, plot=0, scratch=''):
 
     cluster_path= path+'protein_faa/diamond_matches/'
     geneCluster_dt=load_pickle(cluster_path+'allclusters_postprocessed.cpk')
@@ -126,7 +126,7 @@ def postprocess_paralogs_iterative(parallel, path, nstrains, simple_tree,
     split_result= postprocess_paralogs( parallel, path, nstrains, simple_tree,
                                             geneCluster_dt, set(),
                                             paralog_branch_cutoff=paralog_branch_cutoff,
-                                            paralog_frac_cutoff=paralog_frac_cutoff, plot=plot)
+                                            paralog_frac_cutoff=paralog_frac_cutoff, plot=plot, scratch=scratch)
     n_split_clusters, new_fa_files_set = split_result
     iteration=0
     while(n_split_clusters):
@@ -134,7 +134,7 @@ def postprocess_paralogs_iterative(parallel, path, nstrains, simple_tree,
         split_result= postprocess_paralogs( parallel, path, nstrains, simple_tree,
                                                 geneCluster_dt, new_fa_files_set,
                                                 paralog_branch_cutoff=paralog_branch_cutoff,
-                                                paralog_frac_cutoff=paralog_frac_cutoff, plot=plot)
+                                                paralog_frac_cutoff=paralog_frac_cutoff, plot=plot, scratch=scratch)
         n_split_clusters, new_fa_files_set = split_result
         iteration+=1
 
@@ -145,7 +145,7 @@ def postprocess_paralogs_iterative(parallel, path, nstrains, simple_tree,
     update_geneCluster_cpk(path, geneCluster_dt)
 
 def postprocess_paralogs(parallel, path, nstrains, simple_tree, geneCluster_dt,
-    new_fa_files_set,  paralog_branch_cutoff, paralog_frac_cutoff=0.3, plot=0):
+    new_fa_files_set,  paralog_branch_cutoff, paralog_frac_cutoff=0.3, plot=0, scratch=''):
     """
     splitting paralogs, discarding old gene clusters and creating new clusters of split paralogs
     params:
@@ -203,5 +203,5 @@ def postprocess_paralogs(parallel, path, nstrains, simple_tree, geneCluster_dt,
     print 'new_split_fasta_files', time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()), new_fa_files_set
     ## make new aln and tree
     #mem_check('multips(align_and_')
-    multips(align_and_makeTree, parallel, list(new_fa_files_set), file_path, simple_tree)
+    multips(align_and_makeTree, parallel, list(new_fa_files_set), file_path, simple_tree, scratch=scratch)
     return n_split_clusters, new_fa_files_set

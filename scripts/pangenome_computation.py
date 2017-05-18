@@ -193,7 +193,7 @@ class pangenome:
 
     def build_core_tree(self):
         """ build core tree based on SNP alignment """
-        aln_to_Newick(self.path, self.raxml_max_time, self.raxml_path, self.threads)
+        aln_to_Newick(self.path, self.raxml_max_time, self.raxml_path, self.threads, scratch=self.scratch)
 
     def compute_gene_presence_pattern(self):
         """

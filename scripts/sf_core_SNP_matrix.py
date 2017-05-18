@@ -22,15 +22,13 @@ def create_core_SNP_matrix(path, core_cutoff=1.0, core_gene_strain_fpath=''):#1.
     strain_list=load_pickle(path+'strain_list.cpk')
     totalStrain= len(strain_list)
     sorted_geneList = load_sorted_clusters(path)
+    strain_core_cutoff=int(totalStrain*core_cutoff)
+
     if core_gene_strain_fpath!='':
         with open(core_gene_strain_fpath,'rb') as core_gene_strain_file:
             core_strain_set= set([i.rstrip().replace('-','_') for i in core_gene_strain_file])
     with open(output_path+'core_geneList.txt','wb') as outfile:
         for clusterID, vg in sorted_geneList:
-            if core_cutoff==1.0:
-                strain_core_cutoff=totalStrain
-            else:
-                strain_core_cutoff=int(totalStrain*core_cutoff)
             if vg[0]==vg[2] and vg[0]>=strain_core_cutoff:
                 coreGeneName='%s%s'%(clusterID,'_na_aln.fa')
                 ## sequences might be discarded because of premature stops
@@ -41,8 +39,9 @@ def create_core_SNP_matrix(path, core_cutoff=1.0, core_gene_strain_fpath=''):#1.
                     outfile.write(coreGeneName+'\n')
                     corelist.append(coreGeneName)
                 else:
-                    #print '%s%s%s'%('warning: ',coreGeneName_path,' is not a core gene')
-                    pass
+                    if not os.path.exists(coreGeneName_path):
+                        print '%s%s%s'%('warning: ',coreGeneName_path,' file was not found')
+                    #pass
 
         write_pickle(output_path+'core_geneList.cpk',corelist)
 

@@ -249,6 +249,7 @@ def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
     ## Data organization
     ## Move: visualization-related files into ./vis/geneCluster/ folder
     #os.system('ln -sf %s/*.cpk %s/../'%(output_path,output_path))
+    cwd = os.getcwd()
     os.chdir(output_path)
     vis_path='../vis/'
     os.system('mv coreGenomeTree.json strainMetainfo.json ../metaConfiguration.js '+vis_path)
@@ -262,7 +263,7 @@ def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
     os.system('gzip -f *_aln.fa' )
     if not keep_temporary_file:
         # clean up record folders
-        os.chdir('../../../../');
+        os.chdir(cwd);
         print 'clean up temporary files (temporary core gene and post-processed cluster records, etc.)\n'
         tmp_core= folders_dict['tmp_core_seq_path']
         cluster_seq_path= folders_dict['cluster_seq_path']

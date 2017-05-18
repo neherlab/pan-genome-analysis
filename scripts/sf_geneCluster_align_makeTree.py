@@ -426,8 +426,13 @@ class mpm_tree(object):
                     self.mut_to_branch[mut].append(node)
 
     def reduce_alignments(self):
-        for attr, aln, alpha, freq in [["aln_reduced", self.aln, nuc_alpha, self.af_nuc],
-                                 ["aa_aln_reduced", self.aa_aln, aa_alpha, calc_af(self.aa_aln, aa_alpha)]]:
+        try:
+            aa_af = calc_af(self.aa_aln, aa_alpha)
+            nuc_af = calc_af(self.aln, nuc_alpha)
+        except:
+            print('sf_geneCluster_align_makeTree: failed to calculate frequencies')
+        for (attr, aln, alpha, freq) in [["aln_reduced", self.aln, nuc_alpha, nuc_af],
+                                         ["aa_aln_reduced", self.aa_aln, aa_alpha, aa_af]]:
             try:
                 consensus = np.array(alpha)[freq.argmax(axis=0)]
                 aln_array = np.array(self.aln)
@@ -438,8 +443,7 @@ class mpm_tree(object):
                                        id=seq.id, description=seq.description))
                 self.__setattr__(attr, MultipleSeqAlignment(new_seqs))
             except:
-                print("sf_geneCluster_align_MakeTree: aligment reduction failed")
-
+                print("sf_geneCluster_align_makeTree: aligment reduction failed")
 
 
     #def export(self, path = '', extra_attr = ['aa_muts','ann','branch_length','name','longName'], RNA_specific=False):
@@ -468,21 +472,22 @@ class mpm_tree(object):
         tree_json = tree_to_json(self.tree.root, extra_attr=extra_attr)
         write_json(tree_json, timetree_fname, indent=None)
 
-        ## msa compatible
+        # msa compatible
         self.reduce_alignments()
         for i_aln in self.aln:
-            i_aln.id=i_aln.id.replace('|','-',1)
+            i_aln.id=i_aln.id.replace('|','-', 1)
 
         AlignIO.write(self.aln, path+self.clusterID+'_na_aln.fa', 'fasta')
-        AlignIO.write(self.aln_reduced, path+self.clusterID+'_na_aln_reduced.fa', 'fasta')
-
+        if hasattr(self, 'aln_reduced'):
+            AlignIO.write(self.aln_reduced, path+self.clusterID+'_na_aln_reduced.fa', 'fasta')
 
         if RNA_specific==False:
             for i_aa_aln in self.aa_aln:
                 i_aa_aln.id=i_aa_aln.id.replace('|','-',1)
 
             AlignIO.write(self.aa_aln, path+self.clusterID+'_aa_aln.fa', 'fasta')
-            AlignIO.write(self.aa_aln_reduced, path+self.clusterID+'_aa_aln_reduced.fa', 'fasta')
+            if hasattr(self, 'aa_aln_reduced'):
+                AlignIO.write(self.aa_aln_reduced, path+self.clusterID+'_aa_aln_reduced.fa', 'fasta')
 
         ## write seq json
         write_seq_json=0

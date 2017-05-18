@@ -25,7 +25,7 @@ class clusterCollector(object):
 
     def postprocessing_split_long_branch(self):
         """ postprocessing: split long branch via refined core gene diversity """
-        postprocess_split_long_branch(self.threads, self.path, self.simple_tree, self.split_long_branch_cutoff)
+        postprocess_split_long_branch(self.threads, self.path, self.simple_tree, self.split_long_branch_cutoff, scratch=self.scratch)
 
     def postprocessing_split_paralogs(self):
         """ postprocessing: split paralogs"""
@@ -33,9 +33,9 @@ class clusterCollector(object):
             self.paralog_branch_cutoff=self.split_long_branch_cutoff
         postprocess_paralogs_iterative(self.threads, self.path, self.nstrains,
             self.simple_tree, self.paralog_branch_cutoff, self.paralog_frac_cutoff,
-            self.explore_paralog_plot)
+            self.explore_paralog_plot, scratch=self.scratch)
 
     def postprocess_merge_underclustered_genes(self):
         """ postprocessing: integrate under_clustered genes """
         postprocess_unclustered_genes(self.threads, self.path, self.nstrains, self.simple_tree,
-            self.split_long_branch_cutoff, self.window_size_smoothed, self.strain_proportion, self.sigma_scale)
+            self.split_long_branch_cutoff, self.window_size_smoothed, self.strain_proportion, self.sigma_scale, scratch=self.scratch)

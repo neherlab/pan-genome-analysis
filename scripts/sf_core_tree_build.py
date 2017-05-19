@@ -29,6 +29,7 @@ def aln_to_Newick(path, raxml_timelimit, raxml_path, threads):
     output_path = '_'.join(['temp_coretree', time.strftime('%Y%m%d-%H%M%S',time.gmtime()), str(random.randint(0,1000000))])
     os.system('mkdir %s'%output_path)
     os.system('ln -sf ../%s/SNP_whole_matrix.aln %s'%(path+'geneCluster',output_path))
+    cwd = os.getcwd()
     os.chdir(output_path)
 
     ## run fasttree
@@ -72,7 +73,7 @@ def aln_to_Newick(path, raxml_timelimit, raxml_path, threads):
     print ' raxml time-cost:', times(start)
     midpointRooting(out_fname,'tree_result.newick')
     shutil.copy('tree_result.newick', '../%s/tree_result.newick'%(path+'geneCluster') )
-    os.chdir('../')
+    os.chdir(cwd)
     os.system('rm -r %s'%output_path)
 
     # if 0: phyloTree based visualization

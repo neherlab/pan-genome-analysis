@@ -7,6 +7,7 @@ from sf_cluster_protein import diamond_run, filter_hits_single, parse_geneCluste
 def mcl_run(clustering_path, threads, input_prefix, mcl_inflation):
     """ """
     start = time.time()
+    cwd = os.getcwd()
     os.chdir(clustering_path)
     command_mcl=''.join(['mcl ',input_prefix,'_filtered_hits.abc --abc ',\
                         '-o ',input_prefix,'_cluster.output -I ',str(mcl_inflation),\
@@ -14,7 +15,7 @@ def mcl_run(clustering_path, threads, input_prefix, mcl_inflation):
     os.system(command_mcl)
     print 'run command line mcl in ',clustering_path,': \n', command_mcl
     print 'mcl runtime for ', input_prefix,': ', times(start), '\n'
-    os.chdir('../../../../')
+    os.chdir(cwd)
 
 def calculate_aln_consensus(aln_file):
     """ """

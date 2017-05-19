@@ -74,6 +74,7 @@ def delete_original_clusters(file_path, geneCluster_dt):
     return:
         updated geneCluster_dt
     """
+    cwd = os.getcwd()
     os.chdir(file_path)
     with open('delete_misclusters.txt', 'rb') as delete_cluster_file:
         uncluster_filename_list= [ uncluster_filename.split('.fna')[0] for  uncluster_filename in delete_cluster_file]
@@ -84,7 +85,7 @@ def delete_original_clusters(file_path, geneCluster_dt):
                 tmp_files=' '.join([ uncluster_filename+suffix for suffix in ['_aa_aln.fa','_na_aln.fa','.fna','.faa','.nwk','_tree.json']])
                 command_move_deleted_clusters=' '.join(['mv', tmp_files, './deleted_clusters/'])
                 os.system(command_move_deleted_clusters)
-    os.chdir('../../../')
+    os.chdir(cwd)
     return geneCluster_dt
 
 def output_cutted_clusters(file_path, uncluster_filename, gene_list, cut_branch_threshold, treefile_used=None, cut_leftover=None):

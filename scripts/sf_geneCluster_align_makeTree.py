@@ -189,6 +189,7 @@ class mpm_tree(object):
         Parameters:
         - alignment_tool: ['mafft', 'muscle'] the commandline tool to use
         '''
+        cwd = os.getcwd()
         make_dir(self.run_dir)
         os.chdir(self.run_dir)
 
@@ -219,13 +220,14 @@ class mpm_tree(object):
 
         #generate nucleotide alignment
         self.aln = pad_nucleotide_sequences(aln_aa, self.seqs)
-        os.chdir('..')
+        os.chdir(cwd)
         remove_dir(self.run_dir)
 
     def align(self):
         '''
         align sequencences in self.seqs using mafft
         '''
+        cwd = os.getcwd()
         make_dir(self.run_dir)
         os.chdir(self.run_dir)
 
@@ -233,7 +235,7 @@ class mpm_tree(object):
         os.system('mafft --reorder --anysymbol temp_in.fasta 1> temp_out.fasta 2> mafft.log')
 
         self.aln = AlignIO.read('temp_out.fasta', 'fasta')
-        os.chdir('..')
+        os.chdir(cwd)
         remove_dir(self.run_dir)
 
 
@@ -243,6 +245,7 @@ class mpm_tree(object):
         based on nextflu tree building pipeline
         '''
         import subprocess
+        cwd = os.getcwd()
         make_dir(self.run_dir)
         os.chdir(self.run_dir)
         AlignIO.write(self.aln, 'origin.fasta', 'fasta')
@@ -318,7 +321,7 @@ class mpm_tree(object):
             else:
                 node.name='NODE_0'
 
-        os.chdir('..')
+        os.chdir(cwd)
         remove_dir(self.run_dir)
         self.is_timetree=False
 

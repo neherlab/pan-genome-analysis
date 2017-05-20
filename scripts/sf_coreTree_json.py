@@ -221,7 +221,7 @@ def process_metajson(path, meta_tidy_fpath, metajson_dict):
         meta_js_out.write('%s;'%json.dumps(metajson_exp))
 
 def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
-                 large_output, meta_tidy_fpath, keep_temporary_file ):
+                 large_output, meta_tidy_fpath, clean_temporary_files ):
     """ create json files for web-visualiaztion
         input: tree_result.newick, metainfo.tsv
         output: json files for core gene SNP tree and strain metadata table
@@ -231,7 +231,10 @@ def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
     if meta_info_file_path !='none':
         os.system('cp %s %s'%(meta_info_file_path, metaFile))
 
+    main_data_path= path
     output_path= folders_dict['cluster_seq_path']
+    vis_json_path= folders_dict['vis_json_path']
+    vis_cluster_path=  folders_dict['vis_cluster_path']
     tree = Tree(output_path+'tree_result.newick',format=1)
     strain_list=[node.name for node in tree.traverse("preorder")]
 
@@ -249,20 +252,20 @@ def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
     ## Data organization
     ## Move: visualization-related files into ./vis/geneCluster/ folder
     #os.system('ln -sf %s/*.cpk %s/../'%(output_path,output_path))
+
     os.chdir(output_path)
-    vis_path='../vis/'
-    os.system('mv coreGenomeTree.json strainMetainfo.json ../metaConfiguration.js '+vis_path)
-    os.system('mv *C*_aln.fa *C*_tree.json *C*.nwk '+vis_path+'geneCluster/')
-    os.system('cp tree_result.newick ../vis/strain_tree.nwk')
+    os.system('mv coreGenomeTree.json strainMetainfo.json '+main_data_path+'metaConfiguration.js '+vis_json_path)
+    os.system('mv *C*_aln*.fa *C*_tree.json *C*.nwk '+vis_cluster_path)
+    os.system('cp tree_result.newick '+vis_cluster_path+'/strain_tree.nwk')
     if large_output==1:
-        os.system('mv *C*patterns.json '+vis_path+'geneCluster/')
+        os.system('mv *C*patterns.json '+vis_cluster_path)
 
     ## gzip aln files
-    os.chdir('../vis/geneCluster/')
-    os.system('gzip -f *_aln.fa' )
-    if not keep_temporary_file:
+    os.system('gzip -f '+vis_cluster_path+'*_aln*.fa' )
+    if clean_temporary_files:
         # clean up record folders
-        os.chdir('../../../../');
+        os.chdir(main_data_path);
+
         print 'clean up temporary files (temporary core gene and post-processed cluster records, etc.)\n'
         tmp_core= folders_dict['tmp_core_seq_path']
         cluster_seq_path= folders_dict['cluster_seq_path']

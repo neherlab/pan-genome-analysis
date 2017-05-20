@@ -28,8 +28,7 @@ class pangenome:
     def __init__(self, **kwargs):
         for k, v in kwargs.iteritems():
             setattr(self, k, v)
-            #self.params_dict[k]=v TODO
-        self.path= '%s/'%self.path
+            #self.params_dict[k]=v todos
         self.folders_dict=defaultdict( str,
             gbk_path='input_GenBank/',
             nucleotide_path='nucleotide_fna/',
@@ -37,7 +36,9 @@ class pangenome:
             clustering_path='protein_faa/diamond_matches/',
             RNA_path='RNA_fna/',
             cluster_seq_path='geneCluster/',
-            tmp_core_seq_path='tmp_core/')
+            tmp_core_seq_path='tmp_core/',
+            vis_json_path='vis/',
+            vis_cluster_path='vis/geneCluster/')
 
         # set up folder structure and files names
         self.organize_folders()
@@ -190,7 +191,7 @@ class pangenome:
 
     def build_core_tree(self):
         """ build core tree based on SNP alignment """
-        aln_to_Newick(self.path, self.raxml_max_time, self.raxml_path, self.threads)
+        aln_to_Newick(self.path, self.folders_dict, self.raxml_max_time, self.raxml_path, self.threads)
 
     def compute_gene_presence_pattern(self):
         """
@@ -217,7 +218,7 @@ class pangenome:
 
     def export_coreTree_json(self):
         """ export core tree as json file for core tree visualization"""
-        json_parser(self.path, self.folders_dict, self.fpaths_dict, self.metainfo_fpath, self.large_output, self.meta_tidy_fpath, self.keep_temporary_file)
+        json_parser(self.path, self.folders_dict, self.fpaths_dict, self.metainfo_fpath, self.large_output, self.meta_tidy_fpath, self.clean_temporary_files)
 
 
 

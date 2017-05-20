@@ -21,21 +21,22 @@ def midpointRooting(infileName, outfileName):
     with open(outfileName, 'wb') as outfile:
         outfile.write(tree.write(format=1))
 
-def aln_to_Newick(path, raxml_timelimit, raxml_path, threads):
+def aln_to_Newick(path, folders_dict, raxml_timelimit, raxml_path, threads):
     """ function: build core gene SNP tree using SNP alignment
         input: SNP_whole_matrix.aln
         output: tree_result.newick
     """
-    output_path = '_'.join(['temp_coretree', time.strftime('%Y%m%d-%H%M%S',time.gmtime()), str(random.randint(0,1000000))])
+    cluster_seq_path=folders_dict['cluster_seq_path']
+    output_path = '_'.join([cluster_seq_path+'temp_coretree', time.strftime('%Y%m%d-%H%M%S',time.gmtime()), str(random.randint(0,1000000))])
     os.system('mkdir %s'%output_path)
-    os.system('ln -sf ../%s/SNP_whole_matrix.aln %s'%(path+'geneCluster',output_path))
+    SNP_matrix_path=cluster_seq_path+'SNP_whole_matrix.aln'
     cwd = os.getcwd()
     os.chdir(output_path)
 
     ## run fasttree
     start = time.time();
 
-    os.system('fasttree -gtr -nt -gamma -nosupport -mlacc 2 -slownni SNP_whole_matrix.aln > initial_tree.newick0') ;
+    os.system('fasttree -gtr -nt -gamma -nosupport -mlacc 2 -slownni '+SNP_matrix_path+' > initial_tree.newick0') ;
     print ' fasttree time-cost:', times(start)
 
     resolve_polytomies('initial_tree.newick0','initial_tree.newick')
@@ -48,7 +49,7 @@ def aln_to_Newick(path, raxml_timelimit, raxml_path, threads):
         # exec for killing process
         end_time = time.time() + int(raxml_timelimit*60) #
         raxml_program= 'raxml' if raxml_path=='' else raxml_path
-        process = subprocess.Popen('exec '+raxml_program+' -f d -T '+str(threads)+' -j -s SNP_whole_matrix.aln -n topology -c 25 -m GTRCAT -p 344312987 -t initial_tree.newick', shell=True)
+        process = subprocess.Popen('exec '+raxml_program+' -f d -T '+str(threads)+' -j -s '+SNP_matrix_path+' -n topology -c 25 -m GTRCAT -p 344312987 -t initial_tree.newick', shell=True)
         while (time.time() < end_time):
             if os.path.isfile('RAxML_result.topology'):
                 break
@@ -67,12 +68,12 @@ def aln_to_Newick(path, raxml_timelimit, raxml_path, threads):
         shutil.copy('initial_tree.newick', 'raxml_tree.newick')
 
     print 'RAxML branch length optimization and rooting'
-    os.system(raxml_program+' -f e -T 6 -s SNP_whole_matrix.aln -n branches -c 25 -m GTRGAMMA -p 344312987 -t raxml_tree.newick')
+    os.system(raxml_program+' -f e -T 6 -s '+SNP_matrix_path+' -n branches -c 25 -m GTRGAMMA -p 344312987 -t raxml_tree.newick')
     shutil.copy('RAxML_result.branches', out_fname)
 
     print ' raxml time-cost:', times(start)
     midpointRooting(out_fname,'tree_result.newick')
-    shutil.copy('tree_result.newick', '../%s/tree_result.newick'%(path+'geneCluster') )
+    shutil.copy('tree_result.newick', cluster_seq_path+'tree_result.newick')
     os.chdir(cwd)
     os.system('rm -r %s'%output_path)
 

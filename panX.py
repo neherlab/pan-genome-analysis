@@ -153,13 +153,11 @@ parser.add_argument('-rxm', '--raxml_path', type = str, default = '',
     help='absolute path of raxml', metavar='')
 #parser.add_argument('-dbg', '--debug_module', type = int, default = 1,
 #    help='default: debug module not used', metavar='')
-parser.add_argument('-kt', '--keep_temporary_file', action='store_true',
-    help='default: not keep temporary files')
+parser.add_argument('-ct', '--clean_temporary_files', action='store_true',
+    help='default: keep temporary files')
 
 params = parser.parse_args()
-path = params.folder_name
-if path[:-1]!='/':
-    path='%s/'%path
+path = os.path.abspath(params.folder_name)+'/'
 if params.steps[0]=='all':
     ## run all steps
     params.steps=range(1,12)
@@ -168,7 +166,7 @@ print 'Running panX in main folder: %s'%path
 #species=params.species_name TODO
 
 myPangenome=pangenome(
-    path=params.folder_name,
+    path=path,
     species=params.strain_list.split('-RefSeq')[0],
     gbk_present=params.gbk_present,
     threads=params.threads,
@@ -211,7 +209,7 @@ myPangenome=pangenome(
     meta_tidy_fpath=params.meta_tidy_fpath,
     raxml_path=params.raxml_path,
     optional_table_column=params.optional_table_column,
-    keep_temporary_file=params.keep_temporary_file
+    clean_temporary_files=params.clean_temporary_files
     )
 
 if 1 in params.steps:#step 01:

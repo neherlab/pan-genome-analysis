@@ -78,7 +78,6 @@ def geneCluster_to_json(path, disable_RNA_clustering, store_locus_tag,
     # define path and make output directory
     geneCluster_path='%s%s'%(path,'geneCluster/')
     output_path='%s%s'%(path,'vis/')
-    os.system('mkdir %s; mkdir %sgeneCluster/'%(output_path,output_path))
 
     # open files
     geneClusterJSON_outfile=open(output_path+'geneCluster.json', 'wb')

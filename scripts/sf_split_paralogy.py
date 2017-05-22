@@ -12,19 +12,21 @@ def split_cluster(tree, nstrains, max_branch_length, max_paralogs):
     '''
     # determine the optimal split
     best_split = find_best_split(tree)
+
     # explore linear discriminator
     #return best_split.branch_length/max_branch_length + float(len(best_split.para_nodes))/max_paralogs > 1.0 and len(best_split.para_nodes) > 1
 
     # condition1: split whenever branch is long and the complete strain set is duplicated
-    condition1 = len(best_split.para_nodes)>=nstrains and best_split.split_bl > 0.7*max_branch_length
+    #condition1 = len(best_split.para_nodes)>=nstrains and best_split.split_bl > 0.7*max_branch_length
+    condition1 = len(best_split.para_nodes)>=nstrains and best_split.split_bl > max_branch_length
 
     # condition2: split whenever branch is long, the number of duplications exceeds max_paralogs,
     # and at least one side has the full set of strains
-    condition2 = (len(best_split.para_nodes)>max_paralogs and
-                ((len(best_split.leafs)==nstrains) or (len(best_split.not_leafs)==nstrains))
-                and best_split.split_bl > max_branch_length)
+    condition2 = len(best_split.para_nodes)>max_paralogs \
+                 and ((len(best_split.leafs)==nstrains) or (len(best_split.not_leafs)==nstrains)) \
+                 and best_split.split_bl > max_branch_length
 
-    condition3 = len(best_split.para_nodes)>max_paralogs and best_split.split_bl>1.5*max_branch_length
+    #condition3 = len(best_split.para_nodes)>max_paralogs and best_split.split_bl>1.5*max_branch_length
 
     to_split = condition1 or condition2
     #return best_split.branch_length/max_branch_length > 1.0 and float(len(best_split.para_nodes))/max_paralogs >= 1.0

@@ -111,4 +111,4 @@ def estimate_core_gene_diversity(path, folders_dict, strain_list, parallel, core
     if os.path.exists(new_clustering_path):
         os.system(''.join(['rm -r ',new_clustering_path]))
     os.system('mv %s %s'%(tmp_core_seq_path, path))
-    return refined_core_diversity
+    return calculated_core_diversity, refined_core_diversity

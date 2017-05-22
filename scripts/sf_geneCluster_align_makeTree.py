@@ -640,10 +640,9 @@ def find_best_split(tree):
         for child in node:
             child.not_leafs = set(node.not_leafs).union(*[c.leafs for c in node if c!=child])
             child.para_nodes = set.intersection(child.not_leafs, child.leafs)
-
             ## calcuate split branch length
             ## if the parent of the best split is the root, the branch_length is the sum of the two children of the root.
-            child.split_bl = child.branch_length+ min([c.branch_length for c in child.up for c in child.up if c!=child]) if child.up.up is None else child.branch_length
+            child.split_bl = child.branch_length+ [c.branch_length for c in node if c!=child][0] if node==tree.root else 0
             more_para_nodes = len(child.para_nodes)>best_split[1]
             longer_branch  = len(child.para_nodes)==best_split[1] and child.split_bl>best_split[2]
             if more_para_nodes or longer_branch:

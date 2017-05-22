@@ -256,7 +256,7 @@ def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
     os.chdir(output_path)
     os.system('mv coreGenomeTree.json strainMetainfo.json '+main_data_path+'metaConfiguration.js '+vis_json_path)
     os.system('mv *C*_aln*.fa *C*_tree.json *C*.nwk '+vis_cluster_path)
-    os.system('cp tree_result.newick '+vis_cluster_path+'/strain_tree.nwk')
+    os.system('cp tree_result.newick '+vis_json_path+'/strain_tree.nwk')
     if large_output==1:
         os.system('mv *C*patterns.json '+vis_cluster_path)
 

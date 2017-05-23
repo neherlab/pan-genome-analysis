@@ -5,16 +5,32 @@ from Bio import Phylo
 from sf_miscellaneous import read_fasta, write_in_fa, load_pickle, multips
 from sf_geneCluster_align_makeTree import align_and_makeTree, find_best_split, update_diversity_cpk, load_sorted_clusters, update_geneCluster_cpk, mem_check
 
-def split_cluster(tree, max_branch_length, max_paralogs):
+def split_cluster(tree, nstrains, max_branch_length, max_paralogs):
     '''
     determine which clusters to split
     return tree/false depending on whether the cluster should be split or not
     '''
     # determine the optimal split
     best_split = find_best_split(tree)
+
     # explore linear discriminator
     #return best_split.branch_length/max_branch_length + float(len(best_split.para_nodes))/max_paralogs > 1.0 and len(best_split.para_nodes) > 1
-    return best_split.branch_length/max_branch_length > 1.0 and float(len(best_split.para_nodes))/max_paralogs >= 1.0
+
+    # condition1: split whenever branch is long and the complete strain set is duplicated
+    #condition1 = len(best_split.para_nodes)>=nstrains and best_split.split_bl > 0.7*max_branch_length
+    condition1 = len(best_split.para_nodes)>=nstrains and best_split.split_bl > max_branch_length
+
+    # condition2: split whenever branch is long, the number of duplications exceeds max_paralogs,
+    # and at least one side has the full set of strains
+    condition2 = len(best_split.para_nodes)>max_paralogs \
+                 and ((len(best_split.leafs)==nstrains) or (len(best_split.not_leafs)==nstrains)) \
+                 and best_split.split_bl > max_branch_length
+
+    #condition3 = len(best_split.para_nodes)>max_paralogs and best_split.split_bl>1.5*max_branch_length
+
+    to_split = condition1 or condition2
+    #return best_split.branch_length/max_branch_length > 1.0 and float(len(best_split.para_nodes))/max_paralogs >= 1.0
+    return to_split
 
 def explore_paralogs(path, nstrains, paralog_branch_cutoff, paralog_frac_cutoff=0.3, plot=0):
     '''
@@ -181,7 +197,7 @@ def postprocess_paralogs(parallel, path, nstrains, simple_tree, geneCluster_dt,
         best_split = find_best_split(tree)
 
         if best_split is not None:
-            do_split = split_cluster(tree,
+            do_split = split_cluster(tree, nstrains,
                                      max_branch_length = paralog_branch_cutoff,
                                      #max_branch_length = paralog_branch_cutoff*mean_branch_length,
                                      max_paralogs = paralog_frac_cutoff*nstrains)

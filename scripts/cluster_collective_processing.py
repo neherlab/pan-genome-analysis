@@ -13,7 +13,7 @@ class clusterCollector(object):
     def estimate_raw_core_diversity(self):
         """ computing raw core gene diversity which's refined as post-processing cutoff """
         if self.split_long_branch_cutoff==0.0:
-            self.split_long_branch_cutoff= estimate_core_gene_diversity(self.path,
+            self.raw_core_diversity, self.split_long_branch_cutoff= estimate_core_gene_diversity(self.path,
                 self.folders_dict, self.strain_list, self.threads, self.core_genome_threshold, self.factor_core_diversity, self.species)
 
     def make_geneCluster_alignment_and_tree(self):
@@ -27,7 +27,7 @@ class clusterCollector(object):
     def postprocessing_split_paralogs(self):
         """ postprocessing: split paralogs"""
         if self.paralog_branch_cutoff==0.0:
-            self.paralog_branch_cutoff=self.split_long_branch_cutoff
+            self.paralog_branch_cutoff=self.raw_core_diversity
         postprocess_paralogs_iterative(self.threads, self.path, self.nstrains,
             self.simple_tree, self.paralog_branch_cutoff, self.paralog_frac_cutoff,
             self.explore_paralog_plot)

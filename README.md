@@ -41,8 +41,7 @@ The results can be explored via our interactive [pan-genome-visualization](https
      - pip install numpy scipy biopython ete2
      - [treetime](http://github.com/neherlab/treetime) (please fetch treetime using the following two commands)
      ```
-       git submodule init
-       git submodule update
+       git submodule update --init
      ```
 
 2. How to run:

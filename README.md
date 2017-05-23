@@ -85,7 +85,7 @@ In `data/TestSet`, you will find a small set of five *Mycoplasma genitalium* gen
 To run `pan-genome-analysis` pipeline, you need to execute a series of steps that can be started using the `run-TestSet.sh` script
 To run ...
 ```
-python ./scripts/run-pipeline -fn data/TestSet -sl TestSet-RefSeq.txt -t 32
+./panX.py -fn data/TestSet -sl TestSet-RefSeq.txt -t 32
 ```
 All steps can be run in order by omitting the `-st` option, whereas using `-st 5 6` will specify the analysis steps you want to run. `-t ` specifies the number of CPU cores.
 <br />

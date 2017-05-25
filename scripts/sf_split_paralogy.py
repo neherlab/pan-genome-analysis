@@ -182,7 +182,7 @@ def postprocess_paralogs(parallel, path, nstrains, simple_tree, geneCluster_dt,
     if len(new_fa_files_set)==0:
         fname_list =glob.iglob(file_path+'*nwk')
     else:
-        fname_list = [ new_fa.replace('.fna','.nwk') for new_fa in new_fa_files_set ]
+        fname_list = [ new_fa.replace('.fna','.nwk') for new_fa in new_fa_files_set if os.path.exists(file_path+new_fa.replace('.fna','.nwk')) ]
         print fname_list
 
     new_fa_files_set= set()

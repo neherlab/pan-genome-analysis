@@ -128,7 +128,7 @@ def clustering_divide_conquer(path, folders_dict, threads,
     cluster_dt_cpk_fpath='%s%s'%(clustering_path,'allclusters.cpk')
 
     ##clean-up folder firstly
-    os.system('rm -r '+clustering_path+'*subproblem*')
+    os.system('rm -rf '+clustering_path+'*subproblem*')
     os.system('mkdir -p %ssubproblem_cluster_seqs'%clustering_path)
     faa_list= glob.glob(protein_path+"*.faa")
     #subset_size=50

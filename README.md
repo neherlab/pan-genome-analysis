@@ -105,8 +105,7 @@ The results can be explored via our interactive [**pan-genome-visualization**](h
 
 
 **Step01: specify the set of strains**<br />
-The pipeline can either download sequences from GenBank or run on genomes you provide. You need to provide a file within the run directory that contains a list of NCBI RefSeq accession numbers for fetching GenBank files or the names of the files (without file ending) provided.<br />
-If using own GenBank files, step02 can be skipped and corresponding GenBank files should be placed in the same folder where strain list is located.<br />
+You need to provide a file within the run directory that contains a list of NCBI RefSeq accession numbers or the name of own GenBank files (without file ending).<br />
 - Input:<br />
 In folder `./data/TestSet/:`<br />
 TestSet-RefSeq.txt<br />
@@ -114,16 +113,8 @@ TestSet-RefSeq.txt<br />
 In folder `./data/TestSet/:`<br />
 strain_list.cpk (cPickled file for the strain list )<br />
 
-**Step02: download RefSeq GenBank (*.gbk) file**<br />
-If using own GenBank files, step02 can be skipped. Otherwise, run
-to fetch NCBI RefSeq GenBank (\*.gbk) file from strain list<br />
-- Input: In folder `./data/TestSet/:`<br />
-strain_list.cpk<br />
-- Output: In folder `./data/TestSet/:`<br />
-\*.gbk files<br />
-
 **Step03: extract gene sequences from GenBank (*.gbk) file**<br />
-Extract gene sequences in GenBank (\*.gbk) file for preparing nucleotide sequence (\*_genes_dict.cpk) for gene cluster and amino acid sequences for Diamond input (\*.faa)<br />
+Extract genes from GenBank (\*.gbk) file as nucleotide and amino acid sequences<br />
 - Input:<br />
 In folder `./data/TestSet/:`<br />
 \*.gbk file<br />
@@ -131,15 +122,15 @@ In folder `./data/TestSet/:`<br />
 In folder `./data/TestSet/nucleotide_fna:`<br />
 \*.fna file (nucleotide sequences)<br />
 In folder `./data/TestSet/protein_faa:`<br />
-\*.faa file (amino acid sequences for DIAMOND input)<br />
+\*.faa file (amino acid sequences)<br />
 
-**Step04: extract metadata from GenBank (\*.gbk) file (Alternative: use manually curated metadata table)**<br />
-Extracting meta-information ( E.g.: country,collection_date, host, strain) or provide a simple tab-separated values (TSV) table.<br />
+**Step04: extract metadata from GenBank (\*.gbk) file (Alternative: provide manually curated metadata table)**<br />
+Extracting metadata ( E.g.: country, collection_date, host, strain) or provide a tab-separated values (TSV) file.<br />
 
-| strain | location    | ... |
-| -------|:-----------:| ---:|
-| NC_01  | Germany     | ... |
-| NC_02  | Switzerland | ... |
+| strain | location    | host age| serotype | benzylpenicillin MIC (ug/mL) |... |
+| -------|:-----------:| -------:| --------:| ----------------------------:|---:|
+| NC_01  | Germany     | 35      | 23A      | 0.016                        |... |
+| NC_02  | Switzerland | 66      | 23B      | 4                            |... |
 
 - Input:<br />
 In folder `./data/TestSet/:`<br />
@@ -149,7 +140,7 @@ In folder `./data/TestSet/:`<br />
 metainfo.tsv  (metadata for visualization)<br />
 
 **Step05: compute gene clusters**<br />
-Conduct all-against-all protein sequences comparison by Diamond and cluster genes using MCL<br />
+all-against-all protein sequences comparison by Diamond and clustering of genes using MCL<br />
 - Input:<br />
 In folder `./data/TestSet/protein_faa/:`<br />
 \*.faa file<br />
@@ -174,7 +165,7 @@ GC\*_aa_aln.fa (amino acid alignment)<br />
 GC\*_tree.json (gene tree in json file)<br />
 
 **Step07: construct core gene SNP matrix**<br />
-Call SNPs in strictly core genes (without no gene duplication) and build SNP matrix for strain tree<br />
+Call SNPs in strictly core genes (without gene duplication) and build SNP matrix for strain tree<br />
 - Output:<br />
 In folder `./data/TestSet/geneCluster/:`<br />
 SNP_whole_matrix.aln (SNP matrix as pseudo alignment)<br />
@@ -190,7 +181,7 @@ In folder `./data/TestSet/geneCluster/:`<br />
 tree_result.newick<br />
 
 **Step09: infer gene gain and loss event**<br />
-Use ancestral reconstruction algorithm (treetime) to conduct gain and loss events inference<br />
+Use ancestral reconstruction algorithm (treetime) to infer gain and loss events<br />
 - Output:<br />
 In folder `./data/TestSet/geneCluster/:`<br />
 genePresence.aln  (gene presence and absence pattern)<br />
@@ -208,7 +199,7 @@ In folder `./data/TestSet/geneCluster/`<br />
 geneCluster.json (gene cluster json for datatable visualization)<br />
 
 **Step11: export tree and metadata json file**<br />
-Export json files for tree and metadata visualization<br />
+Export json files for strain tree and metadata visualization<br />
 - Input:<br />
 In folder `./data/TestSet/:`<br />
 metainfo.tsv (metadata table)<br />

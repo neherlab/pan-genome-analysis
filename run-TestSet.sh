@@ -4,7 +4,7 @@
 #$ -R y
 #
 #  Reserve 8 CPUs for this job
-#$ -pe parallel 32
+#$ -pe parallel 64
 #
 #  Request 8G of RAM
 #$ -l h_vmem=1G
@@ -21,9 +21,9 @@
 #  Send email when the job begins, ends, aborts, or is suspended
 #$ -m beas
 
-./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -t 32 > TestSet.log
-## example for using divide-and-conquer algorithm on large datasets (use parameters -dmdc and -dcs, maybe also -sitr )
-#./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -dmdc 1 -dcs 50 -sitr 1 -t 32 > TestSet.log
+./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -t 64 > TestSet.log 2>TestSet_error.log
+## example for using divide-and-conquer algorithm on large datasets (#strains>50) (use parameters -dmdc and -dcs) (-sitr will not use treetime to compute mutations on branches of each gene tree)
+#./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -dmdc -sitr -t 32 > TestSet.log
 
 ## example for diverse datasets: (use parameter -cg)
 #./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -cg 0.7 -t 32 > TestSet.log

@@ -530,7 +530,7 @@ def align_and_makeTree( fna_file_list, alignFile_path, simple_tree):
                 myTree = mpm_tree(gene_cluster_nu_filename)
                 myTree.codon_align()
                 myTree.translate()
-                if simple_tree==0:
+                if simple_tree==False:
                     myTree.build(raxml=False,treetime_used=True)
                     myTree.ancestral(translate_tree=True)
                     myTree.refine()
@@ -617,11 +617,12 @@ def cluster_align_makeTree( path, folders_dict, parallel, disable_cluster_postpr
     multips(align_and_makeTree, parallel, fna_file_list,
         cluster_seqs_path, simple_tree)
 
-    ## if cluster_postprocessing skipped, rename allclusters.cpk as the final cluster file
-    if disable_cluster_postprocessing==1:
+    ## if cluster_postprocessing skipped, rename allclusters.tsv and allclusters.cpk as the final cluster file
+    if disable_cluster_postprocessing:
         update_diversity_cpk(path)
         clustering_path= '%s%s'%(path,'protein_faa/diamond_matches/')
         os.system('cp %sallclusters.tsv %sallclusters_final.tsv'%(clustering_path,clustering_path))
+        os.system('cp %sallclusters.cpk %sallclusters_postprocessed.cpk'%(clustering_path,clustering_path))
 
 def find_best_split(tree):
     '''

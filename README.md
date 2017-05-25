@@ -1,94 +1,108 @@
-# panX: Microbial pan-genome analysis and exploration toolkit
+# panX: microbial pan-genome analysis and exploration
 Author: Wei Ding, Franz Baumdicker and Richard Neher
 
 Overview:
-**panX** is based on an automated pan-genome identification pipeline that determines clusters of orthologous genes. The pipeline starts with a set of annotated sequences (e.g. NCBI RefSeq) of a bacterial species.
-The genomes are split into individual genes and all genes from all strains are compared to each other via the fast protein alignment tool [DIAMOND](http://www.nature.com/nmeth/journal/v12/n1/full/nmeth.3176.html) and then clustered into orthologous groups using MCL and panX post-processing procedures. After the construction of gene clusters, genes within clusters are aligned and the corresponding phylogenetic tree is computed, with mutations mapped into each tree and various summary statistics calculated.
+[**panX**](http://pangenome.de) is a software package for pan-genome analysis, interactive visualization and exploration. The analysis pipeline is based on [DIAMOND](https://github.com/bbuchfink/diamond) ([Buchfink et al. 2015 Nature Methods](http://www.nature.com/nmeth/journal/v12/n1/full/nmeth.3176.html)), MCL and phylogeny-aware post-processing, which takes a set of annotated bacterial strains as input (e.g. NCBI RefSeq records or user's own data in **GenBank** format).
+
+Alls genes from all strains are compared to each other via the fast protein alignment tool DIAMOND and then clustered into orthologous groups using MCL and adaptive phylogenetic post-processing, which split distantly related genes and paralogs if necessary. For each gene cluster, corresponding alignment and phylogeny are constructed. All core gene SNPs are then used to build strain/species phylogeny.
+
+The results can be interactively explored using a [**powerful web-based visualization application**](https://github.com/neherlab/pan-genome-visualization) (either hosted by web server or used locally on desktop). The web application integrates various interconnected viewers (pan-genome statistical charts, gene cluster table, alignment, comparative phylogenies, metadata table) and allows rapid search and filter of gene clusters by gene name, annotation, duplication, diversity, gene gain/loss events, etc. Strain-specific **metadata** are integrated into strain phylogeny such that genes related to adaptation, antibiotic resistance, virulence etc can be readily identified.
 
 ### **Quick start:**
 
 `git clone https://github.com/neherlab/pan-genome-analysis.git`
 
 Enter the folder `pan-genome-analysis`:
-
 `git submodule update --init`
 
 Install dependencies and then run the test:
-
 `sh run-TestSet.sh`
 
-The results can be explored via our interactive [pan-genome-visualization](https://github.com/neherlab/pan-genome-visualization) application.
+The results can be explored via our interactive [**pan-genome-visualization**](https://github.com/neherlab/pan-genome-visualization) application.
 
-### **Pipeline overivew:**
+### **Pipeline overview:**
 
 ![panX](/panX-pipeline.png)
 
 1. Dependencies:
   1. Required software:
-    * [DIAMOND](https://github.com/bbuchfink/diamond) (fast protein alignment tool)
-      - located in ./tools/diamond
-    * [MCL Markov Cluster Algorithm](http://micans.org/mcl/)
-      - sudo apt-get install mcl
-    * mafft (multiple alignment program)
-      - sudo apt-get install mafft
-      - Or: download and install from http://mafft.cbrcj.p/alignment/software/linux.html
-    * [fasttree](http://www.microbesonline.org/fasttree/)
-      - sudo apt-get install fasttree
-    * [raxml](https://github.com/stamatak/standard-RAxML)
-      - sudo apt-get install raxml
+      * [DIAMOND](https://github.com/bbuchfink/diamond) (already located in `./tools/diamond`)
+      * [MCL](http://micans.org/mcl/)
+        `sudo apt-get install mcl`
+      * [mafft](http://mafft.cbrc.jp/alignment/software/)
+        `sudo apt-get install mafft`
+      * [fasttree](http://www.microbesonline.org/fasttree/)
+        `sudo apt-get install fasttree`
+      * [raxml](https://github.com/stamatak/standard-RAxML)
+        `sudo apt-get install raxml`
 
   2. Required python packages:
-     - pip install numpy scipy biopython ete2
-     - [treetime](http://github.com/neherlab/treetime) (please fetch treetime using the following two commands)
-     ```
-       git submodule update --init
-     ```
+      - `pip install numpy scipy biopython ete2`
+      - [treetime](http://github.com/neherlab/treetime):
+      `git submodule update --init`
 
 2. How to run:
-  - sh run.sh
-  ```
-    Description:
+
+    To run the test set: ` sh run-TestSet.sh `
+
+    In `data/TestSet`, you will find a small set of five *Mycoplasma genitalium* genomes that is used in this tutorial. Your own data should also reside in such a folder within `data/` -- we will refer to this folder as *run directory* below. The name of the run directory is used as a species name in down-stream analysis.
+
+    All steps can be run in order by omitting the `-st` option, whereas using `-st 5 6` will specify the analysis steps. `-t ` sets the number of CPU cores.
+    <br />
+    ```
+    ./panX.py -fn data/TestSet -sl TestSet-RefSeq.txt -t 32 > TestSet.log 2> TestSet.err
+    ```
+
     This calls panX.py to run each step using scripts located in folder ./scripts/
-    panX.py [-h] -fn folder_name -sl strain_list
+    ```
+    ./panX.py [-h] -fn folder_name -sl strain_list
                        [-st steps [steps ...]] [-rt raxml_max_time]
                        [-t threads] [-bp blast_file_path]
 
-    mandatory parameters: -fn folder_name / -sl strain_list / [-st steps [steps ...]]
+    Mandatory parameters: -fn folder_name / -sl strain_list
     NOTICE: strain_list format should be species_name+'-RefSeq', e.g.: Saureus-RefSeq.txt
-    Example: ./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -t 64 > TestSet.log 2>&1
-  ```
-  The result will be a number of files that contain the all the information necessary for visualizing the pan-genome in the browser using [pan-genome-visualization](https://github.com/neherlab/pan-genome-visualization).
-  ```
-  ./data
-      YourSpecies               # folder specific to the your pan genome
-        - YourSpecies-RefSeq.txt    # INPUT: GenBank accession numbers
-        - input_GenBank              # INPUT: genomes in GenBank format
-          - strain1.gbk
-          - strain2.gbk
-          ...
-        - vis
-          - geneCluster.json
-          - strainMetainfo.json
-          - coreGenomeTree.json
-          - geneCluster/       # Folder contain orthologous clusters
-            - GC000001*_na_aln.fa
-            - GC000001*_aa_aln.fa
-            - GC000001*_tree.json
-            - GC000001*_patterns.json
+    Example: ./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -t 32 > TestSet.log 2> TestSet.err
+    ```
+
+    **Useful options**:
+
+      Soft core-gene:
+
+        -cg    core-genome threshold [e.g.: 0.7] percentage of strains used to decide whether a gene is core
+      Large dataset (use divide-and-conquer(DC) strategy which scales approximately linearly with the number of genomes):
+
+        -dmdc  apply DC strategy to run DIAMOND on subsets and then combine the results
+        -dcs   subset size used in DC strategy [default:50]
+
+        E.g.: ./panX.py -dmdc -dcs 50 -fn ...
+
+
+    The results contain files required for visualizing the pan-genome using [pan-genome-visualization](https://github.com/neherlab/pan-genome-visualization).
+    ```
+    ./data
+        YourSpecies               # folder specific to the your pan genome
+          - YourSpecies-RefSeq.txt    # INPUT: GenBank accession numbers
+          - input_GenBank              # INPUT: genomes in GenBank format
+            - strain1.gbk
+            - strain2.gbk
             ...
-  ```
-  In which step of the analysis different files and directories are produced is described in more detail below.
+          - vis
+            - geneCluster.json
+            - strainMetainfo.json
+            - coreGenomeTree.json
+            - geneCluster/       # Folder contain orthologous clusters
+              - GC00000001_na_aln.fa
+              - GC00000001_aa_aln.fa
+              - GC00000001_na_aln_reduced.fa
+              - GC00000001_aa_aln_reduced.fa
+              - GC00000001_tree.json
+              - GC00000001_patterns.json
+    ```
+    In which step different files and directories are produced is described in more details below.
 
 
 ### **Step-by-Step tutorial:**<br />
-In `data/TestSet`, you will find a small set of five *Mycoplasma genitalium* genomes that is used in this tutorial. Your own data should also reside in such a folder within `data/` -- we will refer to this folder as *run directory* below. The name of the run directory is used as a species name in down-stream analysis.
-To run `pan-genome-analysis` pipeline, you need to execute a series of steps that can be started using the `run-TestSet.sh` script
-To run ...
-```
-./panX.py -fn data/TestSet -sl TestSet-RefSeq.txt -t 32
-```
-All steps can be run in order by omitting the `-st` option, whereas using `-st 5 6` will specify the analysis steps you want to run. `-t ` specifies the number of CPU cores.
-<br />
+
 
 **Step01: specify the set of strains**<br />
 The pipeline can either download sequences from GenBank or run on genomes you provide. You need to provide a file within the run directory that contains a list of NCBI RefSeq accession numbers for fetching GenBank files or the names of the files (without file ending) provided.<br />

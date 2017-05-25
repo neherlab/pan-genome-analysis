@@ -221,7 +221,7 @@ def process_metajson(path, meta_tidy_fpath, metajson_dict):
         meta_js_out.write('%s;'%json.dumps(metajson_exp))
 
 def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
-                 large_output, meta_tidy_fpath, clean_temporary_files ):
+                 merged_gain_loss_output, meta_tidy_fpath, clean_temporary_files ):
     """ create json files for web-visualiaztion
         input: tree_result.newick, metainfo.tsv
         output: json files for core gene SNP tree and strain metadata table
@@ -257,7 +257,7 @@ def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
     os.system('mv coreGenomeTree.json strainMetainfo.json '+main_data_path+'metaConfiguration.js '+vis_json_path)
     os.system('mv *C*_aln*.fa *C*_tree.json *C*.nwk '+vis_cluster_path)
     os.system('cp tree_result.newick '+vis_json_path+'/strain_tree.nwk')
-    if large_output==1:
+    if not merged_gain_loss_output:
         os.system('mv *C*patterns.json '+vis_cluster_path)
 
     ## gzip aln files

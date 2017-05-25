@@ -177,9 +177,10 @@ class pangenome:
         myClusterCollector.estimate_raw_core_diversity()
         #self.clusterCollector= myClusterCollector.cluster_align_makeTree()
         myClusterCollector.make_geneCluster_alignment_and_tree()
-        myClusterCollector.postprocessing_split_long_branch()
-        myClusterCollector.postprocessing_split_paralogs()
-        myClusterCollector.postprocess_merge_underclustered_genes()
+        if not self.disable_cluster_postprocessing:
+            myClusterCollector.postprocessing_split_long_branch()
+            myClusterCollector.postprocessing_split_paralogs()
+            myClusterCollector.postprocess_merge_underclustered_genes()
 
     def make_RNACluster_alignment_and_tree(self):
         """ aligning RNA clusters and building RNA tree """
@@ -198,14 +199,14 @@ class pangenome:
         compute gene presence/absence pattern for each gene cluster
         (displayed on core tree)
         """
-        make_genepresence_alignment(self.path, self.enable_gain_loss, self.large_output)
+        make_genepresence_alignment(self.path, self.disable_gain_loss, self.merged_gain_loss_output)
 
     def infer_gene_gain_loss_pattern(self):
         """
         infer gene gain/loss pattern for each gene cluster
         (displayed on core tree)
         """
-        process_gain_loss(self.path, self.large_output)
+        process_gain_loss(self.path, self.merged_gain_loss_output)
 
     def inferAssociations(self):
         from sf_association import infer_branch_associations
@@ -218,7 +219,7 @@ class pangenome:
 
     def export_coreTree_json(self):
         """ export core tree as json file for core tree visualization"""
-        json_parser(self.path, self.folders_dict, self.fpaths_dict, self.metainfo_fpath, self.large_output, self.meta_tidy_fpath, self.clean_temporary_files)
+        json_parser(self.path, self.folders_dict, self.fpaths_dict, self.metainfo_fpath, self.merged_gain_loss_output, self.meta_tidy_fpath, self.clean_temporary_files)
 
 
 

@@ -4,6 +4,10 @@ from collections import defaultdict
 from sf_miscellaneous import times, load_pickle, write_pickle, read_fasta, write_in_fa, multips
 from sf_cluster_protein import diamond_run, filter_hits_single, parse_geneCluster, cleanup_clustering #mcl_run
 
+class InputError(Exception):
+    """raise exception when input error happens in divide-and-conquer algorithm"""
+    pass
+
 def mcl_run(clustering_path, threads, input_prefix, mcl_inflation):
     """ """
     start = time.time()
@@ -132,7 +136,8 @@ def clustering_divide_conquer(path, folders_dict, threads,
     all_faa_list=[]
     if subproblems_count==0:
     ## set_size < subset_size, does not need to apply divide_and_conquer
-        print len(faa_list)
+        error_message=''.join(['Divide-and-conquer (DC) strategy can not be conducted, because the total number of strains ',str(len(faa_list)),' is smaller than given DC subset size ',str(subset_size)])
+        raise InputError(error_message)
     else:
         for i in range(0, subproblems_count):
             sub_list= faa_list[i*subset_size : (i+1)*subset_size]

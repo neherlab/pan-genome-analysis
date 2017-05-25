@@ -16,21 +16,21 @@ For help, type:
 '''
 parser = argparse.ArgumentParser(description=\
     'panX: Software for computing core and pan-genome from a set of genome sequences.'
-    'The results will be exported as json files for visualization in the browser.',
-    usage='%(prog)s')
+    ' The results will be exported as json files for visualization in the browser.',
+    usage='./%(prog)s'+' -h (help)')
 parser.add_argument('-fn', '--folder_name', type = str, required=True,
     help='the absolute path for project folder ', metavar='')
 parser.add_argument('-sl', '--strain_list', type = str, required=True,
     help='the file name for strain list (e.g.: Pa-RefSeq.txt)', metavar='')
 parser.add_argument('-gbk', '--gbk_present', type = int, default = 1,
-    help=' Using GenBank files by default. \
-    Otherwise, nucleotide/amino_acid sequence fna/faa files should be provided.', metavar='')
+    help=' Using GenBank files. \
+    Alternatively, use nucleotide/amino acid sequence files (fna/faa)', metavar='')
 parser.add_argument('-st', '--steps', nargs='+', type = int, default = ['all'],
-    help='select specific steps to run or run all steps by default ', metavar='')
+    help='run specific steps or run all steps by default', metavar='')
 parser.add_argument('-mo', '--metainfo_organism', action='store_true',
-    help='using this parameter will add organism information in metadata table.')
+    help='add organism information in metadata table.')
 parser.add_argument('-rt', '--raxml_max_time', type = int, default = 30,
-    help='RAxML tree optimization: maximal runing time (in minutes, default: 30 min)' , metavar='')
+    help='RAxML tree optimization: maximal runing time (minutes, default:30min)' , metavar='')
 parser.add_argument('-t', '--threads', type = int, default = 1,
     help='number of threads', metavar='')
 
@@ -50,7 +50,7 @@ parser.add_argument('-mi', '--metainfo_fpath', type = str, default = 'none',
 parser.add_argument('-dme', '--diamond_evalue', type = str, default = '0.001',
     help='default: e-value threshold below 0.001', metavar='')
 parser.add_argument('-dmt', '--diamond_max_target_seqs', type = str, default = '600',
-    help='Diamond: the maximum number of target sequences per query to keep alignments for.\
+    help='Diamond: maximum number of target sequences per query\
     Calculation: #strain * #max_duplication (40*15= 600)', metavar='')
 parser.add_argument('-dmi', '--diamond_identity', type = str, default = '0',
     help='Diamond: sequence identity threshold to report an alignment. Default: empty.\
@@ -58,101 +58,85 @@ parser.add_argument('-dmi', '--diamond_identity', type = str, default = '0',
     All alignments with identity below 0.7 of will not be reported, \
     thus also saving computational time. ', metavar='')
 parser.add_argument('-dmqc', '--diamond_query_cover', type = str, default = '0',
-    help='Diamond: sequence (query) coverage threshold to report an alignment.  Default: empty.\
-    When applied to species with low genetic diversity: 70 could be a decent starting point.\
-    All alignments with less than 0.7 of query coverage will not be reported, \
-    thus also saving computational time. ', metavar='')
+    help='Diamond: sequence (query) coverage threshold to report an alignment.  Default: empty', metavar='')
 parser.add_argument('-dmsc', '--diamond_subject_cover', type = str, default = '0',
-    help='Diamond: sequence (subject) coverage threshold to report an alignment.  Default: empty.\
-    When applied to species with low genetic diversity: 70 could be a decent starting point.\
-    All alignments with less than 0.7 of subject coverage will not be reported, \
-    thus also saving computational time. ', metavar='')
+    help='Diamond: sequence (subject) coverage threshold to report an alignment.  Default: empty', metavar='')
 parser.add_argument('-dmip', '--diamond_identity_subproblem', type = str, default = '90',
     help='Diamond: sequence identity threshold to report an alignment.', metavar='')
 parser.add_argument('-dmqcp', '--diamond_query_cover_subproblem', type = str, default = '90',
-    help='Diamond: sequence (query) coverage threshold to report an alignment.', metavar='')
+    help='Diamond: sequence (query) coverage threshold to report an alignment', metavar='')
 parser.add_argument('-dmscp', '--diamond_subject_cover_subproblem', type = str, default = '90',
-    help='Diamond: sequence (subject) coverage threshold to report an alignment.', metavar='')
-parser.add_argument('-dmdc', '--diamond_divide_conquer', type = int, default = 0,
-    help='Default: running diamond alignment in divide-and-conquer(DC) method is not activated;\
-    this option is designed for large dataset.', metavar='')
+    help='Diamond: sequence (subject) coverage threshold to report an alignment', metavar='')
+parser.add_argument('-dmdc', '--diamond_divide_conquer', action='store_true',
+    help='running diamond alignment in divide-and-conquer(DC) algorithm for large dataset')
 parser.add_argument('-dcs', '--subset_size', type = int, default = 50,
-    help='Default:subset_size (number of strains in a subset) for divide-and-conquer(DC) method',\
+    help='subset_size (number of strains in a subset) for divide-and-conquer(DC) algorithm. Default:50',\
     metavar='')
 parser.add_argument('-imcl', '--mcl_inflation', type = float, default = 1.5,
-    help='MCL: inflation parameter (varying this parameter affects granularity) ', metavar='')
-parser.add_argument('-ortha', '--orthAgogue_used', type = int, default = 0,
-    help='Default: orthAgogue not used', metavar='')
+    help='MCL: inflation parameter (this parameter affects granularity) ', metavar='')
 parser.add_argument('-bmt', '--blastn_RNA_max_target_seqs', type = str, default = '100',
-    help='Blastn on RNAs: the maximum number of target sequences per query to keep alignments for.\
+    help='Blastn on RNAs: the maximum number of target sequences per query\
     Calculation: #strain * #max_duplication', metavar='')
-parser.add_argument('-cst', '--enable_cluster_correl_stats', type = int, default = 0,
-    help='default: calculate statistics on each cluster for correlation test', metavar='')
+parser.add_argument('-cst', '--enable_cluster_correl_stats', action='store_true',
+    help='calculate statistics on each cluster for correlation test')
 
 #/*=======================================
 #            post-processing
 #=======================================*/
-parser.add_argument('-np', '--disable_cluster_postprocessing', type = int, default = 0,
-    help='default: run post-processing procedure for splitting overclustered genes and paralogs,\
-    and clustering un-clustered genes', metavar='')
+parser.add_argument('-np', '--disable_cluster_postprocessing', action='store_true',
+    help='disable postprocessing (split overclustered genes and paralogs, and cluster unclustered genes)')
 parser.add_argument('-nrna', '--disable_RNA_clustering', type = int, default = 1,
     help='default: disabled, not cluster rRNAs', metavar='')
 ## split tree via breaking up long branches (resolving over-clustering)
 #parser.add_argument('-sf', '--split_long_branch_factor', type = float, default = 3.0,
 #    help='use (0.1+3.0*core_diversity)/(1+3.0*core_diversity) to decide split_long_branch_cutoff',metavar='')
 parser.add_argument('-fcd', '--factor_core_diversity', type = float, default = 2.0,
-    help='default: factore used to refine raw core genome diversity, \
+    help='default: factor used to refine raw core genome diversity, \
     apply (0.1+2.0*core_diversity)/(1+2.0*core_diversity) to decide split_long_branch_cutoff', metavar='')
 parser.add_argument('-slb', '--split_long_branch_cutoff', type = float, default = 0.0,
     help='split long branch cutoff provided by user (by default: 0.0 as not given):',metavar='')
 ## split paralogy
-parser.add_argument('-pep', '--explore_paralog_plot', type = int, default = 0,
-    help='default: not plot paralog statistics', metavar='')
-parser.add_argument('-pfc', '--paralog_frac_cutoff', type = float, default = 0.3,
-    help='fraction of strains required for splitting paralogy. Default: 0.3', metavar='')
+parser.add_argument('-pep', '--explore_paralog_plot', action='store_true',
+    help='default: not plot paralog statistics')
+parser.add_argument('-pfc', '--paralog_frac_cutoff', type = float, default = 0.33,
+    help='fraction of strains required for splitting paralogy. Default: 0.33', metavar='')
 parser.add_argument('-pbc', '--paralog_branch_cutoff', type = float, default = 0.0,
     help='branch_length cutoff used in paralogy splitting', metavar='')
 ## resolve peaks (unclustered records)
 parser.add_argument('-ws', '--window_size_smoothed', type = int, default = 5,
-    help='postprocess_unclustered_genes: window_size for smoothed cluster length distribution',
+    help='postprocess_unclustered_genes: window size for smoothed cluster length distribution',
     metavar='')
 parser.add_argument('-spr', '--strain_proportion', type = float, default = 0.3,
-    help='postprocess_unclustered_genes: strain_proportion', metavar='')
+    help='postprocess_unclustered_genes: strain proportion', metavar='')
 parser.add_argument('-ss', '--sigma_scale', type = int, default = 3,
-    help='postprocess_unclustered_genes: sigma_scale', metavar='')
+    help='postprocess_unclustered_genes: sigma scale', metavar='')
 
 ## core genome cutoff
 parser.add_argument('-cg', '--core_genome_threshold', type = float, default = 1.0,
     help='percentage of strains used to decide whether a gene is core.\
-    Default: 1.0 for strictly core gene; customized instance: 0.9 for soft core genes',
+    Default: 1.0 for strictly core gene; < 1.0 for soft core genes',
     metavar='')
 ## core gene strain constraint
 parser.add_argument('-csf', '--core_gene_strain_fpath', type = str, default = '',
-    help='file path for user-provided subset of strains( core genes should be present in all strains in this list)',
+    help='file path for user-provided subset of strains (core genes should be present in all strains in this list)',
     metavar='')
+parser.add_argument('-sitr', '--simple_tree', action='store_true',
+    help='simple tree: does not use treetime for ancestral inference')
 ## gene gain loss inference
-parser.add_argument('-gl', '--enable_gain_loss', type = int, default = 1,
-    help='default: not enable gene gain and loss inference', metavar='')
-
-parser.add_argument('-sitr', '--simple_tree', type = int, default = 0,
-    help='default: enable rich tree annotation; setting simple to 1 does not conduct ancestral inference via treetime.', metavar='')
-
-parser.add_argument('-sp', '--species_name', type = str, default = '',
-    help='default:', metavar='')
-parser.add_argument('-lo', '--large_output', type = int, default = 1,
-    help='default: split gene presence/absence and gain/loss pattern into separate files for each cluster', metavar='')
+parser.add_argument('-dgl', '--disable_gain_loss', action='store_true',
+    help='disable enable gene gain and loss inference')
+parser.add_argument('-mglo', '--merged_gain_loss_output', action='store_true',
+    help='not split gene presence/absence and gain/loss pattern into separate files for each cluster')
 parser.add_argument('-slt', '--store_locus_tag', action='store_true',
-    help='using this parameter will store locus_tags in a separate file instead of saving locus_tags in gene cluster json file for large dataset.')
+    help='store locus_tags in a separate file instead of saving locus_tags in gene cluster json for large dataset')
 parser.add_argument('-rlt', '--raw_locus_tag', action='store_true',
-    help='default: use strain_ID + locus_tag as new locus_tag; if set to 0, use raw locus_tag from GenBank file')
+    help='use raw locus_tag from GenBank instead of strain_ID + locus_tag')
 parser.add_argument('-otc', '--optional_table_column', action='store_true',
-    help='using this parameter will add customized column in gene cluster json file for visualization.')
+    help='add customized column in gene cluster json file for visualization.')
 parser.add_argument('-mtf', '--meta_tidy_fpath', type = str, default = '',
-    help='default: file path for a tidy metadata structure (discrete/continuous data type, etc.)', metavar='')
+    help='file path for pre-defined metadata structure (discrete/continuous data type, etc.)', metavar='')
 parser.add_argument('-rxm', '--raxml_path', type = str, default = '',
     help='absolute path of raxml', metavar='')
-#parser.add_argument('-dbg', '--debug_module', type = int, default = 1,
-#    help='default: debug module not used', metavar='')
 parser.add_argument('-ct', '--clean_temporary_files', action='store_true',
     help='default: keep temporary files')
 
@@ -201,9 +185,9 @@ myPangenome=pangenome(
     sigma_scale=params.sigma_scale,
     core_genome_threshold=params.core_genome_threshold,
     core_gene_strain_fpath=params.core_gene_strain_fpath,
-    enable_gain_loss=params.enable_gain_loss,
+    disable_gain_loss=params.disable_gain_loss,
     simple_tree=params.simple_tree,
-    large_output=params.large_output,
+    merged_gain_loss_output=params.merged_gain_loss_output,
     store_locus_tag=params.store_locus_tag,
     raw_locus_tag=params.raw_locus_tag,
     meta_tidy_fpath=params.meta_tidy_fpath,
@@ -241,7 +225,7 @@ if 4 in params.steps:# step04:
 if 5 in params.steps:# step05:
     print '======  cluster proteins'
     start = time.time()
-    if params.diamond_divide_conquer==1:
+    if params.diamond_divide_conquer:
         ## clustering with divide_and_conquer method for large dataset
         myPangenome.clustering_protein_divide_conquer()
     else:
@@ -283,7 +267,7 @@ if 9 in params.steps:# step09:
     print '======  starting step09: infer presence/absence and gain/loss patterns of all genes'
     start = time.time()
     myPangenome.compute_gene_presence_pattern()
-    if params.enable_gain_loss==1:
+    if not params.disable_gain_loss:
         myPangenome.infer_gene_gain_loss_pattern()
     print '======  time for step09: infer presence/absence and gain/loss patterns of all genes'
     print times(start),'\n'

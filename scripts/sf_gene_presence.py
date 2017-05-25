@@ -22,7 +22,7 @@ def create_genePresence(dt_strainGene, totalStrain, set_totalStrain, all_gene_na
         for ist0 in set_totalStrain-set_sharedStrain:
             dt_strainGene[ist0]='%s0'%dt_strainGene[ist0]
 
-def make_genepresence_alignment(path, enable_gain_loss, large_output):
+def make_genepresence_alignment(path, disable_gain_loss, merged_gain_loss_output):
     '''
     loop over all gene clusters and append 0/1 to strain specific
     string used as pseudo alignment of gene presence absence
@@ -47,18 +47,19 @@ def make_genepresence_alignment(path, enable_gain_loss, large_output):
             write_in_fa( presence_outfile, istkey, dt_strainGene[istkey])
     write_pickle('%s%s'%(output_path,'dt_genePresence.cpk'), dt_strainGene)
 
-    if enable_gain_loss==0:
+    if disable_gain_loss:
         geneEvents_dt={ i:0 for i in range(len(sorted_genelist)) }
         write_pickle('%s%s'%(output_path,'dt_geneEvents.cpk'), geneEvents_dt)
-        if large_output==0:
+        if merged_gain_loss_output:
             gene_loss_fname='%s%s'%(output_path,'geneGainLossEvent.json')
             write_json(dt_strainGene, gene_loss_fname, indent=1)
         else:
             ## strainID as key, presence pattern as value (converted into np.array)
             keylist= dt_strainGene.keys(); keylist.sort()
             strainID_keymap= {ind:k for ind, k in enumerate(keylist)} # dict(zip(keylist, range(3)))
-            presence_arr= np.array([ np.fromstring(dt_strainGene[k], np.int8)-48 for k in keylist])
+            presence_arr= np.array([ np.array(dt_strainGene[k],'c') for k in keylist]) # 0: present, 3: absent
+            presence_arr[presence_arr=='1']='3'
             for ind, (clusterID, gene) in enumerate(sorted_genelist):
                 pattern_dt= { strainID_keymap[strain_ind]:str(patt) for strain_ind, patt in enumerate(presence_arr[:, ind])}
-                pattern_fname='%s%s_pattern.json'%(output_path,clusterID)
+                pattern_fname='%s%s_patterns.json'%(output_path,clusterID)
                 write_json(pattern_dt, pattern_fname, indent=1)

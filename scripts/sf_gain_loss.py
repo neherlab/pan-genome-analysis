@@ -43,7 +43,7 @@ def infer_gene_gain_loss(path, rates = [1.0, 1.0]):
     return t
 
 
-def export_gain_loss(tree, path, large_output):
+def export_gain_loss(tree, path, merged_gain_loss_output):
     '''
     '''
     # write final tree with internal node names as assigned by treetime
@@ -74,7 +74,7 @@ def export_gain_loss(tree, path, large_output):
 
     write_pickle(events_dict_path, events_dict)
 
-    if large_output==0:
+    if merged_gain_loss_output:
         ## export gene loss dict to json for visualization
         #gene_loss_fname = sep.join([ output_path, 'geneGainLossEvent.json'])
         #write_json(gene_gain_loss_dict, gene_loss_fname, indent=1)
@@ -83,7 +83,8 @@ def export_gain_loss(tree, path, large_output):
         ## strainID as key, presence pattern as value (converted into np.array)
         sorted_genelist = load_sorted_clusters(path)
         strainID_keymap= {ind:k for ind, k in enumerate(preorder_strain_list)}
-        presence_arr= np.array([ np.fromstring(gene_gain_loss_dict[k], np.int8)-48 for k in preorder_strain_list])
+        #presence_arr= np.array([ np.fromstring(gene_gain_loss_dict[k], np.int8)-48 for k in preorder_strain_list])
+        presence_arr= np.array([ np.array(gene_gain_loss_dict[k],'c') for k in preorder_strain_list])
         ## if true, write pattern dict instead of pattern string in a json file
         pattern_json_flag=False
         for ind, (clusterID, gene) in enumerate(sorted_genelist):
@@ -97,7 +98,7 @@ def export_gain_loss(tree, path, large_output):
                 write_pattern.write('{"patterns":"'+''.join([ str(patt) for patt in presence_arr[:, ind]])+'"}')
 
 
-def process_gain_loss(path, large_output):
+def process_gain_loss(path, merged_gain_loss_output):
     ##  infer gain/loss event
     tree = infer_gene_gain_loss(path)
     create_visible_pattern_dictionary(tree)
@@ -138,13 +139,13 @@ def process_gain_loss(path, large_output):
         change_gtr_parameters_forgainloss(tree,res.x[0],res.x[1])
         print('estimated gain/loss rate: ',res.x[0],res.x[1])
         tree.reconstruct_anc(method='ml')
-        export_gain_loss(tree,path,large_output)
+        export_gain_loss(tree,path,merged_gain_loss_output)
     else:
         print('Warning: failed to estimated the gtr parameters by ML.')
         #import ipdb;ipdb.set_trace()
         change_gtr_parameters_forgainloss(tree,0.5,1.0)
         tree.reconstruct_anc(method='ml')
-        export_gain_loss(tree,path,large_output)
+        export_gain_loss(tree,path,merged_gain_loss_output)
 
 
 def create_visible_pattern_dictionary(tree):

@@ -64,9 +64,9 @@ def harmonize_filename(path,glob_list):
             print ''.join(['filename harmonized: ',fpath,' -> ',gbk_fname])
             os.system(''.join(['mv ',fpath,' ',path,gbk_fname]))
 
-def load_strains(path,gbk_present,folders_dict):
+def load_strains(path, gbk_present, folders_dict):
     """ load input strains in strain_list """
-    if gbk_present==1:
+    if gbk_present:
         glob_item='.gbk'
         gbk_path=folders_dict['gbk_path']
         glob_list=glob.glob('%s*%s'%(path,glob_item))

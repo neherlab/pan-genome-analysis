@@ -462,14 +462,14 @@ class mpm_tree(object):
         write_json(tree_json, timetree_fname, indent=None)
 
         ## msa compatible
-        self.reduce_alignments()
         for i_aln in self.aln:
             i_aln.id=i_aln.id.replace('|','-',1)
 
         AlignIO.write(self.aln, path+self.clusterID+'_na_aln.fa', 'fasta')
-        AlignIO.write(self.aln_reduced, path+self.clusterID+'_na_aln_reduced.fa', 'fasta')
-
         if RNA_specific==False:
+            self.reduce_alignments()
+            AlignIO.write(self.aln_reduced, path+self.clusterID+'_na_aln_reduced.fa', 'fasta')
+
             for i_aa_aln in self.aa_aln:
                 i_aa_aln.id=i_aa_aln.id.replace('|','-',1)
 

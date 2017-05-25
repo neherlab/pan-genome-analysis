@@ -44,9 +44,9 @@ def create_RNACluster_fa(path,folders_dict):
         RNA_cluster_nu_write.close()
     return diamond_RNACluster_dt
 
-def single_RNACluster_align_and_makeTree(fa_files_list, alignFile_path, parallel):
+def single_RNACluster_align_and_makeTree(fa_files_list, alignFile_path, parallel, simple_tree):
     for RNA_cluster_nu_filename in fa_files_list:
-        try:
+        if 1:#try:
             # extract GC_RNA002 from path/GC_RNA002.aln
             clusterID = RNA_cluster_nu_filename.split('/')[-1].split('.')[0]
             geneDiversity_file = open(alignFile_path+'gene_diversity.txt', 'a')
@@ -62,18 +62,23 @@ def single_RNACluster_align_and_makeTree(fa_files_list, alignFile_path, parallel
                 print RNA_cluster_nu_filename
                 myTree = mpm_tree(RNA_cluster_nu_filename,threads=parallel)
                 myTree.align()
-                myTree.build(raxml=False)
-                myTree.ancestral(translate_tree=True)
-                myTree.refine()
-                myTree.export(path=alignFile_path, RNA_specific=True)
+
+                if simple_tree==False:
+                    myTree.build(raxml=False,treetime_used=True)
+                    myTree.ancestral(translate_tree=True)
+                    myTree.refine()
+                else:
+                    myTree.build(raxml=False,treetime_used=False)
                 myTree.diversity_statistics_nuc()
+                myTree.export(path=alignFile_path, RNA_specific=True)
+
                 RNA_diversity_values='{0:.3f}'.format(myTree.diversity_nuc)
                 geneDiversity_file.write('%s\t%s\n'%(clusterID,RNA_diversity_values))
                 print clusterID,RNA_diversity_values
-        except:
+        if 0:#except:
             print("Aligning and tree building of RNA %s failed"%RNA_cluster_nu_filename)
 
-def RNAclusters_align_makeTree( path, folders_dict, parallel ):
+def RNAclusters_align_makeTree( path, folders_dict, parallel, simple_tree ):
     """
     create RNA clusters as nucleotide fasta files
     and build individual RNA trees based on fna files
@@ -84,7 +89,7 @@ def RNAclusters_align_makeTree( path, folders_dict, parallel ):
     ## align, build_tree, make_RNATree_json
     fasta_path = path+'geneCluster/'
     fa_files=glob.glob(fasta_path+"*RC*.fna")
-    multips(single_RNACluster_align_and_makeTree, parallel, fa_files, fasta_path, parallel)
+    multips(single_RNACluster_align_and_makeTree, parallel, fa_files, fasta_path, parallel, simple_tree)
     ## add RNA cluster in diamond_geneCluster_dt
     ### load gene cluster
     geneClusterPath='%s%s'%(path,'protein_faa/diamond_matches/')

@@ -15,7 +15,7 @@ def extract_metadata(path, strain_list, folders_dict, gbk_present, metainfo_orga
         if metainfo_organism:
             header.insert(1, 'organism')
         writeseq.write( "%s\n"%('\t'.join(header)) )
-        if gbk_present==1:
+        if gbk_present==True:
             gbk_path=folders_dict['gbk_path']
             for strainID in strain_list:
                 gbk_fpath=''.join([gbk_path,strainID,'.gbk'])

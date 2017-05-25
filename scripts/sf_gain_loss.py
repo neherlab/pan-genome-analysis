@@ -55,7 +55,7 @@ def export_gain_loss(tree, path, merged_gain_loss_output):
     tree_fname = sep.join([output_path, 'tree_result.newick'])
     Phylo.write(tree.tree, tree_fname, 'newick')
 
-    from collections import defaultdict
+
     gene_gain_loss_dict=defaultdict(str)
     preorder_strain_list= [] #store the preorder nodes as strain list
     for node in tree.tree.find_clades(order='preorder'):# order does not matter much here

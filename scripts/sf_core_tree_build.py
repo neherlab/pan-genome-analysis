@@ -68,7 +68,7 @@ def aln_to_Newick(path, folders_dict, raxml_timelimit, raxml_path, threads):
         shutil.copy('initial_tree.newick', 'raxml_tree.newick')
 
     print 'RAxML branch length optimization and rooting'
-    os.system(raxml_program+' -f e -T 6 -s '+SNP_matrix_path+' -n branches -c 25 -m GTRGAMMA -p 344312987 -t raxml_tree.newick')
+    os.system(raxml_program+' -f e -T '+str(threads)+' -s '+SNP_matrix_path+' -n branches -c 25 -m GTRGAMMA -p 344312987 -t raxml_tree.newick')
     shutil.copy('RAxML_result.branches', out_fname)
 
     print ' raxml time-cost:', times(start)

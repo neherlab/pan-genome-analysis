@@ -22,9 +22,8 @@ parser.add_argument('-fn', '--folder_name', type = str, required=True,
     help='the absolute path for project folder ', metavar='')
 parser.add_argument('-sl', '--strain_list', type = str, required=True,
     help='the file name for strain list (e.g.: Pa-RefSeq.txt)', metavar='')
-parser.add_argument('-gbk', '--gbk_present', type = int, default = 1,
-    help=' Using GenBank files. \
-    Alternatively, use nucleotide/amino acid sequence files (fna/faa)', metavar='')
+parser.add_argument('-ngbk', '--gbk_present', action='store_false',
+    help='use nucleotide/amino acid sequence files (fna/faa) when no genBank files given (this option does not consider annotations)')
 parser.add_argument('-st', '--steps', nargs='+', type = int, default = ['all'],
     help='run specific steps or run all steps by default', metavar='')
 parser.add_argument('-mo', '--metainfo_organism', action='store_true',
@@ -85,8 +84,8 @@ parser.add_argument('-cst', '--enable_cluster_correl_stats', action='store_true'
 #=======================================*/
 parser.add_argument('-np', '--disable_cluster_postprocessing', action='store_true',
     help='disable postprocessing (split overclustered genes and paralogs, and cluster unclustered genes)')
-parser.add_argument('-nrna', '--disable_RNA_clustering', type = int, default = 1,
-    help='default: disabled, not cluster rRNAs', metavar='')
+parser.add_argument('-rna', '--enable_RNA_clustering', action='store_true',
+    help='cluster rRNAs')
 ## split tree via breaking up long branches (resolving over-clustering)
 #parser.add_argument('-sf', '--split_long_branch_factor', type = float, default = 3.0,
 #    help='use (0.1+3.0*core_diversity)/(1+3.0*core_diversity) to decide split_long_branch_cutoff',metavar='')
@@ -124,7 +123,7 @@ parser.add_argument('-sitr', '--simple_tree', action='store_true',
     help='simple tree: does not use treetime for ancestral inference')
 ## gene gain loss inference
 parser.add_argument('-dgl', '--disable_gain_loss', action='store_true',
-    help='disable enable gene gain and loss inference')
+    help='disable enable gene gain and loss inference (not recommended)')
 parser.add_argument('-mglo', '--merged_gain_loss_output', action='store_true',
     help='not split gene presence/absence and gain/loss pattern into separate files for each cluster')
 parser.add_argument('-slt', '--store_locus_tag', action='store_true',
@@ -172,9 +171,9 @@ myPangenome=pangenome(
     diamond_dc_used=params.diamond_divide_conquer,
     diamond_dc_subset_size=params.subset_size,
     mcl_inflation=params.mcl_inflation,
-    blastn_max_target=params.blastn_RNA_max_target_seqs,
+    blastn_RNA_max_target_seqs=params.blastn_RNA_max_target_seqs,
     disable_cluster_postprocessing=params.disable_cluster_postprocessing,
-    disable_RNA_clustering=params.disable_RNA_clustering,
+    enable_RNA_clustering=params.enable_RNA_clustering,
     factor_core_diversity=params.factor_core_diversity,
     split_long_branch_cutoff=params.split_long_branch_cutoff,
     explore_paralog_plot=params.explore_paralog_plot,
@@ -234,7 +233,7 @@ if 5 in params.steps:# step05:
         ## clustering
         myPangenome.clustering_protein_sequences()
     ## clustering RNA when option activated
-    if params.disable_RNA_clustering==0:
+    if params.enable_RNA_clustering:
         myPangenome.RNA_clustering()
     print '======  cluster proteins'
     print times(start),'\n'
@@ -244,7 +243,7 @@ if 6 in params.steps:# step06:
     start = time.time()
     myPangenome.process_clusters()
 
-    if params.disable_RNA_clustering==0:
+    if params.enable_RNA_clustering:
         myPangenome.make_RNACluster_alignment_and_tree()
     print '======  time for step06: align genes in geneCluster by mafft and build gene trees'
     print times(start),'\n'

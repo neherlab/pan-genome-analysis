@@ -123,7 +123,7 @@ class pangenome:
 
     def extract_gbk_sequences(self):
         """ extract nucleotide and protein sequences from GenBank file """
-        extract_sequences(self.path, self.strain_list, self.folders_dict, self.gbk_present, self.disable_RNA_clustering)
+        extract_sequences(self.path, self.strain_list, self.folders_dict, self.gbk_present, self.enable_RNA_clustering)
         #gene_aa_dict, gene_na_dict= extract_sequences()
 
     def extract_gbk_metadata(self):
@@ -184,7 +184,7 @@ class pangenome:
 
     def make_RNACluster_alignment_and_tree(self):
         """ aligning RNA clusters and building RNA tree """
-        RNAclusters_align_makeTree(self.path, self.folders_dict, self.threads)
+        RNAclusters_align_makeTree(self.path, self.folders_dict, self.threads, self.simple_tree)
 
     def create_SNP_alignment(self):
         """ build pseudo-alignment based on core gene SNPs """
@@ -215,12 +215,11 @@ class pangenome:
 
     def export_geneCluster_json(self):
         """ export gene clusters as json file which is loaded in the cluster datatable """
-        geneCluster_to_json(self.path, self.disable_RNA_clustering, self.store_locus_tag, self.raw_locus_tag, self.optional_table_column)
+        geneCluster_to_json(self.path, self.enable_RNA_clustering, self.store_locus_tag, self.raw_locus_tag, self.optional_table_column)
 
     def export_coreTree_json(self):
         """ export core tree as json file for core tree visualization"""
-        json_parser(self.path, self.folders_dict, self.fpaths_dict, self.metainfo_fpath, self.merged_gain_loss_output, self.meta_tidy_fpath, self.clean_temporary_files)
-
+        json_parser(self.path, self.folders_dict, self.fpaths_dict, self.metainfo_fpath, self.meta_tidy_fpath, self.clean_temporary_files)
 
 
 def harmonize_filename(path, glob_list):

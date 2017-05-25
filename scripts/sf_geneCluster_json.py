@@ -49,7 +49,7 @@ def consolidate_geneName(path,all_gene_names, geneID_to_description_dict):
     #print all_geneName, ' ?', majority
     return all_geneName, majority
 
-def optional_geneCluster_properties(gene_list):
+def optional_geneCluster_properties(gene_list, optional_table_column):
     strain_to_locustag = dict([igl.split('|')[:2] for igl in gene_list])
     ## add optional table column
     if optional_table_column:
@@ -68,7 +68,7 @@ def geneCluster_associations(associations, suffix='BA'):
     return ['"%s %s":%1.2f'%(k.split()[0], suffix , np.abs(v)) for k,v in associations.iteritems() if not np.isnan(v)]
 
 
-def geneCluster_to_json(path, disable_RNA_clustering, store_locus_tag,
+def geneCluster_to_json(path, enable_RNA_clustering, store_locus_tag,
                         raw_locus_tag, optional_table_column):
     """
     create json file for gene cluster table visualzition
@@ -90,7 +90,7 @@ def geneCluster_to_json(path, disable_RNA_clustering, store_locus_tag,
     # load geneID_to_descriptions
     geneID_to_descriptions=load_pickle(path+'geneID_to_description.cpk')
 
-    if disable_RNA_clustering==0:
+    if enable_RNA_clustering:
         # load RNAID_to_description_file
         geneID_to_descriptions.update(load_pickle(path+'RNAID_to_description.cpk'))
 
@@ -175,7 +175,7 @@ def geneCluster_to_json(path, disable_RNA_clustering, store_locus_tag,
                             ]
 
         if optional_table_column:
-            cluster_json_line.extend(optional_geneCluster_properties(gene_list))
+            cluster_json_line.extend(optional_geneCluster_properties(gene_list,optional_table_column))
         if clusterID in branch_associations:
             cluster_json_line.extend(geneCluster_associations(branch_associations[clusterID], suffix='BA'))
         if clusterID in presence_absence_associations:

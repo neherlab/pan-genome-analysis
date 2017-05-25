@@ -43,6 +43,7 @@ def create_core_SNP_matrix(path, core_cutoff=1.0, core_gene_strain_fpath=''):#1.
                 else:
                     #print '%s%s%s'%('warning: ',coreGeneName_path,' is not a core gene')
                     pass
+        print strain_core_cutoff, 'corelist ',corelist
 
         write_pickle(output_path+'core_geneList.cpk',corelist)
 

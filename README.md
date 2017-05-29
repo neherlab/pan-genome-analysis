@@ -105,13 +105,7 @@ The results can be explored via our interactive [**pan-genome-visualization**](h
 
 
 **Step01: specify the set of strains**<br />
-You need to provide a file within the run directory that contains a list of NCBI RefSeq accession numbers or the name of own GenBank files (without file ending).<br />
-- Input:<br />
-In folder `./data/TestSet/:`<br />
-TestSet-RefSeq.txt<br />
-- Output:<br />
-In folder `./data/TestSet/:`<br />
-strain_list.cpk (cPickled file for the strain list )<br />
+Load the strain file within the run directory which contains a list of NCBI RefSeq accession numbers or names of own GenBank files (without file ending).<br />
 
 **Step03: extract gene sequences from GenBank (*.gbk) file**<br />
 Extract genes from GenBank (\*.gbk) file as nucleotide and amino acid sequences<br />
@@ -185,15 +179,11 @@ Use ancestral reconstruction algorithm (treetime) to infer gain and loss events<
 - Output:<br />
 In folder `./data/TestSet/geneCluster/:`<br />
 genePresence.aln  (gene presence and absence pattern)<br />
-dt_genePresence.cpk (gene presence and absence pattern as cPickled file)<br />
-dt_geneEvents.cpk (number of gene gain/loss events)<br />
 GC000\*_patterns.json (gene gain/loss pattern for each gene cluster)<br />
 
 **Step10: export gene cluster json file**<br />
 Export json file for gene cluster datatable visualization<br />
 In folder `./data/TestSet/geneCluster/:`<br />
-gene_diversity.cpk (diversity for each gene cluster)<br />
-dt_geneEvents.cpk (gain/loss event count)<br />
 - Output:<br />
 In folder `./data/TestSet/geneCluster/`<br />
 geneCluster.json (gene cluster json for datatable visualization)<br />

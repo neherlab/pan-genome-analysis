@@ -237,7 +237,6 @@ def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
     vis_cluster_path=  folders_dict['vis_cluster_path']
     tree = Tree(output_path+'tree_result.newick',format=1)
     strain_list=[node.name for node in tree.traverse("preorder")]
-    print strain_list
 
     ## create strain tree json file
     strain_meta_dict, headers, metajson_dict = metadata_process(path, metaFile)

@@ -89,8 +89,10 @@ The results can be explored via our interactive [**pan-genome-visualization**](h
           - vis
             - geneCluster.json       # for clusters table: gene clusters and their summary statistics
             - strainMetainfo.json    # for metadata table: strain-associated metadata
+            - metaConfiguration.js   # metadata configuration file (also accept valid customized file)
             - coreGenomeTree.json    # core genome SNP tree (json file)
             - strain_tree.nwk        # core genome SNP tree (newick file)
+
             - geneCluster/           # folder contain orthologous clusters
               - GC00000001_na_aln.fa
               - GC00000001_aa_aln.fa

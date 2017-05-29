@@ -43,7 +43,6 @@ def create_core_SNP_matrix(path, core_cutoff=1.0, core_gene_strain_fpath=''):#1.
                 else:
                     #print '%s%s%s'%('warning: ',coreGeneName_path,' is not a core gene')
                     pass
-        print strain_core_cutoff, 'corelist ',corelist
 
         write_pickle(output_path+'core_geneList.cpk',corelist)
 
@@ -87,14 +86,14 @@ def create_core_SNP_matrix(path, core_cutoff=1.0, core_gene_strain_fpath=''):#1.
                     if strain in core_gene_strain:
                         nuc_array=np.array(np.fromstring(strain_seq_dt[strain], dtype='S1'))
                     else:
-                        print 'Soft core gene: gene not present in strain %s for cluster %s'%(strain,align_file)
+                        print 'Soft core gene: gene absent in strain %s on cluster %s'%(strain,align_file)
                         nuc_array=np.array(np.fromstring(missing_gene_seq, dtype='S1'))
                     start_flag=1
                 else:
                     if strain in core_gene_strain:
                         nuc_array=np.vstack((nuc_array,np.fromstring(strain_seq_dt[strain], dtype='S1')))
                     else:
-                        print 'Soft core gene: gene not present in strain %s for cluster %s'%(strain,align_file)
+                        print 'Soft core gene: gene absent in strain %s on cluster %s'%(strain,align_file)
                         nuc_array=np.vstack((nuc_array,np.fromstring(missing_gene_seq, dtype='S1')))
             ## find SNP positions
             ## mask missing genes -- determine rows that have ' ' in every column

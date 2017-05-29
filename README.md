@@ -77,7 +77,10 @@ The results can be explored via our interactive [**pan-genome-visualization**](h
         E.g.: ./panX.py -dmdc -dcs 50 -fn ...
 
 
-    The results contain files required for visualizing the pan-genome using [pan-genome-visualization](https://github.com/neherlab/pan-genome-visualization).
+    The results contain clustering result
+    `./data/YourSpecies/allclusters_final.tsv `
+
+     and files required for visualizing the pan-genome using [pan-genome-visualization](https://github.com/neherlab/pan-genome-visualization).
     ```
     ./data
         YourSpecies               # folder specific to the your pan genome

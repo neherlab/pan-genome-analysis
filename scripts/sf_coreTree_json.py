@@ -232,6 +232,7 @@ def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
         os.system('cp %s %s'%(meta_info_file_path, metaFile))
 
     main_data_path= path
+    clustering_path= folders_dict['clustering_path']
     output_path= folders_dict['cluster_seq_path']
     vis_json_path= folders_dict['vis_json_path']
     vis_cluster_path=  folders_dict['vis_cluster_path']
@@ -258,6 +259,7 @@ def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
     os.system('mv *C*_aln*.fa *C*_tree.json *C*.nwk '+vis_cluster_path)
     os.system('cp tree_result.newick '+vis_json_path+'/strain_tree.nwk')
     os.system('mv *C*patterns.json '+vis_cluster_path)
+    os.system('mv '+clustering_path+'allclusters_final.tsv'+' '+main_data_path)
 
     ## gzip aln files
     os.system('gzip -f '+vis_cluster_path+'*_aln*.fa' )

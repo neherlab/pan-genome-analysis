@@ -44,6 +44,7 @@ def cut_tree_gather_clades(tree, cut_branch_threshold):
                 gene_list.append(set.intersection(node.leafs, leaves))
                 leaves=leaves-node.leafs
             elif False and node==tree.root: # check the sum of children.branch_length
+            #Notes: not encourage to use based on test using simulation data
                 root_children_bl=[child.branch_length for child in node]
                 if max(root_children_bl) < cut_branch_threshold and sum(root_children_bl) > cut_branch_threshold:
                     gene_list.append(set.intersection(node[0].leafs, leaves))

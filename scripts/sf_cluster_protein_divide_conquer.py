@@ -74,7 +74,7 @@ def build_representative_cluster(clustering_path, threads, input_prefix):
 def clustering_subproblem(clustering_path, threads, subproblem_merged_faa,
         diamond_evalue, diamond_max_target_seqs, diamond_identity,
         diamond_query_cover, diamond_subject_cover,
-        mcl_inflation,last_run_flag):
+        mcl_inflation, diamond_path, last_run_flag):
     """ clustering on subproblems """
     if last_run_flag==0:
         diamond_identity= diamond_query_cover= diamond_subject_cover='90'
@@ -83,7 +83,7 @@ def clustering_subproblem(clustering_path, threads, subproblem_merged_faa,
 
     diamond_run(clustering_path, subproblem_merged_faa, threads,
                 diamond_evalue, diamond_max_target_seqs, diamond_identity,
-                diamond_query_cover, diamond_subject_cover)
+                diamond_query_cover, diamond_subject_cover, diamond_path)
     input_prefix= subproblem_merged_faa.split('.faa')[0]
     filter_hits_single(clustering_path, threads, input_prefix=input_prefix)
     mcl_run(clustering_path, threads, input_prefix, mcl_inflation)
@@ -113,7 +113,7 @@ def integrate_clusters(clustering_path, cluster_fpath):
 
 def clustering_divide_conquer(path, folders_dict, threads,
     diamond_evalue, diamond_max_target_seqs, diamond_identity,
-    diamond_query_cover, diamond_subject_cover, mcl_inflation, subset_size=50):
+    diamond_query_cover, diamond_subject_cover, mcl_inflation, diamond_path, subset_size=50):
     """
     Use divide and conquer algorithm to break down large all-aginst-all alignment problem
     on many strains (e.g.: >100 strains) into smaller sub-all-aginst-all-alignment on
@@ -146,7 +146,7 @@ def clustering_divide_conquer(path, folders_dict, threads,
             clustering_subproblem(clustering_path, threads, subproblem_merged_faa,
                                 diamond_evalue, diamond_max_target_seqs,diamond_identity,
                                 diamond_query_cover, diamond_subject_cover,
-                                mcl_inflation, last_run_flag=0)
+                                mcl_inflation, diamond_path, last_run_flag=0)
             #print len(sub_list)
             if i==subproblems_count-1 and leftover_count!=0: # the left-overs
                 sub_list= faa_list[(i+1)*subset_size : len(faa_list)]
@@ -155,7 +155,7 @@ def clustering_divide_conquer(path, folders_dict, threads,
                 clustering_subproblem(clustering_path, threads, subproblem_merged_faa,
                                     diamond_evalue, diamond_max_target_seqs,diamond_identity,
                                     diamond_query_cover, diamond_subject_cover,
-                                    mcl_inflation, last_run_flag=0)
+                                    mcl_inflation, diamond_path, last_run_flag=0)
                 ## TODO-mightbe
                 ## decide whether to distribute the leftover to each subproblem
                 ## if leftover_count/subproblems_count:
@@ -166,7 +166,7 @@ def clustering_divide_conquer(path, folders_dict, threads,
         clustering_subproblem(clustering_path, threads, subproblem_merged_faa,
                             diamond_evalue,diamond_max_target_seqs, diamond_identity,
                             diamond_query_cover, diamond_subject_cover, mcl_inflation,
-                            last_run_flag=1)
+                            diamond_path, last_run_flag=1)
     integrate_clusters(clustering_path,cluster_fpath)
     cleanup_clustering(clustering_path)
     parse_geneCluster(cluster_fpath,cluster_dt_cpk_fpath)

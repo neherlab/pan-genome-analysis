@@ -3,10 +3,13 @@ from collections import defaultdict, Counter
 from sf_miscellaneous import times, read_fasta, load_pickle, write_pickle
 
 def diamond_run(output_path, dmd_ref_file, threads,
-    diamond_evalue, diamond_max_target_seqs,diamond_identity,
-    diamond_query_cover, diamond_subject_cover, diamond_no_self_hits=0):
+    diamond_evalue, diamond_max_target_seqs, diamond_identity,
+    diamond_query_cover, diamond_subject_cover, diamond_path, diamond_no_self_hits=0):
     """ run diamond using sensitive alignment mode """
-    diam= ''.join([os.path.dirname(os.path.realpath(__file__)), '/../tools/diamond'])
+    if diamond_path=='':
+        diam= ''.join([os.path.dirname(os.path.realpath(__file__)), '/../tools/diamond'])
+    else:
+        diam=diamond_path
     print 'diamond inputfile:', dmd_ref_file
     input_prefix= dmd_ref_file.split('.faa')[0]
     if input_prefix=='reference':
@@ -165,7 +168,7 @@ def process_orthofinder(input_fpath,output_fpath):
 def clustering_protein(path, folders_dict, threads,
     blast_fpath, roary_fpath, orthofinder_fpath, other_tool_fpath,
     diamond_evalue, diamond_max_target_seqs, diamond_identity,
-    diamond_query_cover, diamond_subject_cover, mcl_inflation):
+    diamond_query_cover, diamond_subject_cover, diamond_path, mcl_inflation):
     '''
     Procedure: all-against-all protein comparison + hits filtering + mcl clustering
     By default: DIAMOND -> BS -> MCL
@@ -202,7 +205,7 @@ def clustering_protein(path, folders_dict, threads,
         os.system(''.join(['cat ',protein_path,'*faa > ',clustering_path,dmd_ref_file]))
         ## run diamond
         diamond_run(clustering_path, dmd_ref_file, threads, diamond_evalue,
-            diamond_max_target_seqs, diamond_identity, diamond_query_cover, diamond_subject_cover)
+            diamond_max_target_seqs, diamond_identity, diamond_query_cover, diamond_subject_cover, diamond_path )
         ## filtering hits via BS score
         filter_hits_single(clustering_path, threads)
         ## running mcl

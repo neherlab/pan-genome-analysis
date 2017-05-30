@@ -46,6 +46,8 @@ parser.add_argument('-otp', '--other_tool_fpath', type = str, default = 'none',
     help='the absolute path for result from other orthology inference tool  (e.g.: /path/other_tool.out)' , metavar='')
 parser.add_argument('-mi', '--metainfo_fpath', type = str, default = 'none',
     help='the absolute path for meta_information file (e.g.: /path/meta.out)' , metavar='')
+parser.add_argument('-dmp', '--diamond_path', type = str, default = '',
+    help='alternative diamond path provided by user', metavar='')
 parser.add_argument('-dme', '--diamond_evalue', type = str, default = '0.001',
     help='default: e-value threshold below 0.001', metavar='')
 parser.add_argument('-dmt', '--diamond_max_target_seqs', type = str, default = '600',
@@ -160,6 +162,7 @@ myPangenome=pangenome(
     orthofinder_fpath=params.orthofinder_file_path,
     other_tool_fpath=params.other_tool_fpath,
     metainfo_fpath=params.metainfo_fpath,
+    diamond_path=params.diamond_path,
     diamond_evalue=params.diamond_evalue,
     diamond_max_target_seqs=params.diamond_max_target_seqs,
     diamond_identity=params.diamond_identity,

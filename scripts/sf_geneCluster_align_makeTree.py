@@ -418,19 +418,26 @@ class mpm_tree(object):
                 for mut in node.mutations:
                     self.mut_to_branch[mut].append(node)
 
-    def reduce_alignments(self):
+    def reduce_alignments(self,RNA_specific=False):
+        if RNA_specific:
+            self.aa_aln=None
+            self.af_aa =None
+        else:
+            self.af_aa= calc_af(self.aa_aln, aa_alpha)
         for attr, aln, alpha, freq in [["aln_reduced", self.aln, nuc_alpha, self.af_nuc],
-                                 ["aa_aln_reduced", self.aa_aln, aa_alpha, calc_af(self.aa_aln, aa_alpha)]]:
+                                 ["aa_aln_reduced", self.aa_aln, aa_alpha, self.af_aa]]:
             try:
-                consensus = np.array(list(alpha))[freq.argmax(axis=0)]
-                aln_array = np.array(aln)
-                aln_array[aln_array==consensus]='.'
-                new_seqs = [SeqRecord(seq=Seq("".join(consensus)), name="consensus", id="consensus")]
-                for si, seq in enumerate(aln):
-                    new_seqs.append(SeqRecord(seq=Seq("".join(aln_array[si])), name=seq.name,
-                                       id=seq.id, description=seq.description))
-                self.__setattr__(attr, MultipleSeqAlignment(new_seqs))
-
+                if RNA_specific and attr=="aa_aln_reduced":
+                    pass #** no reduced amino alignment for RNA
+                else:
+                    consensus = np.array(list(alpha))[freq.argmax(axis=0)]
+                    aln_array = np.array(aln)
+                    aln_array[aln_array==consensus]='.'
+                    new_seqs = [SeqRecord(seq=Seq("".join(consensus)), name="consensus", id="consensus")]
+                    for si, seq in enumerate(aln):
+                        new_seqs.append(SeqRecord(seq=Seq("".join(aln_array[si])), name=seq.name,
+                                           id=seq.id, description=seq.description))
+                    self.__setattr__(attr, MultipleSeqAlignment(new_seqs))
             except:
                 print("sf_geneCluster_align_MakeTree: aligment reduction failed")
 
@@ -461,17 +468,22 @@ class mpm_tree(object):
         tree_json = tree_to_json(self.tree.root, extra_attr=extra_attr)
         write_json(tree_json, timetree_fname, indent=None)
 
+        self.reduce_alignments(RNA_specific)
+
         ## msa compatible
         for i_aln in self.aln:
             i_aln.id=i_aln.id.replace('|','-',1)
+        for i_alnr in self.aln_reduced:
+            i_alnr.id=i_alnr.id.replace('|','-',1)
 
         AlignIO.write(self.aln, path+self.clusterID+'_na_aln.fa', 'fasta')
-        if RNA_specific==False:
-            self.reduce_alignments()
-            AlignIO.write(self.aln_reduced, path+self.clusterID+'_na_aln_reduced.fa', 'fasta')
+        AlignIO.write(self.aln_reduced, path+self.clusterID+'_na_aln_reduced.fa', 'fasta')
 
+        if RNA_specific==False:
             for i_aa_aln in self.aa_aln:
                 i_aa_aln.id=i_aa_aln.id.replace('|','-',1)
+            for i_aa_alnr in self.aa_aln_reduced:
+                i_aa_alnr.id=i_aa_alnr.id.replace('|','-',1)
 
             AlignIO.write(self.aa_aln, path+self.clusterID+'_aa_aln.fa', 'fasta')
             AlignIO.write(self.aa_aln_reduced, path+self.clusterID+'_aa_aln_reduced.fa', 'fasta')

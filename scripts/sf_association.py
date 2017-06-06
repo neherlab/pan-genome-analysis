@@ -33,13 +33,23 @@ class PresenceAbsenceAssociation(object):
         calculate the mean value of the phenotype of leaves upstream and down stream
         of each branch in the tree.
         '''
+        def mean_var(node, pc=3, total_var=0.0):
+            nval = node.meta_count
+            m = node.meta_value/nval
+            var = ((node.meta_sq_value - nval*m**2) + pc*total_var)/(nval-1.0+pc)
+            return (m,var, nval)
+
         if transform is None:
             transform = lambda x:x
+        all_values = []
+        values_by_state = {'present':[], 'absent':[]}
         for n in self.tree.find_clades(order='postorder'):
             if n.is_terminal():
                 n.strain = n.name.split('|')[0]
                 n.meta_value = transform(self.meta_info[n.strain][meta_column])
                 if not np.isnan(n.meta_value):
+                    all_values.append(n.meta_value)
+                    values_by_state[n.present].append(n.meta_value)
                     n.meta_count = 1
                     n.meta_sq_value = n.meta_value*n.meta_value
                 else:
@@ -54,13 +64,22 @@ class PresenceAbsenceAssociation(object):
         self.averages = {'present':[], 'absent':[]}
         rn = self.tree.root
         if rn.meta_count:
-            self.averages[rn.present].append(rn.meta_value/rn.meta_count)
+            self.averages[rn.present].append(mean_var(rn, pc=3, total_var = np.var(all_values)))
         for n in self.tree.find_clades(order='preorder'):
             if n.event and n.meta_count:
-                self.averages[n.present].append(n.meta_value/n.meta_count)
+                self.averages[n.present].append(mean_var(n, pc=3, total_var = np.var(all_values)))
 
         from scipy.stats import ttest_ind
-        return (np.mean(self.averages['present']) - np.mean(self.averages['absent']))*np.sqrt(1.0/(1.0/len(self.averages['present']) + 1.0/len(self.averages['present'])))
+        self.averages = {k:np.array(v) for k,v in self.averages.iteritems()}
+        p = self.averages['present']
+        a = self.averages['absent']
+        if len(a) and len(p) and len(values_by_state['present']) and len(values_by_state['absent']):
+            #return (np.sum(p[:,0]/p[:,1])/np.sum(1./p[:,1]) - np.sum(a[:,0]/a[:,1])/np.sum(1./a[:,1]))*np.sqrt(1.0/(1.0/p.shape[0] + 1.0/a.shape[0]))
+            #return (np.mean(p[:,0]) - np.mean(a[:,0]))*np.sqrt(1.0/(1.0/p.shape[0] + 1.0/a.shape[0]))
+            return (np.mean(values_by_state['present']) - np.mean(values_by_state['absent']))*np.sqrt(1.0/(1.0/len(values_by_state['present']) + 1.0/len(values_by_state['absent'])))
+            #return (np.mean(p[:,0]) - np.mean(a[:,0]))*np.sqrt(1.0/(1.0/p.shape[0] + 1.0/a.shape[0])/(np.var(p[:,0])+np.var(a[:,0])))
+        else:
+            return np.nan
 
 
 class BranchAssociation(object):

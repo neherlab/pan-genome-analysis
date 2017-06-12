@@ -14,7 +14,7 @@ def split_cluster(tree, nstrains, max_branch_length, max_paralogs):
     best_split = find_best_split(tree)
 
     # explore linear discriminator
-    return best_split.split_bl/max_branch_length + len(best_split.para_nodes)/max_paralogs > 1.0 and len(best_split.para_nodes) > 1
+    return ( best_split.split_bl/max_branch_length + len(best_split.para_nodes)/(nstrains*1.5) > 1.0 ) and len(best_split.para_nodes) > 1
 
     # condition1: split whenever branch is long and the complete strain set is duplicated
     #condition1 = len(best_split.para_nodes)>=nstrains and best_split.split_bl > 0.7*max_branch_length

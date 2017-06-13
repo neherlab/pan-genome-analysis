@@ -209,8 +209,9 @@ class pangenome:
         process_gain_loss(self.path, self.merged_gain_loss_output)
 
     def inferAssociations(self):
-        from sf_association import infer_branch_associations
-        infer_branch_associations(self.path, [])
+        from sf_association import infer_branch_associations, infer_presence_absence_associations
+        #infer_branch_associations(self.path)
+        infer_presence_absence_associations(self.path)
         # TODO: gain loss associations
 
     def export_geneCluster_json(self):

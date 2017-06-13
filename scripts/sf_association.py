@@ -28,7 +28,7 @@ class PresenceAbsenceAssociation(object):
         rn.present = 'present' if np.mean([c.present=='present' for c in rn])>=0.5 else 'absent'
         rn.event = True
 
-    def calc_association(self,meta_column, transform=None, pc=3):
+    def calc_association_by_event(self,meta_column, transform=None, pc=3):
         '''
         calculate the mean value of the phenotype of leaves upstream and down stream
         of each branch in the tree.
@@ -76,8 +76,38 @@ class PresenceAbsenceAssociation(object):
         if len(a) and len(p) and len(values_by_state['present']) and len(values_by_state['absent']):
             #return (np.sum(p[:,0]/p[:,1])/np.sum(1./p[:,1]) - np.sum(a[:,0]/a[:,1])/np.sum(1./a[:,1]))*np.sqrt(1.0/(1.0/p.shape[0] + 1.0/a.shape[0]))
             #return (np.mean(p[:,0]) - np.mean(a[:,0]))*np.sqrt(1.0/(1.0/p.shape[0] + 1.0/a.shape[0]))
-            return (np.mean(values_by_state['present']) - np.mean(values_by_state['absent']))*np.sqrt(1.0/(1.0/len(values_by_state['present']) + 1.0/len(values_by_state['absent'])))
-            #return (np.mean(p[:,0]) - np.mean(a[:,0]))*np.sqrt(1.0/(1.0/p.shape[0] + 1.0/a.shape[0])/(np.var(p[:,0])+np.var(a[:,0])))
+            #return (np.mean(values_by_state['present']) - np.mean(values_by_state['absent']))*np.sqrt(1.0/(1.0/len(values_by_state['present']) + 1.0/len(values_by_state['absent'])))
+            return (np.mean(p[:,0]) - np.mean(a[:,0]))*np.sqrt(1.0/(1.0/p.shape[0] + 1.0/a.shape[0]))
+        else:
+            return np.nan
+
+    def calc_association_simple(self,meta_column, transform=None, pc=3):
+        '''
+        calculate the mean value of the phenotype of leaves upstream and down stream
+        of each branch in the tree.
+        '''
+
+        values_by_state = {'present':[], 'absent':[]}
+        for n in self.tree.get_terminals():
+            if n.is_terminal():
+                n.strain = n.name.split('|')[0]
+                n.meta_value = transform(self.meta_info[n.strain][meta_column])
+                if not np.isnan(n.meta_value):
+                    values_by_state[n.present].append(n.meta_value)
+
+
+        n_events = len([n for n in self.tree.find_clades() if n.event])
+
+
+
+        if len(values_by_state['present'])>1 and len(values_by_state['absent'])>1:
+            # return (np.mean(values_by_state['present']) - np.mean(values_by_state['absent']))\
+            #         *np.sqrt(1.0/(1.0/len(values_by_state['present']) + 1.0/len(values_by_state['absent'])))\
+            #         /np.std(values_by_state['present']+values_by_state['absent'])
+            #return (np.mean(values_by_state['present']) - np.mean(values_by_state['absent']))\
+            #        /np.sqrt(np.var(values_by_state['present'])+np.var(values_by_state['present']))
+            return (np.mean(values_by_state['present']) - np.mean(values_by_state['absent']))\
+                   /np.std(values_by_state['present']+values_by_state['absent'])*np.sqrt(n_events)
         else:
             return np.nan
 
@@ -231,8 +261,11 @@ def infer_presence_absence_associations(path):
                     #else:
                     #    t = lambda x:x
                     assoc.set_gain_loss(gl)
-                    ttest_result = assoc.calc_association(d["meta_category"], transform = t)
-                    association_dict[clusterID][d["meta_category"]] = ttest_result
+                    score = assoc.calc_association_simple(d["meta_category"], transform = t)
+                    if np.isinf(score):
+                        association_dict[clusterID][d["meta_category"]] = 0.0
+                    else:
+                        association_dict[clusterID][d["meta_category"]] = np.abs(score)
 
     write_pickle("%s/presence_absence_association.cpk"%path, association_dict)
 

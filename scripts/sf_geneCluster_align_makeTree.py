@@ -150,8 +150,9 @@ def polytomies_midpointRooting(infileName, outfileName, clusterID):
     try:
         tree.set_outgroup( tree.get_midpoint_outgroup() )
     except:
-        print clusterID, ' can not conduct midpoint rooting'
-    tree.ladderize()#print 'ladderized'
+        pass
+        #print clusterID, ' can not conduct midpoint rooting'
+    tree.ladderize()
 
     ## adding the missing node.name
     #for ind, node in enumerate(tree.traverse("postorder")):
@@ -365,7 +366,6 @@ class mpm_tree(object):
             tmp_seq = Seq(str(Seq(str_seq.replace('---', 'NNN')).translate(table="Bacterial")).replace('X','-'))
         except:
             tmp_seq = Seq(str(Seq(str_seq.replace('-', 'N')).translate(table="Bacterial")).replace('X','-'))
-            print("Trouble translating", self.clusterID)#print("Trouble translating",seq)
         return tmp_seq
 
     def translate(self):

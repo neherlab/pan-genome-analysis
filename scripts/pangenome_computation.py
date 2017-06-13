@@ -210,7 +210,7 @@ class pangenome:
 
     def inferAssociations(self):
         from sf_association import infer_branch_associations
-        infer_branch_associations(self.path, [])
+        infer_branch_associations(self.path)
         # TODO: gain loss associations
 
     def export_geneCluster_json(self):

@@ -8,6 +8,14 @@ def extract_metadata(path, strain_list, folders_dict, gbk_present, metainfo_orga
     Input: genBank file
     Output: metainfo csv file
     """
+    def organism_format(raw_data):
+        """"""
+        #Pseudomonas putida ND6
+        #[Pseudomonas syringae] pv. tomato str. DC3000
+        new_tag=raw_data.replace('[','').replace(']','').split(' ')[:2]
+        new_tag=new_tag[0][:1]+'.'+new_tag[1]
+        return new_tag
+
     from Bio import SeqIO
     with open('%s%s'%(path,'metainfo.tsv'), 'wb') as writeseq:
         #headers: accession, strainName, dateInfo, country, host
@@ -25,7 +33,8 @@ def extract_metadata(path, strain_list, folders_dict, gbk_present, metainfo_orga
                         if feature.type=='source':
                             if metainfo_organism:
                                 if 'organism' in feature.qualifiers:
-                                    organismName= feature.qualifiers['organism'][0]
+                                    raw_data=feature.qualifiers['organism'][0]
+                                    organismName= organism_format(raw_data)
                                 else:
                                     organismName= 'unknown'
                             if 'strain' in feature.qualifiers:

@@ -54,10 +54,7 @@ parser.add_argument('-dmt', '--diamond_max_target_seqs', type = str, default = '
     help='Diamond: maximum number of target sequences per query\
     Calculation: #strain * #max_duplication (40*15= 600)', metavar='')
 parser.add_argument('-dmi', '--diamond_identity', type = str, default = '0',
-    help='Diamond: sequence identity threshold to report an alignment. Default: empty.\
-    When applied to species with low genetic diversity: 70 could be a decent starting point.\
-    All alignments with identity below 0.7 of will not be reported, \
-    thus also saving computational time. ', metavar='')
+    help='Diamond: sequence identity threshold to report an alignment. Default: empty.', metavar='')
 parser.add_argument('-dmqc', '--diamond_query_cover', type = str, default = '0',
     help='Diamond: sequence (query) coverage threshold to report an alignment.  Default: empty', metavar='')
 parser.add_argument('-dmsc', '--diamond_subject_cover', type = str, default = '0',
@@ -78,8 +75,6 @@ parser.add_argument('-imcl', '--mcl_inflation', type = float, default = 1.5,
 parser.add_argument('-bmt', '--blastn_RNA_max_target_seqs', type = str, default = '100',
     help='Blastn on RNAs: the maximum number of target sequences per query\
     Calculation: #strain * #max_duplication', metavar='')
-parser.add_argument('-cst', '--enable_cluster_correl_stats', action='store_true',
-    help='calculate statistics on each cluster for correlation test')
 
 #/*=======================================
 #            post-processing
@@ -128,6 +123,10 @@ parser.add_argument('-dgl', '--disable_gain_loss', action='store_true',
     help='disable enable gene gain and loss inference (not recommended)')
 parser.add_argument('-mglo', '--merged_gain_loss_output', action='store_true',
     help='not split gene presence/absence and gain/loss pattern into separate files for each cluster')
+## branch association inference
+parser.add_argument('-iba', '--infer_branch_association', action='store_true',
+    help='infer branch association')
+## other options
 parser.add_argument('-slt', '--store_locus_tag', action='store_true',
     help='store locus_tags in a separate file instead of saving locus_tags in gene cluster json for large dataset')
 parser.add_argument('-rlt', '--raw_locus_tag', action='store_true',
@@ -271,6 +270,9 @@ if 9 in params.steps:# step09:
     myPangenome.compute_gene_presence_pattern()
     if not params.disable_gain_loss:
         myPangenome.infer_gene_gain_loss_pattern()
+    if params.infer_branch_association:
+        myPangenome.inferAssociations()
+
     print '======  time for step09: infer presence/absence and gain/loss patterns of all genes'
     print times(start),'\n'
 

@@ -16,22 +16,6 @@ def split_cluster(tree, nstrains, max_branch_length, max_paralogs):
     # explore linear discriminator
     return ( best_split.split_bl/max_branch_length + len(best_split.para_nodes)/(nstrains*1.5) > 1.0 ) and len(best_split.para_nodes) > 1
 
-    # condition1: split whenever branch is long and the complete strain set is duplicated
-    #condition1 = len(best_split.para_nodes)>=nstrains and best_split.split_bl > 0.7*max_branch_length
-    #*condition1 = len(best_split.para_nodes)>=nstrains and best_split.split_bl > max_branch_length
-
-    # condition2: split whenever branch is long, the number of duplications exceeds max_paralogs,
-    # and at least one side has the full set of strains
-    #*condition2 = len(best_split.para_nodes)>max_paralogs \
-    #*             and ((len(best_split.leafs)==nstrains) or (len(best_split.not_leafs)==nstrains)) \
-    #*             and best_split.split_bl > max_branch_length
-
-    #condition3 = len(best_split.para_nodes)>max_paralogs and best_split.split_bl>1.5*max_branch_length
-
-    #*to_split = condition1 or condition2
-    #return best_split.branch_length/max_branch_length > 1.0 and float(len(best_split.para_nodes))/max_paralogs >= 1.0
-    #*return to_split
-
 def explore_paralogs(path, nstrains, paralog_branch_cutoff, paralog_frac_cutoff=0.3, plot=0):
     '''
     gather paralog statistics for all trees and plot if desired
@@ -50,8 +34,7 @@ def explore_paralogs(path, nstrains, paralog_branch_cutoff, paralog_frac_cutoff=
             print 'abc ', fname
         best_split = find_best_split(tree)
         if best_split is not None:
-            paralog_stat.append([fname, best_split.branch_length, len(best_split.para_nodes)])
-            #paralog_stat.append([fname, best_split.branch_length/mean_branch_length, len(best_split.para_nodes)])
+            paralog_stat.append([fname, best_split.split_bl, len(best_split.para_nodes)])
     with open(cluster_seqs_path+'paralogy_statistics.txt','wb') as paralogy_statistics:
         for x,y,z in paralog_stat:
             paralogy_statistics.write('%s\t%s\t%s\n'%(x.split('/')[-1],y,z))
@@ -120,7 +103,7 @@ def create_split_cluster_files(file_path, fname,
                 write_in_fa(gene_cluster_nu_write, gene_memb, origin_nu_fa_dt[gene_memb])
                 write_in_fa(gene_cluster_aa_write, gene_memb, origin_aa_fa_dt[gene_memb])
             except:
-                print 'xxxx', fname, gene_memb, gene_list1, gene_list2
+                print 'debug (write new split cluster files)', fname #, gene_memb, gene_list1, gene_list2
 
         gene_cluster_nu_write.close(); gene_cluster_aa_write.close();
 
@@ -142,7 +125,7 @@ def postprocess_paralogs_iterative(parallel, path, nstrains, simple_tree,
     split_result= postprocess_paralogs( parallel, path, nstrains, simple_tree,
                                             geneCluster_dt, set(),
                                             paralog_branch_cutoff=paralog_branch_cutoff,
-                                            paralog_frac_cutoff=paralog_frac_cutoff, plot=plot)
+                                            paralog_frac_cutoff=paralog_frac_cutoff, plot=0)
     n_split_clusters, new_fa_files_set = split_result
     iteration=0
     while(n_split_clusters):
@@ -182,8 +165,7 @@ def postprocess_paralogs(parallel, path, nstrains, simple_tree, geneCluster_dt,
     if len(new_fa_files_set)==0:
         fname_list =glob.iglob(file_path+'*nwk')
     else:
-        fname_list = [ new_fa.replace('.fna','.nwk') for new_fa in new_fa_files_set if os.path.exists(file_path+new_fa.replace('.fna','.nwk')) ]
-        print fname_list
+        fname_list = [ new_fa.replace('.fna','.nwk') for new_fa in new_fa_files_set if os.path.exists(new_fa.replace('.fna','.nwk')) ]
 
     new_fa_files_set= set()
     n_split_clusters = 0
@@ -192,7 +174,7 @@ def postprocess_paralogs(parallel, path, nstrains, simple_tree, geneCluster_dt,
         try:
             tree = Phylo.read(fname, 'newick')
         except:
-            print 'debug: ',fname, ' ', os.getcwd()
+            print 'debug(postprocess_paralogs read nwk file): ',fname, ' ', os.getcwd()
 
         best_split = find_best_split(tree)
 
@@ -205,7 +187,7 @@ def postprocess_paralogs(parallel, path, nstrains, simple_tree, geneCluster_dt,
                 print('will split:', fname,
                     '#leaves:', tree.count_terminals(),
                     '#best_split.para_nodes:',len(best_split.para_nodes),
-                    '#best_split.branch_length:', best_split.branch_length)
+                    '#best_split.split_bl:', best_split.split_bl)
 
                 all_genes = set([n.name for n in tree.get_terminals()])
                 gene_list1 = set([n.name for n in best_split.get_terminals()])
@@ -216,7 +198,8 @@ def postprocess_paralogs(parallel, path, nstrains, simple_tree, geneCluster_dt,
                 new_fa_files_set |= new_fa_files
                 n_split_clusters+=1
 
-    print 'new_split_fasta_files', time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()), new_fa_files_set
+    fname_list_len=len(fname_list) if type(fname_list) is list else len(list(fname_list))
+    print '#new_split_fasta_files:', fname_list_len, time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()), [ new_fa.split('/')[-1] for new_fa in new_fa_files_set ]
     ## make new aln and tree
     #mem_check('multips(align_and_')
     multips(align_and_makeTree, parallel, list(new_fa_files_set), file_path, simple_tree)

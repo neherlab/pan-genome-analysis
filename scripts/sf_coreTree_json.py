@@ -217,8 +217,9 @@ def process_metajson(path, meta_tidy_fpath, metajson_dict):
     with open(''.join([path,'metaConfiguration.js']),'wb') as meta_js_out:
         if len(metajson_dict['organism'])<=1:
             del metajson_dict['organism']
-            metajson_exp['meta_display_order'].remove('organism')
-            del metajson_exp['color_options']['organism']
+            if 'organism' in metajson_exp['meta_display_order']:
+                metajson_exp['meta_display_order'].remove('organism')
+                del metajson_exp['color_options']['organism']
         meta_js_out.write('var meta_details=')
         meta_js_out.write('%s'%json.dumps(metajson_dict))
         meta_js_out.write(', meta_display=')

@@ -538,7 +538,7 @@ def align_and_makeTree( fna_file_list, alignFile_path, simple_tree):
 
                 geneDiversity_file.write('%s\t%s\n'%(clusterID,'0.0'))
             else: # align and build tree
-                print gene_cluster_nu_filename
+                #print gene_cluster_nu_filename
                 myTree = mpm_tree(gene_cluster_nu_filename)
                 myTree.codon_align()
                 myTree.translate()

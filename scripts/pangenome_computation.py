@@ -128,7 +128,7 @@ class pangenome:
 
     def extract_gbk_metadata(self):
         """ extract metainfo (collection date, country, etc.) from GenBank file """
-        extract_metadata(self.path, self.strain_list, self.folders_dict, self.gbk_present, self.metainfo_organism)
+        extract_metadata(self.path, self.strain_list, self.folders_dict, self.gbk_present)
 
     def clustering_protein_sequences(self):
         """ clustering protein sequences"""
@@ -147,8 +147,8 @@ class pangenome:
         """ applying divide and conquer algorithm to speed up all-against-all protein alignment """
         clustering_divide_conquer(self.path, self.folders_dict, self.threads,
              self.diamond_evalue, self.diamond_max_target_seqs,
-            self.diamond_identity, self.diamond_query_cover,
-            self.diamond_subject_cover, self.mcl_inflation, self.diamond_path, self.diamond_dc_subset_size)
+            self.diamond_identity_subproblem, self.diamond_query_cover_subproblem,
+            self.diamond_subject_cover_subproblem, self.mcl_inflation, self.diamond_path, self.diamond_dc_subset_size)
 
     def RNA_clustering(self):
         """clustering RNA sequences """
@@ -209,8 +209,9 @@ class pangenome:
         process_gain_loss(self.path, self.merged_gain_loss_output)
 
     def inferAssociations(self):
-        from sf_association import infer_branch_associations
+        from sf_association import infer_branch_associations, infer_presence_absence_associations
         infer_branch_associations(self.path)
+        infer_presence_absence_associations(self.path)
         # TODO: gain loss associations
 
     def export_geneCluster_json(self):

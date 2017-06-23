@@ -69,7 +69,7 @@ In folder `./data/TestSet/geneCluster/:`<br />
 SNP_whole_matrix.aln<br />
 - Output:<br />
 In folder `./data/TestSet/geneCluster/:`<br />
-tree_result.newick<br />
+strain_tree.nwk<br />
 
 **Step09: infer gene gain and loss event**<br />
 Use ancestral reconstruction algorithm (treetime) to infer gain and loss events<br />
@@ -91,7 +91,7 @@ Export json files for strain tree and metadata visualization<br />
 In folder `./data/TestSet/:`<br />
 metainfo.tsv (metadata table)<br />
 In folder `./data/TestSet/geneCluster/:`<br />
-tree_result.newick (strain tree)<br />
+strain_tree.nwk (strain tree)<br />
 - Output:<br />
 In folder `./data/TestSet/geneCluster/`<br />
 coreGenomeTree.json (strain tree visualization)<br />

@@ -150,8 +150,9 @@ def polytomies_midpointRooting(infileName, outfileName, clusterID):
     try:
         tree.set_outgroup( tree.get_midpoint_outgroup() )
     except:
-        print clusterID, ' can not conduct midpoint rooting'
-    tree.ladderize()#print 'ladderized'
+        pass
+        #print clusterID, ' can not conduct midpoint rooting'
+    tree.ladderize()
 
     ## adding the missing node.name
     #for ind, node in enumerate(tree.traverse("postorder")):
@@ -365,7 +366,6 @@ class mpm_tree(object):
             tmp_seq = Seq(str(Seq(str_seq.replace('---', 'NNN')).translate(table="Bacterial")).replace('X','-'))
         except:
             tmp_seq = Seq(str(Seq(str_seq.replace('-', 'N')).translate(table="Bacterial")).replace('X','-'))
-            print("Trouble translating", self.clusterID)#print("Trouble translating",seq)
         return tmp_seq
 
     def translate(self):
@@ -538,7 +538,7 @@ def align_and_makeTree( fna_file_list, alignFile_path, simple_tree):
 
                 geneDiversity_file.write('%s\t%s\n'%(clusterID,'0.0'))
             else: # align and build tree
-                print gene_cluster_nu_filename
+                #print gene_cluster_nu_filename
                 myTree = mpm_tree(gene_cluster_nu_filename)
                 myTree.codon_align()
                 myTree.translate()
@@ -658,7 +658,7 @@ def find_best_split(tree):
             child.para_nodes = set.intersection(child.not_leafs, child.leafs)
             ## calcuate split branch length
             ## if the parent of the best split is the root, the branch_length is the sum of the two children of the root.
-            child.split_bl = child.branch_length+ [c.branch_length for c in node if c!=child][0] if node==tree.root else 0
+            child.split_bl = child.branch_length+ ([c.branch_length for c in node if c!=child][0] if node==tree.root else 0)
             more_para_nodes = len(child.para_nodes)>best_split[1]
             longer_branch  = len(child.para_nodes)==best_split[1] and child.split_bl>best_split[2]
             if more_para_nodes or longer_branch:

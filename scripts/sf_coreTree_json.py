@@ -164,7 +164,7 @@ def process_metajson(path, meta_tidy_fpath, metajson_dict):
             next(meta_tidy_file)
             ## meta_category data_type display
             for iline in meta_tidy_file:
-                meta_category, data_type, display= iline.rstrip().split('\t')
+                meta_category, data_type, display= iline.rstrip().split('\t')[:3]
                 meta_display_order.append(meta_category)
                 meta_display_choice_dt[meta_category]=(data_type, display)
         metajson_exp['meta_display_order']=meta_display_order
@@ -215,6 +215,11 @@ def process_metajson(path, meta_tidy_fpath, metajson_dict):
                 print metatype, ': undefined coloring type is now set to %s.'%coloring_type
 
     with open(''.join([path,'metaConfiguration.js']),'wb') as meta_js_out:
+        if len(metajson_dict['organism'])<=1:
+            del metajson_dict['organism']
+            if 'organism' in metajson_exp['meta_display_order']:
+                metajson_exp['meta_display_order'].remove('organism')
+                del metajson_exp['color_options']['organism']
         meta_js_out.write('var meta_details=')
         meta_js_out.write('%s'%json.dumps(metajson_dict))
         meta_js_out.write(', meta_display=')
@@ -223,7 +228,7 @@ def process_metajson(path, meta_tidy_fpath, metajson_dict):
 def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
                  meta_tidy_fpath, clean_temporary_files ):
     """ create json files for web-visualiaztion
-        input: tree_result.newick, metainfo.tsv
+        input: strain_tree.nwk, metainfo.tsv
         output: json files for core gene SNP tree and strain metadata table
     """
     metaFile= '%s%s'%(path,'metainfo.tsv')
@@ -236,7 +241,7 @@ def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
     output_path= folders_dict['cluster_seq_path']
     vis_json_path= folders_dict['vis_json_path']
     vis_cluster_path=  folders_dict['vis_cluster_path']
-    tree = Tree(output_path+'tree_result.newick',format=1)
+    tree = Tree(output_path+'strain_tree.nwk',format=1)
     strain_list=[node.name for node in tree.traverse("preorder")]
 
     ## create strain tree json file
@@ -257,7 +262,7 @@ def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
     os.chdir(output_path)
     os.system('mv coreGenomeTree.json strainMetainfo.json '+main_data_path+'metaConfiguration.js '+vis_json_path)
     os.system('mv *C*_aln*.fa *C*_tree.json *C*.nwk '+vis_cluster_path)
-    os.system('cp tree_result.newick '+vis_json_path+'/strain_tree.nwk')
+    os.system('cp strain_tree.nwk '+vis_json_path+'/strain_tree.nwk')
     os.system('mv *C*patterns.json '+vis_cluster_path)
     os.system('mv '+clustering_path+'allclusters_final.tsv'+' '+main_data_path)
 

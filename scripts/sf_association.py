@@ -248,7 +248,7 @@ def infer_presence_absence_associations(path):
     sorted_genelist = load_sorted_clusters(path)
     ## sorted_genelist: [(clusterID, [ count_strains,[memb1,...],count_genes]),...]
     # TODO fix vis
-    tree = Phylo.read("%s/vis/strain_tree.nwk"%(path), 'newick')
+    tree = Phylo.read("%sgeneCluster/strain_tree.nwk"%(path), 'newick')
     assoc = PresenceAbsenceAssociation(tree, metadata_dict)
     for clusterID, gene in sorted_genelist:
         if gene[-1]>10 and gene[-1]<600:

@@ -176,7 +176,7 @@ def clustering_protein(path, folders_dict, threads,
     1. Blastp output (user-provided) -> BS -> MCL
     2. Roary
     3. OrthoFinder
-    4. other coming tools.
+    4. Other tools.
     params:
         path:                    path to directory including data and output
         threads:                 number of parallel threads used to run diamond
@@ -184,8 +184,8 @@ def clustering_protein(path, folders_dict, threads,
                                  comparison and other clusterings methods
         roary_fpath: gene clusters by roary
         diamond_max_target_seqs: Diamond setting: the maximum number of target sequences
-                                  per query to keep alignments for. Defalut:
-                                  #strain * #max_duplication= 40*15= 600
+                                  per query to keep alignments for. Defalut:600
+                                  #strain * #max_duplication= 50*10= 500
     '''
     threads=str(threads)
     protein_path= folders_dict['protein_path']

@@ -147,8 +147,8 @@ class pangenome:
         """ applying divide and conquer algorithm to speed up all-against-all protein alignment """
         clustering_divide_conquer(self.path, self.folders_dict, self.threads,
              self.diamond_evalue, self.diamond_max_target_seqs,
-            self.diamond_identity, self.diamond_query_cover,
-            self.diamond_subject_cover, self.mcl_inflation, self.diamond_path, self.diamond_dc_subset_size)
+            self.diamond_identity_subproblem, self.diamond_query_cover_subproblem,
+            self.diamond_subject_cover_subproblem, self.mcl_inflation, self.diamond_path, self.diamond_dc_subset_size)
 
     def RNA_clustering(self):
         """clustering RNA sequences """

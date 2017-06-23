@@ -24,7 +24,7 @@ def midpointRooting(infileName, outfileName):
 def aln_to_Newick(path, folders_dict, raxml_timelimit, raxml_path, threads):
     """ function: build core gene SNP tree using SNP alignment
         input: SNP_whole_matrix.aln
-        output: tree_result.newick
+        output: strain_tree.nwk
     """
     cluster_seq_path=folders_dict['cluster_seq_path']
     output_path = '_'.join([cluster_seq_path+'temp_coretree', time.strftime('%Y%m%d-%H%M%S',time.gmtime()), str(random.randint(0,1000000))])
@@ -72,8 +72,8 @@ def aln_to_Newick(path, folders_dict, raxml_timelimit, raxml_path, threads):
     shutil.copy('RAxML_result.branches', out_fname)
 
     print ' raxml time-cost:', times(start)
-    midpointRooting(out_fname,'tree_result.newick')
-    shutil.copy('tree_result.newick', cluster_seq_path+'tree_result.newick')
+    midpointRooting(out_fname,'strain_tree.nwk')
+    shutil.copy('strain_tree.nwk', cluster_seq_path+'strain_tree.nwk')
     os.chdir(cwd)
     os.system('rm -r %s'%output_path)
 

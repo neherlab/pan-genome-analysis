@@ -228,7 +228,7 @@ def process_metajson(path, meta_tidy_fpath, metajson_dict):
 def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
                  meta_tidy_fpath, clean_temporary_files ):
     """ create json files for web-visualiaztion
-        input: tree_result.newick, metainfo.tsv
+        input: strain_tree.nwk, metainfo.tsv
         output: json files for core gene SNP tree and strain metadata table
     """
     metaFile= '%s%s'%(path,'metainfo.tsv')
@@ -241,7 +241,7 @@ def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
     output_path= folders_dict['cluster_seq_path']
     vis_json_path= folders_dict['vis_json_path']
     vis_cluster_path=  folders_dict['vis_cluster_path']
-    tree = Tree(output_path+'tree_result.newick',format=1)
+    tree = Tree(output_path+'strain_tree.nwk',format=1)
     strain_list=[node.name for node in tree.traverse("preorder")]
 
     ## create strain tree json file
@@ -262,7 +262,7 @@ def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
     os.chdir(output_path)
     os.system('mv coreGenomeTree.json strainMetainfo.json '+main_data_path+'metaConfiguration.js '+vis_json_path)
     os.system('mv *C*_aln*.fa *C*_tree.json *C*.nwk '+vis_cluster_path)
-    os.system('cp tree_result.newick '+vis_json_path+'/strain_tree.nwk')
+    os.system('cp strain_tree.nwk '+vis_json_path+'/strain_tree.nwk')
     os.system('mv *C*patterns.json '+vis_cluster_path)
     os.system('mv '+clustering_path+'allclusters_final.tsv'+' '+main_data_path)
 

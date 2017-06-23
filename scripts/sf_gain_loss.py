@@ -25,7 +25,7 @@ def infer_gene_gain_loss(path, rates = [1.0, 1.0]):
     sep='/'
     fasta = sep.join([path.rstrip(sep), 'geneCluster', 'genePresence.aln'])
     # strain tree based on core gene SNPs
-    nwk =  sep.join([path.rstrip(sep), 'geneCluster', 'tree_result.newick'])
+    nwk =  sep.join([path.rstrip(sep), 'geneCluster', 'strain_tree.nwk'])
 
     # instantiate treetime with custom GTR
     t = ta.TreeAnc(nwk, gtr =gain_loss_model, verbose=2)
@@ -52,7 +52,7 @@ def export_gain_loss(tree, path, merged_gain_loss_output):
     events_dict_path= sep.join([ output_path, 'dt_geneEvents.cpk'])
     gene_pattern_dict_path= sep.join([ output_path, 'dt_genePattern.cpk'])
 
-    tree_fname = sep.join([output_path, 'tree_result.newick'])
+    tree_fname = sep.join([output_path, 'strain_tree.nwk'])
     Phylo.write(tree.tree, tree_fname, 'newick')
 
 

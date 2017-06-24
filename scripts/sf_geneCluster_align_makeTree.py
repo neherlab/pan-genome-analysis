@@ -177,7 +177,7 @@ class mpm_tree(object):
         if 'run_dir' not in kwarks:
             import random
             #self.run_dir = '_'.join(['tmp', self.clusterID])
-            self.run_dir = '_'.join([folderID, 'temp', time.strftime('%H%M%S',time.gmtime()), str(random.randint(0,100000000))])
+            self.run_dir = '_'.join([folderID, 'tmp', time.strftime('%H%M%S',time.gmtime()), str(random.randint(0,100000000))])
         else:
             self.run_dir = kwarks['run_dir']
         self.nuc=True

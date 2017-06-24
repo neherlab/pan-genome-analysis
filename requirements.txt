@@ -1,0 +1,5 @@
+biopython==1.66
+numpy==1.10.4
+scipy==0.16.1
+pandas==0.16.2
+ete2==2.3.10

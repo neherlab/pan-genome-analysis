@@ -102,14 +102,14 @@ def check_dependency(program):
     fpath, fname = os.path.split(program)
     if fpath:
         if is_exe(program):
-            print program+': OK'
+            #print program+': OK'
             return True
     else:
         for path in os.environ["PATH"].split(os.pathsep):
             path = path.strip('"')
             exe_file = os.path.join(path, program)
             if is_exe(exe_file):
-                print program+': OK ('+exe_file+')'
+                #print program+': OK ('+exe_file+')'
                 return True
     return False
 

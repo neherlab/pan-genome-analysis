@@ -1,0 +1,17 @@
+meta_category	data_type	display	associate	log_scale
+Serotype	discrete	yes	no	no
+longitude	discrete	no	no	no
+latitude	discrete	no	no	no
+Sequence Cluster	discrete	yes	no	no
+Sequence Cluster__colour	discrete	no	no	no
+Sequence Type	discrete	yes	no	no
+Year of Isolation__shape	continuous	no	no	no
+Year of Isolation	continuous	yes	no	no
+Community of Isolation	discrete	yes	no	no
+Host Age (months)	discrete	yes	no	no
+Ceftriaxone MIC (ug/mL)	mixed_continuous	yes	yes	yes
+Tetracycline MIC (ug/mL)	mixed_continuous	yes	yes	yes
+Erythromycin MIC (ug/mL)	mixed_continuous	yes	yes	yes
+Trimethoprim MIC (ug/mL)	mixed_continuous	yes	yes	yes
+Chloramphenicol MIC (ug/mL)	mixed_continuous	yes	yes	yes
+Benzylpenicillin MIC (ug/mL)	mixed_continuous	yes	yes	yes

@@ -3,9 +3,6 @@ Serotype	discrete	yes	no	no
 longitude	discrete	no	no	no
 latitude	discrete	no	no	no
 Sequence Cluster	discrete	yes	no	no
-Sequence Cluster__colour	discrete	no	no	no
-Sequence Type	discrete	yes	no	no
-Year of Isolation__shape	continuous	no	no	no
 Year of Isolation	continuous	yes	no	no
 Community of Isolation	discrete	yes	no	no
 Host Age (months)	discrete	yes	no	no

@@ -94,6 +94,25 @@ def load_strains(path, gbk_present, folders_dict):
         os.system(command_organize_aa_input)
     write_pickle('%s%s'%(path,'strain_list.cpk'), strain_list)
 
+def check_dependency(program):
+    import os
+    def is_exe(fpath):
+        return os.path.isfile(fpath) and os.access(fpath, os.X_OK)
+
+    fpath, fname = os.path.split(program)
+    if fpath:
+        if is_exe(program):
+            print program+': OK'
+            return True
+    else:
+        for path in os.environ["PATH"].split(os.pathsep):
+            path = path.strip('"')
+            exe_file = os.path.join(path, program)
+            if is_exe(exe_file):
+                print program+': OK ('+exe_file+')'
+                return True
+    return False
+
 def build_sublist_multithread(threads, full_list, pad_val=None):
     """ divide a list into sub_list for multi-threading """
     #return izip_longest(*[iter(full_list)]*threads, fillvalue=pad_val)

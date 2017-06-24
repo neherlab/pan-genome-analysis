@@ -203,11 +203,19 @@ from sf_miscellaneous import check_dependency
 programs={'mcl':'mcl', 'mafft':'mafft', 'fasttree':'FastTree', 'raxml':'raxmlHPC'}
 for program_alias, program_name in programs.items():
     passed=False
-    for program in program_alias, program_name:
-        if check_dependency(program):
-            passed=True
+    ## check whether program_alias exists (if yes, test passed)
+    if check_dependency(program_alias):
+        continue
+    ## If program_alias does not exist, check whether origin program_name exists
+    ## Yes: create alias; No: warn and exit
+    program_path=check_dependency(program_name)
+    if program_path:
+        create_alias='echo "'+"alias "+program_alias+"='"+program_path+"'"+'"'+' >> ~/.bashrc;'
+        source_bashrc='source ~/.bashrc'
+        os.system(create_alias+source_bashrc)
+        continue
     if not passed:
-        print 'program '+program+' not found, please install it.'
+        print 'program '+program_name+' not found, please install it.'
         exit()
 
 if 1 in params.steps:#step 01:

@@ -103,15 +103,15 @@ def check_dependency(program):
     if fpath:
         if is_exe(program):
             #print program+': OK'
-            return True
+            return program
     else:
         for path in os.environ["PATH"].split(os.pathsep):
             path = path.strip('"')
             exe_file = os.path.join(path, program)
             if is_exe(exe_file):
                 #print program+': OK ('+exe_file+')'
-                return True
-    return False
+                return exe_file
+    return None
 
 def build_sublist_multithread(threads, full_list, pad_val=None):
     """ divide a list into sub_list for multi-threading """

@@ -199,6 +199,17 @@ myPangenome=pangenome(
     clean_temporary_files=params.clean_temporary_files
     )
 
+from sf_miscellaneous import check_dependency
+programs={'mcl':'mcl', 'mafft':'mafft', 'fasttree':'FastTree', 'raxml':'raxmlHPC'}
+for program_alias, program_name in programs.items():
+    passed=False
+    for program in program_alias, program_name:
+        if check_dependency(program):
+            passed=True
+    if not passed:
+        print 'program '+program+' not found, please install it.'
+        exit()
+
 if 1 in params.steps:#step 01:
     myPangenome.make_strain_list()
     print '======  step01: strain list successfully loaded'

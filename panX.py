@@ -210,8 +210,8 @@ for program_alias, program_name in programs.items():
     ## Yes: create alias; No: warn and exit
     program_path=check_dependency(program_name)
     if program_path:
-        create_alias='echo "'+"alias "+program_alias+"='"+program_path+"'"+'"'+' >> ~/.bashrc;'
-        source_bashrc='source ~/.bashrc'
+        create_alias='echo "'+"alias "+program_alias+"='"+program_path+"'"+'"'+' >> ~/.bashrc; '
+        source_bashrc='. ~/.bashrc'
         os.system(create_alias+source_bashrc)
         continue
     if not passed:

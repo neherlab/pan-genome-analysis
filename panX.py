@@ -149,7 +149,26 @@ if params.steps[0]=='all':
     params.steps=range(1,12)
 
 print 'Running panX in main folder: %s'%path
-#species=params.species_name TODO
+#species=params.species_name
+
+from sf_miscellaneous import check_dependency
+programs={'mcl':'mcl', 'mafft':'mafft', 'fasttree':'FastTree', 'raxml':'raxmlHPC'}
+for program_alias, program_name in programs.items():
+    passed=False
+    ## check whether program_alias exists (if yes, test passed)
+    if check_dependency(program_alias):
+        continue
+    ## If program_alias does not exist, check whether origin program_name exists
+    ## Yes: link the path; No: warn and exit
+    program_path=check_dependency(program_name)
+    if program_path:
+        #print program_alias, program_name
+        raxml_name='raxmlHPC'
+        fasttree_name='FastTree'
+        continue
+    if not passed:
+        print 'program '+program_name+' not found, please install it.'
+        exit()
 
 myPangenome=pangenome(
     path=path,
@@ -194,29 +213,12 @@ myPangenome=pangenome(
     store_locus_tag=params.store_locus_tag,
     raw_locus_tag=params.raw_locus_tag,
     meta_tidy_fpath=params.meta_tidy_fpath,
-    raxml_path=params.raxml_path,
+    #raxml_path=params.raxml_path,
+    raxml_name=raxml_name,
+    fasttree_name=fasttree_name,
     optional_table_column=params.optional_table_column,
     clean_temporary_files=params.clean_temporary_files
     )
-
-from sf_miscellaneous import check_dependency
-programs={'mcl':'mcl', 'mafft':'mafft', 'fasttree':'FastTree', 'raxml':'raxmlHPC'}
-for program_alias, program_name in programs.items():
-    passed=False
-    ## check whether program_alias exists (if yes, test passed)
-    if check_dependency(program_alias):
-        continue
-    ## If program_alias does not exist, check whether origin program_name exists
-    ## Yes: create alias; No: warn and exit
-    program_path=check_dependency(program_name)
-    if program_path:
-        create_alias='echo "'+"alias "+program_alias+"='"+program_path+"'"+'"'+' >> ~/.bashrc; '
-        source_bashrc='. ~/.bashrc'
-        os.system(create_alias+source_bashrc)
-        continue
-    if not passed:
-        print 'program '+program_name+' not found, please install it.'
-        exit()
 
 if 1 in params.steps:#step 01:
     myPangenome.make_strain_list()

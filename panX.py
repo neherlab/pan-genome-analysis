@@ -4,7 +4,8 @@ import os, sys, time
 panX_script_dir= os.path.dirname(os.path.realpath(__file__))
 sys.path.insert(0,panX_script_dir+'/scripts/')
 from pangenome_computation import pangenome
-from sf_miscellaneous import times
+from sf_miscellaneous import times, check_dependency
+
 '''
 panX clusters genes from a set of microbial genomes into orthologous clusters
 and exports alignments, phylogenies, and meta data for interactive web visualization
@@ -151,21 +152,16 @@ if params.steps[0]=='all':
 print 'Running panX in main folder: %s'%path
 #species=params.species_name
 
-from sf_miscellaneous import check_dependency
 programs={'mcl':'mcl', 'mafft':'mafft', 'fasttree':'FastTree', 'raxml':'raxmlHPC'}
 for program_alias, program_name in programs.items():
     passed=False
     ## check whether program_alias exists (if yes, test passed)
     if check_dependency(program_alias):
         continue
-    ## If program_alias does not exist, check whether origin program_name exists
-    ## Yes: link the path; No: warn and exit
-    program_path=check_dependency(program_name)
-    if program_path:
-        #print program_alias, program_name
-        raxml_name='raxmlHPC'
-        fasttree_name='FastTree'
+    ## if program_alias does not exist, check whether origin program_name exists
+    if check_dependency(program_name):
         continue
+    ## if the program is not installed, exit
     if not passed:
         print 'program '+program_name+' not found, please install it.'
         exit()
@@ -213,9 +209,7 @@ myPangenome=pangenome(
     store_locus_tag=params.store_locus_tag,
     raw_locus_tag=params.raw_locus_tag,
     meta_tidy_fpath=params.meta_tidy_fpath,
-    #raxml_path=params.raxml_path,
-    raxml_name=raxml_name,
-    fasttree_name=fasttree_name,
+    raxml_path=params.raxml_path,
     optional_table_column=params.optional_table_column,
     clean_temporary_files=params.clean_temporary_files
     )

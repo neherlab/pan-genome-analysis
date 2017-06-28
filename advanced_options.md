@@ -1,3 +1,19 @@
+## Table of contents
+  * [Mandatory parameters](#mandatory-parameters)
+  * [Specify steps and threads](#specify-steps-and-threads)
+  * [Clustering](#clustering)
+    + [Parameters used to run Diamond](#parameters-used-to-run-diamond)
+    + [Running diamond with divide-and-conquer algorithm for large dataset](#running-diamond-with-divide-and-conquer-algorithm-for-large-dataset)
+    + [Other clustering parameters](#other-clustering-parameters)
+  * [Cluster post-processing](#cluster-post-processing)
+    + [Split long branches](#split-long-branches)
+    + [Split paralogy](#split-paralogy)
+    + [Resolve unclustered genes](#resolve-unclustered-genes)
+  * [Metadata processing](#metadata-processing)
+  * [Core genome cutoff](#core-genome-cutoff)
+  * [Association inference](#association-inference)
+  * [Other options](#other-options)
+
 ```
 Usage example: ./panX -fn data/TestSet -sl TestSet-RefSeq.txt 1>TestSet.log 2>TestSet.err
 For help: ./panX -h
@@ -34,7 +50,7 @@ For other tools, panX expects a tab-separated values (TSV) file containing each 
 
     the absolute path of result from other orthology inference tool  (e.g.: /path/other_tool.out)
 
-##### Parameters used to run Diamond
+##### Parameters used to run diamond
 [DIAMOND](https://github.com/bbuchfink/diamond) [(Buchfink et al. 2015 Nature Methods)] (http://www.nature.com/nmeth/journal/v12/n1/full/nmeth.3176.html)
 
   - -dmp --diamond_path
@@ -58,7 +74,7 @@ For other tools, panX expects a tab-separated values (TSV) file containing each 
 
     subject sequence coverage threshold to report an alignment
 
-##### Running diamond alignment with divide-and-conquer(DC) algorithm for large dataset
+##### Running diamond with divide-and-conquer algorithm for large dataset
   - -dmdc --diamond_divide_conquer
 
     using divide-and-conquer(DC) algorithm
@@ -80,23 +96,24 @@ panX can also use a matrix of all-against-all blast hits to generate clusters wi
 
     the absolute path for blast result (e.g.: /path/blast.out)
 
-##### MCL parameter
+##### Other clustering parameters
+MCL parameter
   - -imcl --mcl_inflation (default:1.5)
 
-    inflation parameter (this parameter affects granularity)
+  inflation parameter (this parameter affects granularity)
 
-#### Metadata processing
-  panX parses metadata from GenBank file by default.
-  To link customized metadata to the strains, a TSV table needs to be provided. [(example)](https://github.com/neherlab/pan-genome-analysis/blob/master/metadata/metainfo.tsv)
-  This will only use the meta-information given by user.
-  - -mi --metainfo_fpath
+RNA clustering
+  - -rna --enable_RNA_clustering cluster rRNAs
 
-    the absolute path for meta_information file (e.g.: /path/meta.out)
+Running Blastn on RNAs
+  - -bmt --blastn_RNA_max_target_seqs (default:100)
 
-For metadata such as drug concentration measurements, which user might want to have the branch and presence/absence association to be visualized, an extra TSV table is required to specify what metadata types are used for above-mentioned association inference. [(example)](https://github.com/neherlab/pan-genome-analysis/blob/master/metadata/meta_config.tsv)
-  - -mtf --meta_tidy_fpath
+    the maximum number of target sequences per query; estimation: #strain * #max_duplication
 
-    the absolute path for pre-defined metadata structure (discrete/continuous data type, etc.)
+Disable postprocessing
+ - -np --disable_cluster_postprocessing
+
+    Not apply postprocessing
 
 #### Cluster post-processing
 ##### Split long branches
@@ -126,7 +143,9 @@ Alternatively, paralog branch_cutoff can be specified with the argument -pbc ins
 
     branch_length cutoff for paralogy splitting provided by user
 
-##### Resolve unclustered genes (shown as peaks in gene length distribution)
+##### Resolve unclustered genes
+  (peaks in gene length distribution)
+
   From our experience, there can be sometimes a small number of unclustered genes, despite of their sequence similarity.
   panX spots those sequences by inspecting the peaks in the gene length distribution (average length of genes from each cluster), statistically speaking, by comparing the length distribution to smoothed length distribution.
 
@@ -147,19 +166,18 @@ Alternatively, paralog branch_cutoff can be specified with the argument -pbc ins
   For each peak, all genes in these clusters are aligned, with corresponding phylogeny being inferred.
   Sub-clusters are then split using long branch splitting principle as described above.
 
-Disable postprocessing
- - -np --disable_cluster_postprocessing
+#### Metadata processing
+  panX parses metadata from GenBank file by default.
+  To link customized metadata to the strains, a TSV table needs to be provided. [(example)](https://github.com/neherlab/pan-genome-analysis/blob/master/metadata/metainfo.tsv)
+  This will only use the meta-information given by user.
+  - -mi --metainfo_fpath
 
-    Not apply postprocessing
+    the absolute path for meta_information file (e.g.: /path/meta.out)
 
-RNA clustering
-  - -rna --enable_RNA_clustering cluster rRNAs
+For metadata such as drug concentration measurements, which user might want to have the branch and presence/absence association to be visualized, an extra TSV table is required to specify what metadata types are used for above-mentioned association inference. [(example)](https://github.com/neherlab/pan-genome-analysis/blob/master/metadata/meta_config.tsv)
+  - -mtf --meta_tidy_fpath
 
-Running Blastn on RNAs
-  - -bmt --blastn_RNA_max_target_seqs (default:100)
-
-    the maximum number of target sequences per query; estimation: #strain * #max_duplication
-
+    the absolute path for pre-defined metadata structure (discrete/continuous data type, etc.)
 
 #### Core genome cutoff
   Core genome can be defined either as **strictly core** or **soft core**.

@@ -1,5 +1,5 @@
 import os, sys, time, random, glob, subprocess, shutil
-from sf_miscellaneous import times
+from sf_miscellaneous import times, check_dependency
 from ete2 import Tree
 from sf_geneCluster_align_makeTree import mpm_tree
 
@@ -36,7 +36,8 @@ def aln_to_Newick(path, folders_dict, raxml_timelimit, raxml_path, threads):
     ## run fasttree
     start = time.time();
 
-    os.system('fasttree -gtr -nt -gamma -nosupport -mlacc 2 -slownni '+SNP_matrix_path+' > initial_tree.newick0') ;
+    fasttree_program= 'fasttree' if check_dependency('fasttree') else 'FastTree'
+    os.system(fasttree_program+' -gtr -nt -gamma -nosupport -mlacc 2 -slownni '+SNP_matrix_path+' > initial_tree.newick0') ;
     print ' fasttree time-cost:', times(start)
 
     resolve_polytomies('initial_tree.newick0','initial_tree.newick')
@@ -48,7 +49,8 @@ def aln_to_Newick(path, folders_dict, raxml_timelimit, raxml_path, threads):
         print '%s%d%s'%('RAxML tree optimization within the timelimit of ',raxml_timelimit, ' minutes')
         # exec for killing process
         end_time = time.time() + int(raxml_timelimit*60) #
-        raxml_program= 'raxml' if raxml_path=='' else raxml_path
+
+        raxml_program= 'raxml' if check_dependency('raxml') else 'raxmlHPC'
         process = subprocess.Popen('exec '+raxml_program+' -f d -T '+str(threads)+' -j -s '+SNP_matrix_path+' -n topology -c 25 -m GTRCAT -p 344312987 -t initial_tree.newick', shell=True)
         while (time.time() < end_time):
             if os.path.isfile('RAxML_result.topology'):

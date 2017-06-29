@@ -111,7 +111,7 @@ def check_dependency(program):
             if is_exe(exe_file):
                 #print program+': OK ('+exe_file+')'
                 return exe_file
-    return None
+    return False
 
 def build_sublist_multithread(threads, full_list, pad_val=None):
     """ divide a list into sub_list for multi-threading """

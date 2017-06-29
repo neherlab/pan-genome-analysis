@@ -64,11 +64,11 @@ def single_RNACluster_align_and_makeTree(fa_files_list, alignFile_path, parallel
                 myTree.align()
 
                 if simple_tree==False:
-                    myTree.build(raxml=False,treetime_used=True)
+                    myTree.build(raxml=False,fasttree_program=fasttree_program,treetime_used=True)
                     myTree.ancestral(translate_tree=True)
                     myTree.refine()
                 else:
-                    myTree.build(raxml=False,treetime_used=False)
+                    myTree.build(raxml=False,fasttree_program=fasttree_program,treetime_used=False)
                 myTree.diversity_statistics_nuc()
                 myTree.export(path=alignFile_path, RNA_specific=True)
 

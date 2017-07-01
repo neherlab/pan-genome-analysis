@@ -30,18 +30,8 @@ Install dependencies and then run the test:
 The results can be explored via our interactive [**pan-genome-visualization**](https://github.com/neherlab/pan-genome-visualization) application.
 
 ### Dependencies
-#### Conda
-The required software and python packages can be installed via Conda.
-How to download and set up Conda:
-```
-wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh
-bash Miniconda2-latest-Linux-x86_64.sh
-export PATH=~/miniconda2/bin:$PATH
-conda env create -f panX-environment.yml
-source activate panX
-```
-#### Manual
-Alternatively, installation can be done manually.
+#### Manual installation
+Install these dependencies:
   - Required software:
       `sudo apt-get install mcl mafft fasttree raxml`
       * [DIAMOND](https://github.com/bbuchfink/diamond) (linux version already located in `./tools/diamond`)
@@ -54,6 +44,18 @@ Alternatively, installation can be done manually.
       - `pip install -r requirements.txt`
       - [treetime](http://github.com/neherlab/treetime):
       `git submodule update --init`
+
+#### Conda
+The required software and python packages can be installed via Conda.
+How to download and set up Conda:
+```
+wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh
+bash Miniconda2-latest-Linux-x86_64.sh
+export PATH=~/miniconda2/bin:$PATH
+conda env create -f panX-environment.yml
+source activate panX
+```
+
 
 ### How to run
 To run the test set: ` sh run-TestSet.sh `

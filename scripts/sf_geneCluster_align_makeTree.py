@@ -514,7 +514,7 @@ class mpm_tree(object):
 ################################################################################
 
 def align_and_makeTree( fna_file_list, alignFile_path, simple_tree):
-    fasttree_program= 'fasttree' if check_dependency('fasttree') else 'FastTree'
+    fasttree_name= 'fasttree' if check_dependency('fasttree') else 'FastTree'
     for gene_cluster_nu_filename in fna_file_list:
         try:
             # extract GC_00002 from path/GC_00002.aln
@@ -544,11 +544,11 @@ def align_and_makeTree( fna_file_list, alignFile_path, simple_tree):
                 myTree.codon_align()
                 myTree.translate()
                 if simple_tree==False:
-                    myTree.build(raxml=False,fasttree_program=fasttree_program,treetime_used=True)
+                    myTree.build(raxml=False,fasttree_program=fasttree_name,treetime_used=True)
                     myTree.ancestral(translate_tree=True)
                     myTree.refine()
                 else:
-                    myTree.build(raxml=False,fasttree_program=fasttree_program,treetime_used=False)
+                    myTree.build(raxml=False,fasttree_program=fasttree_name,treetime_used=False)
                 myTree.diversity_statistics_nuc()
                 myTree.export(path=alignFile_path)
                 #myTree.diversity_statistics_aa()

@@ -9,7 +9,7 @@ from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from Bio.Align import MultipleSeqAlignment
 from sf_miscellaneous import times, read_fasta, \
-    load_pickle, write_pickle, write_in_fa, write_json, multips
+    load_pickle, write_pickle, write_in_fa, write_json, check_dependency, multips
 
 sys.setrecursionlimit(50000)
 nuc_alpha = 'ACGT-N'
@@ -240,7 +240,7 @@ class mpm_tree(object):
         remove_dir(self.run_dir)
 
 
-    def build(self, root='midpoint', raxml=True, raxml_time_limit=0.5, treetime_used=True):
+    def build(self, root='midpoint', raxml=True, fasttree_program='fasttree', raxml_time_limit=0.5, treetime_used=True):
         '''
         build a phylogenetic tree using fasttree and raxML (optional)
         based on nextflu tree building pipeline
@@ -253,7 +253,7 @@ class mpm_tree(object):
         name_translation = make_strains_unique(self.aln)
         AlignIO.write(self.aln, 'temp.fasta', 'fasta')
 
-        tree_cmd = ["fasttree"]
+        tree_cmd = [fasttree_program]
         if self.nuc: tree_cmd.append("-nt")
         tree_cmd.append("temp.fasta 1> initial_tree.newick 2> fasttree.log")
         os.system(" ".join(tree_cmd))
@@ -514,6 +514,7 @@ class mpm_tree(object):
 ################################################################################
 
 def align_and_makeTree( fna_file_list, alignFile_path, simple_tree):
+    fasttree_program= 'fasttree' if check_dependency('fasttree') else 'FastTree'
     for gene_cluster_nu_filename in fna_file_list:
         try:
             # extract GC_00002 from path/GC_00002.aln
@@ -543,11 +544,11 @@ def align_and_makeTree( fna_file_list, alignFile_path, simple_tree):
                 myTree.codon_align()
                 myTree.translate()
                 if simple_tree==False:
-                    myTree.build(raxml=False,treetime_used=True)
+                    myTree.build(raxml=False,fasttree_program=fasttree_program,treetime_used=True)
                     myTree.ancestral(translate_tree=True)
                     myTree.refine()
                 else:
-                    myTree.build(raxml=False,treetime_used=False)
+                    myTree.build(raxml=False,fasttree_program=fasttree_program,treetime_used=False)
                 myTree.diversity_statistics_nuc()
                 myTree.export(path=alignFile_path)
                 #myTree.diversity_statistics_aa()

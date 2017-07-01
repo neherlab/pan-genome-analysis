@@ -7,7 +7,7 @@ from Bio.Align import MultipleSeqAlignment
 from sf_miscellaneous import times, read_fasta, write_in_fa, load_pickle, write_pickle,\
  write_json, multips
 from sf_geneCluster_align_makeTree import align_and_makeTree, update_geneCluster_cpk,\
- update_diversity_cpk, mpm_tree, load_sorted_clusters, write_final_cluster
+ update_diversity_cpk, mpm_tree, load_sorted_clusters#, write_final_cluster
 from sf_split_long_branch import update_geneCluster_dt, cut_tree_gather_clades, \
  output_cutted_clusters, quick_align_makeTree, cutTree_outputCluster
 
@@ -175,4 +175,4 @@ def postprocess_unclustered_genes(parallel, path, nstrains, simple_tree, split_l
         update_geneCluster_cpk(path,geneCluster_dt)
         ## write gene_diversity_Dt cpk file
         update_diversity_cpk(path)
-    write_final_cluster(path)
+    #write_final_cluster(path)

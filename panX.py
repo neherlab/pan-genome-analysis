@@ -223,25 +223,25 @@ if '2' in params.steps:# step02:
     print '======  starting step02: download NCBI RefSeq GenBank file from strain list'
     start = time.time()
     fetch_refseq(path, strain_list)
-    print '======  time for step02: download NCBI RefSeq GenBank file from strain list'
+    print '======  time for step02:'
     print times(start),'\n'
 
 if 3 in params.steps:# step03:
-    print '======  extract sequences from GenBank file'
+    print '======  starting step03: extract sequences from GenBank file'
     start = time.time()
     myPangenome.extract_gbk_sequences()
-    print '======  extract sequences from GenBank file'
+    print '======  time for step03:'
     print times(start),'\n'
 
 if 4 in params.steps:# step04:
-    print '======  extract metadata from GenBank file'
+    print '======  starting step04: extract metadata from GenBank file'
     start = time.time()
     myPangenome.extract_gbk_metadata()
-    print '======  extract metadata from GenBank file'
+    print '======  time for step04:'
     print times(start),'\n'
 
 if 5 in params.steps:# step05:
-    print '======  cluster proteins'
+    print '======  starting step05: cluster proteins'
     start = time.time()
     if params.diamond_divide_conquer:
         ## clustering with divide_and_conquer method for large dataset
@@ -254,7 +254,7 @@ if 5 in params.steps:# step05:
     ## clustering RNA when option activated
     if params.enable_RNA_clustering:
         myPangenome.RNA_clustering()
-    print '======  cluster proteins'
+    print '======  time for step05:'
     print times(start),'\n'
 
 if 6 in params.steps:# step06:
@@ -264,21 +264,21 @@ if 6 in params.steps:# step06:
 
     if params.enable_RNA_clustering:
         myPangenome.make_RNACluster_alignment_and_tree()
-    print '======  time for step06: align genes in geneCluster by mafft and build gene trees'
+    print '======  time for step06:'
     print times(start),'\n'
 
 if 7 in params.steps:# step07:
     print '======  starting step07: call SNPs from core genes'
     start = time.time()
     myPangenome.create_SNP_alignment()
-    print '======  time for step07: call SNPs from core genes'
+    print '======  time for step07:'
     print times(start),'\n'
 
 if 8 in params.steps:# step08:
     print '======  starting step08: run fasttree and raxml for tree construction'
     start = time.time()
     myPangenome.build_core_tree()
-    print '======  time for step08: run fasttree and raxml for tree construction'
+    print '======  time for step08:'
     print times(start),'\n'
 
 if 9 in params.steps:# step09:
@@ -290,21 +290,21 @@ if 9 in params.steps:# step09:
     if params.infer_branch_association:
         myPangenome.inferAssociations()
 
-    print '======  time for step09: infer presence/absence and gain/loss patterns of all genes'
+    print '======  time for step09:'
     print times(start),'\n'
 
 if 10 in params.steps:# step10:
     print '======  starting step10: create json file for geneDataTable visualization'
     start = time.time()
     myPangenome.export_geneCluster_json()
-    print '======  time for step10: create json file for geneDataTable visualization'
+    print '======  time for step10:'
     print times(start),'\n'
 
 if 11 in params.steps:# step11:
     print '======  starting step11: extract json files for tree and treeDataTable visualization,etc'
     start = time.time()
     myPangenome.export_coreTree_json()
-    print '======  time for step11: extract json files for tree and treeDataTable visualization,etc'
+    print '======  time for step11:'
     print times(start),'\n'
 
 if 12 in params.steps:# step12:
@@ -312,5 +312,4 @@ if 12 in params.steps:# step12:
     print '======  starting step12: create pan-genome'
     start = time.time()
     ete_tree_split(path, species)
-    print '======  time for step12: create pan-genome'
     print times(start),'\n'

@@ -8,6 +8,7 @@ from sf_cluster_protein import clustering_protein
 from sf_preclustering import preclustering_protein
 from sf_cluster_protein_divide_conquer import clustering_divide_conquer
 from sf_cluster_RNA import RNA_cluster
+from sf_geneCluster_align_makeTree import write_final_cluster
 from sf_RNAcluster_align_makeTree import RNAclusters_align_makeTree
 from sf_core_SNP_matrix import create_core_SNP_matrix
 from sf_core_tree_build import aln_to_Newick
@@ -179,8 +180,9 @@ class pangenome:
         myClusterCollector.make_geneCluster_alignment_and_tree()
         if not self.disable_cluster_postprocessing:
             myClusterCollector.postprocessing_split_long_branch()
-            myClusterCollector.postprocessing_split_paralogs()
             myClusterCollector.postprocess_merge_underclustered_genes()
+            myClusterCollector.postprocessing_split_paralogs()
+            write_final_cluster(self.path)
 
     def make_RNACluster_alignment_and_tree(self):
         """ aligning RNA clusters and building RNA tree """

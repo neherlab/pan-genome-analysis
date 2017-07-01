@@ -39,7 +39,8 @@ class pangenome:
             cluster_seq_path='geneCluster/',
             tmp_core_seq_path='tmp_core/',
             vis_json_path='vis/',
-            vis_cluster_path='vis/geneCluster/')
+            vis_cluster_path='vis/geneCluster/',
+            log_path='log/')
 
         # set up folder structure and files names
         self.organize_folders()

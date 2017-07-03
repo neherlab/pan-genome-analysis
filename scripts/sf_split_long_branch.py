@@ -290,7 +290,10 @@ def postprocess_split_long_branch(parallel, path, simple_tree, cut_branch_thresh
     if os.path.exists(''.join([file_path,'new_clusters_longSplit.txt'])):
         with open(file_path+'new_clusters_longSplit.txt', 'rb') as new_clusters_longSplit:
             new_fa_files_list=[ clus.rstrip() for clus in new_clusters_longSplit ]
-            print '# times of split'
+            print '#times of splitting long branches:',len(new_fa_files_list)-1
+        with open(file_path+'old_clusters_longSplit.txt', 'rb') as delete_cluster_file:
+            deleted_file_count=len([ clus for clus in delete_cluster_file ])
+            print '#clusters split during the checking of long branches:',deleted_file_count
 
         ## parallelization of "align and make tree on new cluster"
         multips(align_and_makeTree, parallel, new_fa_files_list, file_path, simple_tree)

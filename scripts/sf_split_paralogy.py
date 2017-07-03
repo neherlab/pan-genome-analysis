@@ -160,6 +160,11 @@ def postprocess_paralogs_iterative(parallel, path, nstrains, simple_tree,
     ## remove old gene cluster and create new split cluster
     update_geneCluster_cpk(path, geneCluster_dt)
 
+    if os.path.exists(''.join([geneClusters_fpath,'old_clusters_paralogSplit.txt'])):
+        with open(geneClusters_fpath+'old_clusters_paralogSplit.txt', 'r') as delete_cluster_file:
+            deleted_file_count=len([ clus for clus in delete_cluster_file ])
+            print '#clusters split during the checking paralogy:',deleted_file_count
+
 def postprocess_paralogs(parallel, path, nstrains, simple_tree, geneCluster_dt,
     new_fa_files_set,  paralog_branch_cutoff, paralog_frac_cutoff=0.3, plot=0):
     """

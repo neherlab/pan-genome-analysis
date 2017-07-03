@@ -98,7 +98,7 @@ def create_split_cluster_files(file_path, fname,
     ## split_gene_list has geneSeqID instead of geneID
     for split_gene_list in (list(gene_list1), list(gene_list2)):
         sgs_index+=1
-        newClusterId="%s_%s"%(clusterID,sgs_index)
+        newClusterId="%s_p%s"%(clusterID,sgs_index)
         gene_cluster_nu_filename="%s%s"%(newClusterId,'.fna')
         gene_cluster_aa_filename="%s%s"%(newClusterId,'.faa')
         gene_cluster_nu_write=open( file_path+gene_cluster_nu_filename, 'wb')

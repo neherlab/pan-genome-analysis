@@ -528,6 +528,7 @@ def align_and_makeTree( fna_file_list, alignFile_path, simple_tree):
                 with open(gene_cluster_nu_aln_filename,'wb') as write_file:
                     for SeqID, Sequence in read_fasta(gene_cluster_nu_filename).iteritems():
                         write_in_fa(write_file, SeqID.replace('|','-'), Sequence)
+                os.system( ' '.join(['cp',gene_cluster_nu_aln_filename,gene_cluster_nu_aln_filename.replace('_aln','_aln_reduced')]) )
 
                 ## aa_aln.fa
                 gene_cluster_aa_filename= gene_cluster_nu_filename.replace('.fna','.faa')
@@ -536,6 +537,7 @@ def align_and_makeTree( fna_file_list, alignFile_path, simple_tree):
                 with open(gene_cluster_aa_aln_filename,'wb') as write_file:
                     for SeqID, Sequence in read_fasta(gene_cluster_aa_filename).iteritems():
                         write_in_fa(write_file, SeqID.replace('|','-'), Sequence)
+                os.system( ' '.join(['cp',gene_cluster_aa_aln_filename,gene_cluster_aa_aln_filename.replace('_aln','_aln_reduced')]) )
 
                 geneDiversity_file.write('%s\t%s\n'%(clusterID,'0.0'))
             else: # align and build tree

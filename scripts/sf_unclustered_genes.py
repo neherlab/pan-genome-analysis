@@ -85,16 +85,25 @@ def delete_old_merged_clusters(file_path, geneCluster_dt, merged_clusters_dict):
     return:
         updated geneCluster_dt
     """
-
-    with open(file_path+'delete_misclusters.txt', 'rb') as delete_cluster_file:
+    cwd = os.getcwd()
+    os.chdir(file_path)
+    with open('old_clusters_longSplit.txt', 'rb') as delete_cluster_file:
         uncluster_filename_list= [ uncluster_filename.rstrip() for  uncluster_filename in delete_cluster_file]
         try:
             for uncluster_filename in uncluster_filename_list:
                 for cluster_needed_deletion in merged_clusters_dict[uncluster_filename]:
                     if cluster_needed_deletion in geneCluster_dt:
                         del geneCluster_dt[cluster_needed_deletion]
+                        if os.path.exists(uncluster_filename+'.nwk'):
+                            suffix_list=['_aa_aln.fa','_na_aln.fa','.fna','.faa','.nwk','_tree.json']
+                        else:
+                            suffix_list=['_aa_aln.fa','_na_aln.fa','.fna','.faa']
+                        tmp_files=' '.join([ cluster_needed_deletion+suffix for suffix in suffix_list])
+                        command_move_deleted_clusters=' '.join(['mv', tmp_files, './deleted_clusters_peaks_splits/'])
+                        os.system(command_move_deleted_clusters)
         except:
             print("can't delete"," mis-clusterd genes gathered in ",uncluster_filename)
+    os.chdir(cwd)
     return geneCluster_dt
 
 def cut_all_trees_from_merged_clusters(parallel, path, cut_branch_threshold, simple_tree):
@@ -109,10 +118,10 @@ def cut_all_trees_from_merged_clusters(parallel, path, cut_branch_threshold, sim
     multips(cutTree_outputCluster, parallel, merged_cluster_filelist, geneCluster_fasta_path,
         cut_branch_threshold, treefile_used=False)
 
-    ## gather new clusters from refined_clusters.txt
-    #if os.path.exists(''.join([geneCluster_fasta_path,'refined_clusters.txt'])):
-    with open(''.join([geneCluster_fasta_path,'refined_clusters.txt']),'rb') as refined_clusters:
-        new_fa_files_list=[ clus.rstrip() for clus in refined_clusters ]
+    ## gather new clusters from new_clusters_longSplit.txt
+    #if os.path.exists(''.join([geneCluster_fasta_path,'new_clusters_longSplit.txt'])):
+    with open(''.join([geneCluster_fasta_path,'new_clusters_longSplit.txt']),'rb') as new_clusters_longSplit:
+        new_fa_files_list=[ clus.rstrip() for clus in new_clusters_longSplit ]
 
     ## parallelization of "align and make tree on new cluster"
     multips(align_and_makeTree, parallel, new_fa_files_list, geneCluster_fasta_path, simple_tree)
@@ -137,11 +146,16 @@ def postprocess_unclustered_genes(parallel, path, nstrains, simple_tree, split_l
     """
 
     geneCluster_fasta_path = ''.join([path,'geneCluster/'])
-    new_split_folder= ''.join([geneCluster_fasta_path,'update_uncluster_splits/'])
+    new_split_folder= ''.join([geneCluster_fasta_path,'update_long_branch_splits/'])
     if os.path.exists(new_split_folder):
         ## remove the folder from previous run
         os.system(''.join(['rm -r ',new_split_folder]))
     os.system(''.join(['mkdir ',new_split_folder]))
+
+    deleted_clusters_folder=''.join([geneCluster_fasta_path,'deleted_clusters_peaks_splits/'])
+    if os.path.exists(deleted_clusters_folder):
+        os.system(''.join(['rm -r ',deleted_clusters_folder]))
+    os.system(''.join(['mkdir ',deleted_clusters_folder]))
 
     ## load clusters
     ClusterPath='%s%s'%(path,'protein_faa/diamond_matches/')
@@ -154,11 +168,11 @@ def postprocess_unclustered_genes(parallel, path, nstrains, simple_tree, split_l
     if len(merged_clusters_dict)!=0:
         ## there are merged clusters corresponding to the cluster peaks
 
-        ## ensure that writing to refined_clusters starts at the beginning (for re-running)
-        if os.path.exists(''.join([geneCluster_fasta_path,'refined_clusters.txt'])):
-            os.system(''.join(['rm ',geneCluster_fasta_path,'refined_clusters.txt']))
-        if os.path.exists(''.join([geneCluster_fasta_path,'delete_misclusters.txt'])):
-            os.system(''.join(['rm ',geneCluster_fasta_path,'delete_misclusters.txt']))
+        ## ensure that writing to new_clusters_longSplit starts at the beginning (for re-running)
+        if os.path.exists(''.join([geneCluster_fasta_path,'new_clusters_longSplit.txt'])):
+            os.system(''.join(['rm ',geneCluster_fasta_path,'new_clusters_longSplit.txt']))
+        if os.path.exists(''.join([geneCluster_fasta_path,'old_clusters_longSplit.txt'])):
+            os.system(''.join(['rm ',geneCluster_fasta_path,'old_clusters_longSplit.txt']))
 
         cut_branch_threshold=split_long_branch_cutoff#0.3
         ## cut tree and make new clusters

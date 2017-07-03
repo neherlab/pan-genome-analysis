@@ -31,7 +31,7 @@ def explore_paralogs(path, nstrains, paralog_branch_cutoff, paralog_frac_cutoff=
         try:
             tree = Phylo.read(fname, 'newick')
         except:
-            print 'abc ', fname
+            print '(explore_paralogs) read tree problem: ', fname
         best_split = find_best_split(tree)
         if best_split is not None:
             paralog_stat.append([fname, best_split.split_bl, len(best_split.para_nodes)])
@@ -69,21 +69,32 @@ def create_split_cluster_files(file_path, fname,
     origin_cluster_aa_fa = orgin_nwk_name.replace('nwk','faa')
 
     split_fa_files_set=set()
-    try:
-        print('deleting:',orgin_nwk_name)
-        ##debug:
-        ##print('deleting:',orgin_nwk_name,gene_list1,gene_list2, clusterID)
-        del geneCluster_dt[clusterID]
-    except:
-        print("can't delete",orgin_nwk_name)
-        ##debug:
-        ##print("can't delete",orgin_nwk_name,gene_list1,gene_list2, clusterID)
-
-    ## write new cluster fa files
+    ## load genes from old clusters
     origin_nu_fa_dt = read_fasta(file_path+origin_cluster_nu_fa)
     origin_aa_fa_dt = read_fasta(file_path+origin_cluster_aa_fa)
     sgs_index=0
 
+    ## delete old (split) clusters
+    try:
+        #print('deleting:',orgin_nwk_name)
+        ##debug:
+        ##print('deleting:',orgin_nwk_name,gene_list1,gene_list2, clusterID)
+        del geneCluster_dt[clusterID]
+        with open(file_path+'old_clusters_paralogSplit.txt', 'a') as delete_cluster_file:
+            delete_cluster_file.write('%s\n'%clusterID)
+        if os.path.exists(fname):
+            suffix_list=['_aa_aln.fa','_na_aln.fa','.fna','.faa','.nwk','_tree.json']
+        else:
+            suffix_list=['_aa_aln.fa','_na_aln.fa','.fna','.faa']
+        tmp_files=' '.join([ file_path+clusterID+suffix for suffix in suffix_list ])
+        command_move_deleted_clusters=' '.join(['mv', tmp_files, file_path+'paralog_splits/'])
+        os.system(command_move_deleted_clusters)
+    except:
+        print("paralog splitting: can't delete",orgin_nwk_name)
+        ##debug:
+        ##print("can't delete",orgin_nwk_name,gene_list1,gene_list2, clusterID)
+
+    ## write new cluster fa files
     ## split_gene_list has geneSeqID instead of geneID
     for split_gene_list in (list(gene_list1), list(gene_list2)):
         sgs_index+=1
@@ -103,7 +114,7 @@ def create_split_cluster_files(file_path, fname,
                 write_in_fa(gene_cluster_nu_write, gene_memb, origin_nu_fa_dt[gene_memb])
                 write_in_fa(gene_cluster_aa_write, gene_memb, origin_aa_fa_dt[gene_memb])
             except:
-                print 'debug (write new split cluster files)', fname #, gene_memb, gene_list1, gene_list2
+                print 'paralogy splitting (problem to write new split cluster files)', fname #, gene_memb, gene_list1, gene_list2
 
         gene_cluster_nu_write.close(); gene_cluster_aa_write.close();
 
@@ -120,7 +131,13 @@ def postprocess_paralogs_iterative(parallel, path, nstrains, simple_tree,
    	paralog_branch_cutoff, paralog_frac_cutoff=0.3, plot=0):
 
     cluster_path= path+'protein_faa/diamond_matches/'
+
     geneCluster_dt=load_pickle(cluster_path+'allclusters_postprocessed.cpk')
+    ## folder that contains old split clusters in paralog splitting step
+    geneClusters_fpath=path+'geneCluster/'
+    os.system('mkdir '+geneClusters_fpath+'paralog_splits/')
+    if os.path.exists(''.join([geneClusters_fpath,'old_clusters_paralogSplit.txt'])):
+        os.system(''.join(['rm ',geneClusters_fpath,'old_clusters_paralogSplit.txt']))
 
     split_result= postprocess_paralogs( parallel, path, nstrains, simple_tree,
                                             geneCluster_dt, set(),
@@ -129,7 +146,7 @@ def postprocess_paralogs_iterative(parallel, path, nstrains, simple_tree,
     n_split_clusters, new_fa_files_set = split_result
     iteration=0
     while(n_split_clusters):
-        print('---- split a total of ',n_split_clusters, 'in iteration', iteration)
+        print '---- split a total of ',n_split_clusters, 'in iteration', iteration
         split_result= postprocess_paralogs( parallel, path, nstrains, simple_tree,
                                                 geneCluster_dt, new_fa_files_set,
                                                 paralog_branch_cutoff=paralog_branch_cutoff,
@@ -160,10 +177,10 @@ def postprocess_paralogs(parallel, path, nstrains, simple_tree, geneCluster_dt,
         explore_paralogs(path, nstrains, paralog_branch_cutoff=paralog_branch_cutoff,
                          paralog_frac_cutoff=paralog_frac_cutoff, plot=plot)
 
-    file_path = path+'geneCluster/'
+    clusters_fpath = path+'geneCluster/'
 
     if len(new_fa_files_set)==0:
-        fname_list =glob.iglob(file_path+'*nwk')
+        fname_list =glob.iglob(clusters_fpath+'*nwk')
     else:
         fname_list = [ new_fa.replace('.fna','.nwk') for new_fa in new_fa_files_set if os.path.exists(new_fa.replace('.fna','.nwk')) ]
 
@@ -184,23 +201,23 @@ def postprocess_paralogs(parallel, path, nstrains, simple_tree, geneCluster_dt,
                                      #max_branch_length = paralog_branch_cutoff*mean_branch_length,
                                      max_paralogs = paralog_frac_cutoff*nstrains)
             if do_split:
-                print('will split:', fname,
-                    '#leaves:', tree.count_terminals(),
-                    '#best_split.para_nodes:',len(best_split.para_nodes),
-                    '#best_split.split_bl:', best_split.split_bl)
+                # print 'will split:', fname,' #leaves:', tree.count_terminals(),\
+                #     ' #best_split.para_nodes:',len(best_split.para_nodes),\
+                #     ' #best_split.split_bl:', best_split.split_bl
 
                 all_genes = set([n.name for n in tree.get_terminals()])
                 gene_list1 = set([n.name for n in best_split.get_terminals()])
                 gene_list2 = all_genes.difference(gene_list1)
                 #print all_genes, gene_list1, gene_list2
 
-                new_fa_files = create_split_cluster_files(file_path, fname, gene_list1, gene_list2, geneCluster_dt)
+                new_fa_files = create_split_cluster_files(clusters_fpath, fname, gene_list1, gene_list2, geneCluster_dt)
                 new_fa_files_set |= new_fa_files
                 n_split_clusters+=1
 
     fname_list_len=len(fname_list) if type(fname_list) is list else len(list(fname_list))
-    print '#new_split_fasta_files:', fname_list_len, time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()), [ new_fa.split('/')[-1] for new_fa in new_fa_files_set ]
+    #print '#new_split_fasta_files:', fname_list_len, time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime()), [ new_fa.split('/')[-1] for new_fa in new_fa_files_set ]
+
     ## make new aln and tree
     #mem_check('multips(align_and_')
-    multips(align_and_makeTree, parallel, list(new_fa_files_set), file_path, simple_tree)
+    multips(align_and_makeTree, parallel, list(new_fa_files_set), clusters_fpath, simple_tree)
     return n_split_clusters, new_fa_files_set

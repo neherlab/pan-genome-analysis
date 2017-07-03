@@ -14,7 +14,7 @@ def update_geneCluster_dt(path,geneCluster_dt):
     update_long_branch_splits=''.join([path,'geneCluster/update_long_branch_splits/'])
     for ifile in glob.iglob(update_long_branch_splits+'*.cpk'):
         for k,v in load_pickle(ifile).iteritems():
-            print('adding newly split clusters %s'%k)
+            #print('adding newly split clusters %s'%k)
             geneCluster_dt[k] = v
 
 def cut_tree_gather_clades(tree, cut_branch_threshold):
@@ -74,7 +74,7 @@ def cut_tree_gather_clades(tree, cut_branch_threshold):
 
 def delete_original_clusters(file_path, geneCluster_dt):
     """
-    Delete records in delete_misclusters.txt to update geneCluster_dt
+    Delete records in old_clusters_longSplit.txt to update geneCluster_dt
     Param:
     geneCluster_dt:
         a dict storing cluster statistics
@@ -83,14 +83,15 @@ def delete_original_clusters(file_path, geneCluster_dt):
     """
     cwd = os.getcwd()
     os.chdir(file_path)
-    with open('delete_misclusters.txt', 'rb') as delete_cluster_file:
+    with open('old_clusters_longSplit.txt', 'rb') as delete_cluster_file:
         uncluster_filename_list= [ uncluster_filename.split('.fna')[0] for  uncluster_filename in delete_cluster_file]
         #geneCluster_dt.keys()[0]
+        suffix_list=['_aa_aln.fa','_na_aln.fa','.fna','.faa','.nwk','_tree.json']
         for uncluster_filename in uncluster_filename_list:
             if uncluster_filename in geneCluster_dt:
                 del geneCluster_dt[uncluster_filename]
-                tmp_files=' '.join([ uncluster_filename+suffix for suffix in ['_aa_aln.fa','_na_aln.fa','.fna','.faa','.nwk','_tree.json']])
-                command_move_deleted_clusters=' '.join(['mv', tmp_files, './deleted_clusters/'])
+                tmp_files=' '.join([ uncluster_filename+suffix for suffix in suffix_list])
+                command_move_deleted_clusters=' '.join(['mv', tmp_files, './deleted_clusters_longSplit/'])
                 os.system(command_move_deleted_clusters)
     os.chdir(cwd)
     return geneCluster_dt
@@ -149,11 +150,12 @@ def output_cutted_clusters(file_path, uncluster_filename, gene_list, cut_branch_
             ## align the rest genes, build tree, cut long branches till nothing can be cutted.
             cutTree_outputCluster([gene_cluster_nu_filepath],file_path, cut_branch_threshold, treefile_used)
         else:
-            ## record the misclusters to be deleted
-            with open(file_path+'delete_misclusters.txt', 'a') as delete_cluster_file:
-                delete_cluster_file.write('%s\n'%uncluster_filename)
+            ## record the misclusters to be deleted (already addressed in cutTree_outputCluster )
+            ## it will output the same cluster several times
+            #with open(file_path+'old_clusters_longSplit.txt', 'a') as delete_cluster_file:
+            #    delete_cluster_file.write('%s\n'%uncluster_filename)
 
-            ## add record in refined_clusters.txt, which is used for align new clusters
+            ## add record in new_clusters_longSplit.txt, which is used for align new clusters
             new_fa_files.add(gene_cluster_nu_filepath)
 
             ## write cluster statistics in folder update_long_branch_splits
@@ -169,7 +171,7 @@ def output_cutted_clusters(file_path, uncluster_filename, gene_list, cut_branch_
             write_pickle(''.join([file_path,'update_long_branch_splits/', newClusterId,'.cpk']),addin_geneCluster_dt)
 
     ## write records in gene_diversity file
-    with open(file_path+'refined_clusters.txt', 'a') as refined_cluster_file:
+    with open(file_path+'new_clusters_longSplit.txt', 'a') as refined_cluster_file:
         for i in new_fa_files:
             refined_cluster_file.write('%s\n'%i)
 
@@ -217,8 +219,8 @@ def cutTree_outputCluster( file_list, file_path, cut_branch_threshold, treefile_
             ## 1st check: original cluster has been split
             ## 2nd check: it's not a "further-split" cluster
             ##            from an already split cluster
-            with open(file_path+'delete_misclusters.txt', 'a') as delete_cluster_file:
-                print('delete clusters that have been split: ',input_cluster_filename)
+            with open(file_path+'old_clusters_longSplit.txt', 'a') as delete_cluster_file:
+                #print 'delete clusters that have been split: ',input_cluster_filename
                 delete_cluster_file.write('%s\n'%input_cluster_filename)
 
         ## output cutted clusters
@@ -258,7 +260,7 @@ def postprocess_split_long_branch(parallel, path, simple_tree, cut_branch_thresh
         ## remove the folder from previous run
         os.system(''.join(['rm -r ',new_split_folder]))
     os.system(''.join(['mkdir ',new_split_folder]))
-    deleted_clusters_folder=''.join([file_path,'deleted_clusters/'])
+    deleted_clusters_folder=''.join([file_path,'deleted_clusters_longSplit/'])
     if os.path.exists(deleted_clusters_folder):
         os.system(''.join(['rm -r ',deleted_clusters_folder]))
     os.system(''.join(['mkdir ',deleted_clusters_folder]))
@@ -271,11 +273,11 @@ def postprocess_split_long_branch(parallel, path, simple_tree, cut_branch_thresh
     tree_path = file_path
     tree_fname_list =glob.glob(tree_path+'*nwk')
 
-    ## ensure that writing to refined_clusters starts at the beginning (for re-running)
-    if os.path.exists(''.join([file_path,'refined_clusters.txt'])):
-        os.system(''.join(['rm ',file_path,'refined_clusters.txt']))
-    if os.path.exists(''.join([file_path,'delete_misclusters.txt'])):
-        os.system(''.join(['rm ',file_path,'delete_misclusters.txt']))
+    ## ensure that writing to new_clusters_longSplit starts at the beginning (for re-running)
+    if os.path.exists(''.join([file_path,'new_clusters_longSplit.txt'])):
+        os.system(''.join(['rm ',file_path,'new_clusters_longSplit.txt']))
+    if os.path.exists(''.join([file_path,'old_clusters_longSplit.txt'])):
+        os.system(''.join(['rm ',file_path,'old_clusters_longSplit.txt']))
 
     # =============================================
     # parallelization:
@@ -283,11 +285,12 @@ def postprocess_split_long_branch(parallel, path, simple_tree, cut_branch_thresh
     treefile_used=True
     multips(cutTree_outputCluster, parallel, tree_fname_list, file_path, cut_branch_threshold, treefile_used)
 
-    ## If refined_clusters.txt (over_split records) exists,
-    ## then gather new clusters from refined_clusters.txt
-    if os.path.exists(''.join([file_path,'refined_clusters.txt'])):
-        with open(file_path+'refined_clusters.txt', 'rb') as refined_clusters:
-            new_fa_files_list=[ clus.rstrip() for clus in refined_clusters ]
+    ## If new_clusters_longSplit.txt (over_split records) exists,
+    ## then gather new clusters from new_clusters_longSplit.txt
+    if os.path.exists(''.join([file_path,'new_clusters_longSplit.txt'])):
+        with open(file_path+'new_clusters_longSplit.txt', 'rb') as new_clusters_longSplit:
+            new_fa_files_list=[ clus.rstrip() for clus in new_clusters_longSplit ]
+            print '# times of split'
 
         ## parallelization of "align and make tree on new cluster"
         multips(align_and_makeTree, parallel, new_fa_files_list, file_path, simple_tree)
@@ -301,6 +304,11 @@ def postprocess_split_long_branch(parallel, path, simple_tree, cut_branch_thresh
         update_geneCluster_cpk(path, geneCluster_dt)
         ## write gene_diversity_Dt cpk file
         update_diversity_cpk(path)
+
+        os.system(' '.join(['mv ',file_path+'new_clusters_longSplit.txt' ,file_path+'added_clusters_split_long.txt' ]))
+        os.system(' '.join(['mv ',file_path+'old_clusters_longSplit.txt', file_path+'deleted_clusters_split_long.txt']))
     else: # no clusters postprocessed
         os.system(' '.join(['cp',cluster_path+'allclusters.cpk',cluster_path+'allclusters_postprocessed.cpk']))
+
+
 

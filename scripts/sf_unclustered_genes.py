@@ -94,7 +94,8 @@ def delete_old_merged_clusters(file_path, geneCluster_dt, merged_clusters_dict):
                 for cluster_needed_deletion in merged_clusters_dict[uncluster_filename]:
                     if cluster_needed_deletion in geneCluster_dt:
                         del geneCluster_dt[cluster_needed_deletion]
-                        if os.path.exists(uncluster_filename+'.nwk'):
+
+                        if os.path.exists(cluster_needed_deletion+'.nwk'):
                             suffix_list=['_aa_aln.fa','_na_aln.fa','.fna','.faa','.nwk','_tree.json']
                         else:
                             suffix_list=['_aa_aln.fa','_na_aln.fa','.fna','.faa']

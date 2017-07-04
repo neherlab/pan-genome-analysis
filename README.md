@@ -56,7 +56,6 @@ conda env create -f panX-environment.yml
 source activate panX
 ```
 
-
 ### How to run
 To run the test set: ` sh run-TestSet.sh `
 
@@ -112,10 +111,11 @@ The results contain clustering result
         - strain_tree.nwk        # core genome SNP tree (newick file)
 
         - geneCluster/           # folder contain orthologous clusters
-          - GC00000001_na_aln.fa
-          - GC00000001_aa_aln.fa
-          - GC00000001_na_aln_reduced.fa
-          - GC00000001_aa_aln_reduced.fa
+                                 # nucleotide and amino acid alignment in gzipped FASTA format, tree and presence/absence(gain/loss) pattern in json format.
+          - GC00000001_na_aln.fa.gz
+          - GC00000001_aa_aln.fa.gz
+          - GC00000001_na_aln_reduced.fa.gz
+          - GC00000001_aa_aln_reduced.fa.gz
           - GC00000001_tree.json
           - GC00000001_patterns.json
 ```

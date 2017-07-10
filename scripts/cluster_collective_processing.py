@@ -29,8 +29,8 @@ class clusterCollector(object):
         if self.paralog_branch_cutoff==0.0:
             self.paralog_branch_cutoff=self.split_long_branch_cutoff
         postprocess_paralogs_iterative(self.threads, self.path, self.nstrains,
-            self.simple_tree, self.paralog_branch_cutoff, self.paralog_frac_cutoff,
-            self.explore_paralog_plot)
+            self.simple_tree, self.paralog_branch_cutoff, self.disable_long_branch_splitting,
+            self.paralog_frac_cutoff, self.explore_paralog_plot)
 
     def postprocess_merge_underclustered_genes(self):
         """ postprocessing: integrate under_clustered genes """

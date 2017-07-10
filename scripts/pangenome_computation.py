@@ -165,6 +165,7 @@ class pangenome:
             core_genome_threshold=self.core_genome_threshold,
             factor_core_diversity=self.factor_core_diversity,
             disable_cluster_postprocessing=self.disable_cluster_postprocessing,
+            disable_long_branch_splitting=self.disable_long_branch_splitting,
             simple_tree=self.simple_tree,
             split_long_branch_cutoff=self.split_long_branch_cutoff,
             paralog_branch_cutoff=self.paralog_branch_cutoff,
@@ -180,8 +181,9 @@ class pangenome:
         #self.clusterCollector= myClusterCollector.cluster_align_makeTree()
         myClusterCollector.make_geneCluster_alignment_and_tree()
         if not self.disable_cluster_postprocessing:
-            myClusterCollector.postprocessing_split_long_branch()
-            myClusterCollector.postprocess_merge_underclustered_genes()
+            if not self.disable_long_branch_splitting:
+                myClusterCollector.postprocessing_split_long_branch()
+                myClusterCollector.postprocess_merge_underclustered_genes()
             myClusterCollector.postprocessing_split_paralogs()
             write_final_cluster(self.path)
 

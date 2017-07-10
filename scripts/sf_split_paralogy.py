@@ -3,7 +3,7 @@ import numpy as np
 from collections import Counter
 from Bio import Phylo
 from sf_miscellaneous import read_fasta, write_in_fa, load_pickle, multips
-from sf_geneCluster_align_makeTree import align_and_makeTree, find_best_split, update_diversity_cpk, load_sorted_clusters, update_geneCluster_cpk, mem_check
+from sf_geneCluster_align_makeTree import align_and_makeTree, find_best_split, update_diversity_cpk, update_geneCluster_cpk, mem_check
 
 def split_cluster(tree, nstrains, max_branch_length, max_paralogs):
     '''
@@ -128,11 +128,11 @@ def create_split_cluster_files(file_path, fname,
     return split_fa_files_set
 
 def postprocess_paralogs_iterative(parallel, path, nstrains, simple_tree,
-   	paralog_branch_cutoff, paralog_frac_cutoff=0.3, plot=0):
+   	paralog_branch_cutoff, disable_long_branch_splitting, paralog_frac_cutoff=0.3, plot=0):
 
     cluster_path= path+'protein_faa/diamond_matches/'
-
-    geneCluster_dt=load_pickle(cluster_path+'allclusters_postprocessed.cpk')
+    clusters_need_split='allclusters_postprocessed.cpk' if not disable_long_branch_splitting else 'allclusters.cpk'
+    geneCluster_dt=load_pickle(cluster_path+clusters_need_split)
     ## folder that contains old split clusters in paralog splitting step
     geneClusters_fpath=path+'geneCluster/'
     os.system('mkdir '+geneClusters_fpath+'paralog_splits/')

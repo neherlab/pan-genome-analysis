@@ -84,6 +84,8 @@ parser.add_argument('-bmt', '--blastn_RNA_max_target_seqs', type = str, default 
 #=======================================*/
 parser.add_argument('-np', '--disable_cluster_postprocessing', action='store_true',
     help='disable postprocessing (split overclustered genes and paralogs, and cluster unclustered genes)')
+parser.add_argument('-nsl', '--disable_long_branch_splitting', action='store_true',
+    help='disable splitting long branch')
 parser.add_argument('-rna', '--enable_RNA_clustering', action='store_true',
     help='cluster rRNAs')
 ## split tree via breaking up long branches (resolving over-clustering)
@@ -192,6 +194,7 @@ myPangenome=pangenome(
     mcl_inflation=params.mcl_inflation,
     blastn_RNA_max_target_seqs=params.blastn_RNA_max_target_seqs,
     disable_cluster_postprocessing=params.disable_cluster_postprocessing,
+    disable_long_branch_splitting=params.disable_long_branch_splitting,
     enable_RNA_clustering=params.enable_RNA_clustering,
     factor_core_diversity=params.factor_core_diversity,
     split_long_branch_cutoff=params.split_long_branch_cutoff,

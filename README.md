@@ -78,7 +78,7 @@ NOTICE: strain_list format should be species_name+'-RefSeq', e.g.: Saureus-RefSe
 Example: ./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -t 32 > TestSet.log 2> TestSet.err
 ```
 
-**Command line arguments**: [More details] [link-to-server.py](https://github.com/neherlab/pan-genome-analysis/blob/master/advanced_options.md)
+**Command line arguments**: [More details] [Advanced_options.md](https://github.com/neherlab/pan-genome-analysis/blob/master/advanced_options.md)
 
   Soft core-gene:
 
@@ -121,5 +121,5 @@ The results contain clustering result
           - GC00000001_tree.json
           - GC00000001_patterns.json
 ```
-In which step different files and directories are produced is described in more details in [step-tutorials.txt](https://github.com/neherlab/pan-genome-analysis/blob/master/step-tutorials.txt).
+In which step different files and directories are produced is described in more details in [step-tutorials.md](https://github.com/neherlab/pan-genome-analysis/blob/master/step-tutorials.md).
 

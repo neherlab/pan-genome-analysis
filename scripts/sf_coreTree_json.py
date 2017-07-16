@@ -105,7 +105,8 @@ def metadata_process(path, infile):
             strain_meta_dict) = metadata_load(path, infile)
     #filter the redundant metadata for each metadata_type
     for k,v in metajson_dict.iteritems():
-        metajson_dict[k]=list(set(v))
+        meta_list=list(set(v));meta_list.sort()
+        metajson_dict[k]=meta_list
     output_path= ''.join([path,'geneCluster/'])
     with open(output_path+'strainMetainfo.json', 'wb') as strain_metadata_json:
         strain_metadata_json.write(json.dumps(metatable_strains_json_dict))

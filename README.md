@@ -114,6 +114,7 @@ In which step different files and directories are produced is described in more 
   Soft core-gene:
 
     -cg    core-genome threshold [e.g.: 0.7] percentage of strains used to decide whether a gene is core
+    E.g.: ./panX.py -cg 0.7 -fn ...
 
   Large dataset (use divide-and-conquer(DC) strategy which scales approximately linearly with the number of genomes):
 

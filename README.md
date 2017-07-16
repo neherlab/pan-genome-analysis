@@ -77,21 +77,7 @@ Mandatory parameters: -fn folder_name / -sl strain_list
 NOTICE: strain_list format should be species_name+'-RefSeq', e.g.: Saureus-RefSeq.txt
 Example: ./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -t 32 > TestSet.log 2> TestSet.err
 ```
-
-**Command line arguments**: [More details] [Advanced_options.md](https://github.com/neherlab/pan-genome-analysis/blob/master/advanced_options.md)
-
-  Soft core-gene:
-
-    -cg    core-genome threshold [e.g.: 0.7] percentage of strains used to decide whether a gene is core
-  Large dataset (use divide-and-conquer(DC) strategy which scales approximately linearly with the number of genomes):
-
-    -dmdc  apply DC strategy to run DIAMOND on subsets and then combine the results
-    -dcs   subset size used in DC strategy [default:50]
-
-    E.g.: ./panX.py -dmdc -dcs 50 -fn ...
-
-
-The results contain clustering result
+The analysis generates clustering result
 `./data/YourSpecies/allclusters_final.tsv `
 
  and files required for visualizing the pan-genome using [pan-genome-visualization](https://github.com/neherlab/pan-genome-visualization).
@@ -123,3 +109,24 @@ The results contain clustering result
 ```
 In which step different files and directories are produced is described in more details in [step-tutorials.md](https://github.com/neherlab/pan-genome-analysis/blob/master/step-tutorials.md).
 
+**Command line arguments** [More details](https://github.com/neherlab/pan-genome-analysis/blob/master/advanced_options.md)
+
+  Soft core-gene:
+
+    -cg    core-genome threshold [e.g.: 0.7] percentage of strains used to decide whether a gene is core
+
+  Large dataset (use divide-and-conquer(DC) strategy which scales approximately linearly with the number of genomes):
+
+    -dmdc  apply DC strategy to run DIAMOND on subsets and then combine the results
+    -dcs   subset size used in DC strategy [default:50]
+    E.g.: ./panX.py -dmdc -dcs 50 -fn ...
+
+  Calculate branch associations with metadata (e.g. drug concentration):
+
+    -iba  infer_branch_association
+    -mtf  ./data/yourSpecies/meta_config.tsv
+    E.g.: ./panX.py -iba -mtf ./data/yourSpecies/meta_config.tsv -fn ...
+
+  Example: [meta_config.tsv](https://github.com/neherlab/pan-genome-analysis/blob/master/metadata/meta_config.tsv)
+
+  To bring the branch association into effect for the visualization, one needs to add the generated file to the visualization repository as described in [Special feature: visualize branch association(BA) and presence/absence(PA) association](https://github.com/neherlab/pan-genome-visualization/blob/master/README.md).

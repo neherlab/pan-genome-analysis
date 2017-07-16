@@ -21,8 +21,10 @@ def consolidate_annotation(path,all_gene_names, geneID_to_description_dict):
     majority = annotations_sorted[0][0]
     if majority=='hypothetical_protein' and len(annotations)!=1:
         majority=annotations_sorted[1][0]
+    majority=majority.replace('\\','\\\\')
     # "#" to delimit key/count ; "@" to seperate various annotations
     allAnn=''.join(['%s#%s@'%(i_ann,j_ann) for i_ann,j_ann in annotations_sorted ])[:-1]
+    allAnn=allAnn.replace('\\','\\\\')
     return allAnn,majority
 
 def consolidate_geneName(path,all_gene_names, geneID_to_description_dict):

@@ -198,10 +198,12 @@ For metadata such as drug concentration measurements, which user might want to h
   - -iba --infer_branch_association
 
     infer branch association
-Presence/absence association inference
-  - -iba --infer_presence_association
 
-    infer presence/absence association
+  - -mtf  --meta_tidy_fpath
+
+  Example: [meta_config.tsv](https://github.com/neherlab/pan-genome-analysis/blob/master/metadata/meta_config.tsv)
+
+  E.g.: ./panX.py -iba -mtf ./data/yourSpecies/meta_config.tsv -fn ...
 
 #### Other options
   - -rxm --raxml_path

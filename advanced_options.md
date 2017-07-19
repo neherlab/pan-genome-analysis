@@ -31,7 +31,7 @@ panX runs through all steps by default, which contain pan-genome analysis and da
 Alternatively, user can run specific steps.
   - -st --steps
 
-    e.g.: -st 5 6 (It supposes that steps before 5 have been already finished.)
+    e.g.: -st 5 6 (It requires that steps before 5 have been already finished.)
   - -t --threads
 
     number of threads (default:1)
@@ -41,6 +41,14 @@ panX generates orthologous gene clusters by itself and can alternatively use clu
   - -rp --roary_file_path
 
     the absolute path of roary result (e.g.: /path/roary.out) ,
+
+    Example for using roary output without panX post-processing:
+
+    ./panX.py -st 1 3 4 5 6 7 8 9 10 11 -np -rp ./data/yourSpecies/clustered_proteins -fn ...
+
+    Example for using roary output with panX post-processing:
+
+    ./panX.py -st 1 3 4 5 6 7 8 9 10 11 -rp ./data/yourSpecies/clustered_proteins -fn ...
   - -op --orthofinder_file_path
 
     the absolute path of orthofinder result (e.g.: /path/orthofinder.out)

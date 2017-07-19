@@ -61,7 +61,9 @@ To run the test set: ` sh run-TestSet.sh `
 
 In `data/TestSet`, you will find a small set of five *Mycoplasma genitalium* genomes that is used in this tutorial. Your own data should also reside in such a folder within `data/` -- we will refer to this folder as *run directory* below. The name of the run directory is used as a species name in down-stream analysis.
 
-All steps can be run in order by omitting the `-st` option, whereas using `-st 5 6` will specify the analysis steps. `-t ` sets the number of CPU cores.
+All steps can be run in order by omitting the `-st` option, whereas using `-st 5 6` will specify the analysis steps. If running only specific steps such as `-st 5 6`, steps before 5 should already be finished.
+
+`-t ` sets the number of CPU cores.
 <br />
 ```
 ./panX.py -fn data/TestSet -sl TestSet-RefSeq.txt -t 32 > TestSet.log 2> TestSet.err

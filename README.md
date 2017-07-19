@@ -111,7 +111,7 @@ The analysis generates clustering result
 ```
 In which step different files and directories are produced is described in more details in [step-tutorials.md](https://github.com/neherlab/pan-genome-analysis/blob/master/step-tutorials.md).
 
-**Command line arguments** [More details](https://github.com/neherlab/pan-genome-analysis/blob/master/advanced_options.md)
+**Command line arguments** [(Click here for more details)](https://github.com/neherlab/pan-genome-analysis/blob/master/advanced_options.md)
 
   Soft core-gene:
 
@@ -133,3 +133,5 @@ In which step different files and directories are produced is described in more 
   Example: [meta_config.tsv](https://github.com/neherlab/pan-genome-analysis/blob/master/metadata/meta_config.tsv)
 
   To bring the branch association into effect for the visualization, one needs to add the generated file to the visualization repository as described in [Special feature: visualize branch association(BA) and presence/absence(PA) association](https://github.com/neherlab/pan-genome-visualization/blob/master/README.md).
+
+

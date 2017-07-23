@@ -1,27 +1,22 @@
 #!/bin/sh
-#
-#  Reservation desired
-#$ -R y
-#
-#  Reserve 8 CPUs for this job
-#$ -pe parallel 64
-#
-#  Request 8G of RAM
-#$ -l h_vmem=1G
-#
-#  Request it to run this long HH:MM:SS
-#$ -l h_rt=00:59:00
-#
-#  Use /bin/bash to execute this script
-#$ -S /bin/bash
-#
-#  Run job from current working directory
-#$ -cwd
-#
-#  Send email when the job begins, ends, aborts, or is suspended
-#$ -m beas
+#PBS -l nodes=1:ppn=15
+# specify the time you expect the job to run hh:mm:ss
+#PBS -l walltime=00:59:00
+#specify the amount of memory needed
+#PBS -l mem=4G
+# output and error files
+#PBS -o myout.o$PBS_JOBID
+#PBS -e myout.e$PBS_JOBID
 
-./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -t 64 > TestSet.log 2>TestSet_error.log
+# load paths
+source /home/neher/.bashrc
+
+# move to current working directory
+cd $PBS_O_WORKDIR
+
+source activate panX
+
+./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -t 15 > TestSet.log 
 ## example for using divide-and-conquer algorithm on large datasets (#strains>50) (use parameters -dmdc and -dcs) (-sitr will not use treetime to compute mutations on branches of each gene tree)
 #./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -dmdc -sitr -t 32 > TestSet.log
 

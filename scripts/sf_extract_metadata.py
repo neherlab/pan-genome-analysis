@@ -27,7 +27,7 @@ def extract_metadata(path, strain_list, folders_dict, gbk_present):
                 gbk_fpath=''.join([gbk_path,strainID,'.gbk'])
                 for record in SeqIO.parse(gbk_fpath, "genbank"):
                     for feature in record.features:
-                        host, datacolct, country, strainName ='unknown', 'unknown', 'unknown', 'unknown'
+                        host, datacolct, country, strainName, organismName ='unknown', 'unknown', 'unknown', 'unknown','unknown'
                         if feature.type=='source':
                             if 'organism' in feature.qualifiers:
                                 raw_data=feature.qualifiers['organism'][0]

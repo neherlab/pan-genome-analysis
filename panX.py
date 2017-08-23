@@ -131,9 +131,11 @@ parser.add_argument('-mglo', '--merged_gain_loss_output', action='store_true',
 ## branch association inference
 parser.add_argument('-iba', '--infer_branch_association', action='store_true',
     help='infer branch association')
-parser.add_argument('-pamin', '--min_strain_fraction_association', type = float, default = 0.1,
+parser.add_argument('-bamin', '--min_strain_fraction_branch_association', type = float, default = 1.0,
+    help='minimal fraction of the total number of strains for branch association',metavar='')
+parser.add_argument('-pamin', '--min_strain_fraction_presence_association', type = float, default = 0.02,
     help='minimal fraction of the total number of strains for presence/absence association',metavar='')
-parser.add_argument('-pamax', '--max_strain_fraction_association', type = float, default = 0.85,
+parser.add_argument('-pamax', '--max_strain_fraction_presence_association', type = float, default = 0.9,
     help='maximal fraction of the total number of strains for presence/absence association',metavar='')
 ## other options
 parser.add_argument('-slt', '--store_locus_tag', action='store_true',
@@ -217,8 +219,9 @@ myPangenome=pangenome(
     raw_locus_tag=params.raw_locus_tag,
     meta_tidy_fpath=params.meta_tidy_fpath,
     raxml_path=params.raxml_path,
-    min_strain_fraction_association=params.min_strain_fraction_association,
-    max_strain_fraction_association=params.max_strain_fraction_association,
+    min_strain_fraction_branch_association=params.min_strain_fraction_branch_association,
+    min_strain_fraction_presence_association=params.min_strain_fraction_presence_association,
+    max_strain_fraction_presence_association=params.max_strain_fraction_presence_association,
     optional_table_column=params.optional_table_column,
     clean_temporary_files=params.clean_temporary_files
     )

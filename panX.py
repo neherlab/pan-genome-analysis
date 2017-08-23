@@ -131,6 +131,10 @@ parser.add_argument('-mglo', '--merged_gain_loss_output', action='store_true',
 ## branch association inference
 parser.add_argument('-iba', '--infer_branch_association', action='store_true',
     help='infer branch association')
+parser.add_argument('-pamin', '--min_strain_fraction_association', type = float, default = 0.1,
+    help='minimal fraction of the total number of strains for presence/absence association',metavar='')
+parser.add_argument('-pamax', '--max_strain_fraction_association', type = float, default = 0.85,
+    help='maximal fraction of the total number of strains for presence/absence association',metavar='')
 ## other options
 parser.add_argument('-slt', '--store_locus_tag', action='store_true',
     help='store locus_tags in a separate file instead of saving locus_tags in gene cluster json for large dataset')
@@ -213,6 +217,8 @@ myPangenome=pangenome(
     raw_locus_tag=params.raw_locus_tag,
     meta_tidy_fpath=params.meta_tidy_fpath,
     raxml_path=params.raxml_path,
+    min_strain_fraction_association=params.min_strain_fraction_association,
+    max_strain_fraction_association=params.max_strain_fraction_association,
     optional_table_column=params.optional_table_column,
     clean_temporary_files=params.clean_temporary_files
     )

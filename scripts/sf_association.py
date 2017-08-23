@@ -201,7 +201,7 @@ class BranchAssociation(object):
 
 
 
-def infer_branch_associations(path):
+def infer_branch_associations(path, total_strains_count):
     from sf_geneCluster_align_makeTree import load_sorted_clusters
     from sf_coreTree_json import metadata_load
     metaFile= '%s%s'%(path,'metainfo.tsv')
@@ -213,16 +213,16 @@ def infer_branch_associations(path):
     sorted_genelist = load_sorted_clusters(path)
     ## sorted_genelist: [(clusterID, [ count_strains,[memb1,...],count_genes]),...]
     for clusterID, gene in sorted_genelist:
-        if gene[-1]==616: # and clusterID=='GC00001136':
+        if gene[-1]==total_strains_count: # and clusterID=='GC00001136':
             print(clusterID)
             tree = Phylo.read("%s/geneCluster/%s.nwk"%(path, clusterID), 'newick')
             assoc = BranchAssociation(tree, metadata_dict)
             for col, d  in metadata.data_description.iterrows():
                 if d['associate']=='yes':
-                    #if 'log_scale' in d and d['log_scale']=='yes':
-                    t = lambda x:np.log(x)
-                    #else:
-                    #    t = lambda x:x
+                    if 'log_scale' in d and d['log_scale']=='yes':
+                        t = lambda x:np.log(x)
+                    else:
+                        t = lambda x:x
                     assoc.calc_up_down_averages(d["meta_category"], transform = t)
                     max_assoc = assoc.calc_significance()
                     association_dict[clusterID][d["meta_category"]] = max_assoc
@@ -236,7 +236,8 @@ def load_gain_loss(path, clusterID):
     return map(int, list(tmp))
 
 
-def infer_presence_absence_associations(path):
+def infer_presence_absence_associations(path, total_strains_count,
+    min_strain_fraction_association, max_strain_fraction_association):
     from sf_geneCluster_align_makeTree import load_sorted_clusters
     from sf_coreTree_json import metadata_load
     metaFile= '%s%s'%(path,'metainfo.tsv')
@@ -244,22 +245,23 @@ def infer_presence_absence_associations(path):
     association_dict = defaultdict(dict)
     metadata = Metadata(metaFile, data_description)
     metadata_dict = metadata.to_dict()
-
+    min_strains_association = total_strains_count*min_strain_fraction_association
+    max_strains_association = total_strains_count*max_strain_fraction_association
     sorted_genelist = load_sorted_clusters(path)
     ## sorted_genelist: [(clusterID, [ count_strains,[memb1,...],count_genes]),...]
     # TODO fix vis
     tree = Phylo.read("%sgeneCluster/strain_tree.nwk"%(path), 'newick')
     assoc = PresenceAbsenceAssociation(tree, metadata_dict)
     for clusterID, gene in sorted_genelist:
-        if gene[-1]>10 and gene[-1]<600:
+        if gene[-1]>min_strains_association and gene[-1]<max_strains_association:
             print(clusterID)
             gl = load_gain_loss(path, clusterID)
             for col, d  in metadata.data_description.iterrows():
                 if d['associate']=='yes':
-                    #if 'log_scale' in d and d['log_scale']=='yes':
-                    t = lambda x:np.log(x)
-                    #else:
-                    #    t = lambda x:x
+                    if 'log_scale' in d and d['log_scale']=='yes':
+                        t = lambda x:np.log(x)
+                    else:
+                        t = lambda x:x
                     assoc.set_gain_loss(gl)
                     score = assoc.calc_association_simple(d["meta_category"], transform = t)
                     if np.isinf(score):

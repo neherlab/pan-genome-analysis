@@ -201,7 +201,7 @@ class BranchAssociation(object):
 
 
 
-def infer_branch_associations(path, total_strains_count):
+def infer_branch_associations(path, total_strains_count, strain_fraction_branch_association):
     from sf_geneCluster_align_makeTree import load_sorted_clusters
     from sf_coreTree_json import metadata_load
     metaFile= '%s%s'%(path,'metainfo.tsv')
@@ -213,7 +213,7 @@ def infer_branch_associations(path, total_strains_count):
     sorted_genelist = load_sorted_clusters(path)
     ## sorted_genelist: [(clusterID, [ count_strains,[memb1,...],count_genes]),...]
     for clusterID, gene in sorted_genelist:
-        if gene[-1]==total_strains_count: # and clusterID=='GC00001136':
+        if gene[-1]>=total_strains_count*strain_fraction_branch_association: # and clusterID=='GC00001136':
             print(clusterID)
             tree = Phylo.read("%s/geneCluster/%s.nwk"%(path, clusterID), 'newick')
             assoc = BranchAssociation(tree, metadata_dict)

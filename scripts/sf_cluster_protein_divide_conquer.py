@@ -76,10 +76,8 @@ def clustering_subproblem(clustering_path, threads, subproblem_merged_faa,
         diamond_query_cover, diamond_subject_cover,
         mcl_inflation, diamond_path, last_run_flag):
     """ clustering on subproblems """
-    if last_run_flag==0:
-        diamond_identity= diamond_query_cover= diamond_subject_cover='90'
-    else:
-        diamond_identity= diamond_query_cover= diamond_subject_cover='30'
+    if last_run_flag==1:
+        diamond_identity= diamond_query_cover= diamond_subject_cover='0'
 
     diamond_run(clustering_path, subproblem_merged_faa, threads,
                 diamond_evalue, diamond_max_target_seqs, diamond_identity,

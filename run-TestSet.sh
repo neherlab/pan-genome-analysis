@@ -21,7 +21,7 @@
 #  Send email when the job begins, ends, aborts, or is suspended
 #$ -m beas
 
-./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -t 64 > TestSet.log 2>TestSet_error.log
+./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -t 64 > TestSet.log
 ## example for using divide-and-conquer algorithm on large datasets (#strains>50) (use parameters -dmdc and -dcs) (-sitr will not use treetime to compute mutations on branches of each gene tree)
 #./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -dmdc -sitr -t 32 > TestSet.log
 

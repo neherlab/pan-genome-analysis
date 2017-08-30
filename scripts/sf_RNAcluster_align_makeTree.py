@@ -1,6 +1,6 @@
 import os, sys, glob, time, shutil
 import numpy as np
-from sf_miscellaneous import times, read_fasta, load_pickle, write_pickle, write_in_fa, write_json, multips
+from sf_miscellaneous import times, read_fasta, load_pickle, write_pickle, write_in_fa, write_json, check_dependency, multips
 from sf_geneCluster_align_makeTree import mpm_tree, align_and_makeTree, load_sorted_clusters, update_diversity_cpk
 
 sys.setrecursionlimit(50000)
@@ -44,7 +44,8 @@ def create_RNACluster_fa(path,folders_dict):
         RNA_cluster_nu_write.close()
     return diamond_RNACluster_dt
 
-def single_RNACluster_align_and_makeTree(fa_files_list, alignFile_path, parallel, simple_tree):
+def single_RNACluster_align_and_makeTree(fa_files_list, alignFile_path, simple_tree):
+    fasttree_name= 'fasttree' if check_dependency('fasttree') else 'FastTree'
     for RNA_cluster_nu_filename in fa_files_list:
         if 1:#try:
             # extract GC_RNA002 from path/GC_RNA002.aln
@@ -60,15 +61,15 @@ def single_RNACluster_align_and_makeTree(fa_files_list, alignFile_path, parallel
                 geneDiversity_file.write('%s\t%s\n'%(clusterID,'0.0'))
             else: # align and build tree
                 print RNA_cluster_nu_filename
-                myTree = mpm_tree(RNA_cluster_nu_filename,threads=parallel)
+                myTree = mpm_tree(RNA_cluster_nu_filename)
                 myTree.align()
 
                 if simple_tree==False:
-                    myTree.build(raxml=False,fasttree_program=fasttree_program,treetime_used=True)
+                    myTree.build(raxml=False,fasttree_program=fasttree_name,treetime_used=True)
                     myTree.ancestral(translate_tree=True)
                     myTree.refine()
                 else:
-                    myTree.build(raxml=False,fasttree_program=fasttree_program,treetime_used=False)
+                    myTree.build(raxml=False,fasttree_program=fasttree_name,treetime_used=False)
                 myTree.diversity_statistics_nuc()
                 myTree.export(path=alignFile_path, RNA_specific=True)
 
@@ -89,7 +90,7 @@ def RNAclusters_align_makeTree( path, folders_dict, parallel, simple_tree ):
     ## align, build_tree, make_RNATree_json
     fasta_path = path+'geneCluster/'
     fa_files=glob.glob(fasta_path+"*RC*.fna")
-    multips(single_RNACluster_align_and_makeTree, parallel, fa_files, fasta_path, parallel, simple_tree)
+    multips(single_RNACluster_align_and_makeTree, parallel, fa_files, fasta_path, simple_tree)
     ## add RNA cluster in diamond_geneCluster_dt
     ### load gene cluster
     geneClusterPath='%s%s'%(path,'protein_faa/diamond_matches/')

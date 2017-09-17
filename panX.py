@@ -21,8 +21,8 @@ parser = argparse.ArgumentParser(description=\
     usage='./%(prog)s'+' -h (help)')
 parser.add_argument('-fn', '--folder_name', type = str, required=True,
     help='the absolute path for project folder ', metavar='')
-parser.add_argument('-sl', '--strain_list', type = str, required=True,
-    help='the file name for strain list (e.g.: Pa-RefSeq.txt)', metavar='')
+parser.add_argument('-sl', '--species_name', type = str, required=True,
+    help='species name as prefix for some temporary folders (e.g.: P_aeruginosa)', metavar='')
 parser.add_argument('-ngbk', '--gbk_present', action='store_false',
     help='use nucleotide/amino acid sequence files (fna/faa) when no genBank files given (this option does not consider annotations)')
 parser.add_argument('-st', '--steps', nargs='+', type = int, default = ['all'],
@@ -75,7 +75,7 @@ parser.add_argument('-dmssc', '--diamond_subject_cover_subproblem', type = str, 
 
 parser.add_argument('-imcl', '--mcl_inflation', type = float, default = 1.5,
     help='MCL: inflation parameter (this parameter affects granularity) ', metavar='')
-parser.add_argument('-bmt', '--blastn_RNA_max_target_seqs', type = str, default = '100',
+parser.add_argument('-bmt', '--blastn_RNA_max_target_seqs', type = str, default = '1000',
     help='Blastn on RNAs: the maximum number of target sequences per query\
     Estimation: #strain * #max_duplication', metavar='')
 
@@ -144,7 +144,7 @@ parser.add_argument('-rlt', '--raw_locus_tag', action='store_true',
     help='use raw locus_tag from GenBank instead of strain_ID + locus_tag')
 parser.add_argument('-otc', '--optional_table_column', action='store_true',
     help='add customized column in gene cluster json file for visualization.')
-parser.add_argument('-mtf', '--meta_tidy_fpath', type = str, default = '',
+parser.add_argument('-mtf', '--meta_data_config', type = str, default = '',
     help='file path for pre-defined metadata structure (discrete/continuous data type, etc.)', metavar='')
 parser.add_argument('-rxm', '--raxml_path', type = str, default = '',
     help='absolute path of raxml', metavar='')
@@ -176,7 +176,8 @@ for program_alias, program_name in programs.items():
 
 myPangenome=pangenome(
     path=path,
-    species=params.strain_list.split('-RefSeq')[0],
+    #species=params.strain_list.split('-RefSeq')[0],
+    species=params.species_name,
     gbk_present=params.gbk_present,
     threads=params.threads,
     metainfo_organism=params.metainfo_organism,
@@ -217,7 +218,7 @@ myPangenome=pangenome(
     merged_gain_loss_output=params.merged_gain_loss_output,
     store_locus_tag=params.store_locus_tag,
     raw_locus_tag=params.raw_locus_tag,
-    meta_tidy_fpath=params.meta_tidy_fpath,
+    meta_data_config=params.meta_data_config,
     raxml_path=params.raxml_path,
     min_strain_fraction_branch_association=params.min_strain_fraction_branch_association,
     min_strain_fraction_presence_association=params.min_strain_fraction_presence_association,
@@ -259,8 +260,8 @@ if 5 in params.steps:# step05:
         ## clustering with divide_and_conquer method for large dataset
         myPangenome.clustering_protein_divide_conquer()
     else:
-        if 0:## pre-clustering
-            myPangenome.finding_gene_copies()
+        #if 0:## pre-clustering
+        #    myPangenome.finding_gene_copies()
         ## clustering
         myPangenome.clustering_protein_sequences()
     ## clustering RNA when option activated
@@ -273,7 +274,6 @@ if 6 in params.steps:# step06:
     print '======  starting step06: align genes in geneCluster by mafft and build gene trees'
     start = time.time()
     myPangenome.process_clusters()
-
     if params.enable_RNA_clustering:
         myPangenome.make_RNACluster_alignment_and_tree()
     print '======  time for step06:'

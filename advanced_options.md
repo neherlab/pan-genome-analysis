@@ -183,7 +183,7 @@ Alternatively, paralog branch_cutoff can be specified with the argument -pbc ins
     the absolute path for meta_information file (e.g.: /path/meta.out)
 
 For metadata such as drug concentration measurements, which user might want to have the branch and presence/absence association to be visualized, an extra TSV table is required to specify what metadata types are used for above-mentioned association inference. [(example)](https://github.com/neherlab/pan-genome-analysis/blob/master/metadata/meta_config.tsv)
-  - -mtf --meta_tidy_fpath
+  - -mtf --meta_data_config
 
     the absolute path for pre-defined metadata structure (discrete/continuous data type, etc.)
 
@@ -207,7 +207,7 @@ For metadata such as drug concentration measurements, which user might want to h
 
     infer branch association
 
-  - -mtf  --meta_tidy_fpath
+  - -mtf  --meta_data_config
 
   Example: [meta_config.tsv](https://github.com/neherlab/pan-genome-analysis/blob/master/metadata/meta_config.tsv)
 

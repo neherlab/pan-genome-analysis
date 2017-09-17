@@ -15,16 +15,16 @@
   * [Other options](#other-options)
 
 ```
-Usage example: ./panX -fn data/TestSet -sl TestSet-RefSeq.txt 1>TestSet.log 2>TestSet.err
+Usage example: ./panX -fn data/TestSet -sl TestSet 1>TestSet.log 2>TestSet.err
 For help: ./panX -h
 ```
 ##### Mandatory parameters
   - -fn --folder_name
 
     the absolute path for project folder
-  - -sl --strain_list
+  - -sl --species_name
 
-    the file name for strain list (e.g.: Pa-RefSeq.txt)
+    species name (e.g.: S_aureus)
 
 ##### Specify steps and threads
 panX runs through all steps by default, which contain pan-genome analysis and data preparation for visualization.

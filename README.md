@@ -66,18 +66,18 @@ All steps can be run in order by omitting the `-st` option, whereas using `-st 5
 `-t ` sets the number of CPU cores.
 <br />
 ```
-./panX.py -fn data/TestSet -sl TestSet-RefSeq.txt -t 32 > TestSet.log 2> TestSet.err
+./panX.py -fn data/TestSet -sl TestSet -t 32 > TestSet.log 2> TestSet.err
 ```
 
 This calls panX.py to run each step using scripts located in folder ./scripts/
 ```
-./panX.py [-h] -fn folder_name -sl strain_list
+./panX.py [-h] -fn folder_name -sl species_name
                    [-st steps [steps ...]] [-rt raxml_max_time]
                    [-t threads] [-bp blast_file_path]
 
-Mandatory parameters: -fn folder_name / -sl strain_list
-NOTICE: strain_list format should be species_name+'-RefSeq', e.g.: Saureus-RefSeq.txt
-Example: ./panX.py -fn ./data/TestSet -sl TestSet-RefSeq.txt -t 32 > TestSet.log 2> TestSet.err
+Mandatory parameters: -fn folder_name / -sl species_name
+NOTICE: species_name e.g.: S_aureus
+Example: ./panX.py -fn ./data/TestSet -sl TestSet -t 32 > TestSet.log 2> TestSet.err
 ```
 The analysis generates clustering result
 `./data/YourSpecies/allclusters_final.tsv `
@@ -86,7 +86,6 @@ The analysis generates clustering result
 ```
 ./data
     YourSpecies               # folder specific to the your pan genome
-      - YourSpecies-RefSeq.txt    # INPUT: GenBank accession numbers
       - input_GenBank              # INPUT: genomes in GenBank format
         - strain1.gbk
         - strain2.gbk

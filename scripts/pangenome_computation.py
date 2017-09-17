@@ -226,7 +226,7 @@ class pangenome:
 
     def export_coreTree_json(self):
         """ export core tree as json file for core tree visualization"""
-        json_parser(self.path, self.folders_dict, self.fpaths_dict, self.metainfo_fpath, self.meta_tidy_fpath, self.clean_temporary_files)
+        json_parser(self.path, self.folders_dict, self.fpaths_dict, self.metainfo_fpath, self.meta_data_config, self.clean_temporary_files)
 
 
 def harmonize_filename(path, glob_list):

@@ -156,13 +156,13 @@ def process_mixed_continuous(meta_detail):
         processed_elems.append([raw_elem,new_elem])
     return processed_elems
 
-def process_metajson(path, meta_tidy_fpath, metajson_dict):
+def process_metajson(path, meta_data_config, metajson_dict):
     """ """
     metajson_exp={"color_options":{ }}
     meta_display_choice_dt={}
     meta_display_order=[]
-    if meta_tidy_fpath!='':
-        with open(meta_tidy_fpath,'r') as meta_tidy_file:
+    if meta_data_config!='':
+        with open(meta_data_config,'r') as meta_tidy_file:
             next(meta_tidy_file)
             ## meta_category data_type display
             for iline in meta_tidy_file:
@@ -228,7 +228,7 @@ def process_metajson(path, meta_tidy_fpath, metajson_dict):
         meta_js_out.write('%s;'%json.dumps(metajson_exp))
 
 def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
-                 meta_tidy_fpath, clean_temporary_files ):
+                 meta_data_config, clean_temporary_files ):
     """ create json files for web-visualiaztion
         input: strain_tree.nwk, metainfo.tsv
         output: json files for core gene SNP tree and strain metadata table
@@ -255,7 +255,7 @@ def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
         core_tree_json.write(coreTree_jsonString)
 
     ## process meta json
-    process_metajson(path, meta_tidy_fpath, metajson_dict)
+    process_metajson(path, meta_data_config, metajson_dict)
 
     ## Data organization
     ## Move: visualization-related files into ./vis/geneCluster/ folder

@@ -2,6 +2,7 @@ import os
 from collections import defaultdict
 from Bio import SeqIO
 from sf_miscellaneous import read_fasta, write_in_fa, load_pickle, write_pickle
+import random,time
 
 def gbk_translation(strainID, gbk_fname, protein_fname, nucleotide_fname, RNA_fname,
     geneID_to_geneSeqID_dict,geneID_to_description_dict,
@@ -82,7 +83,10 @@ def gbk_translation(strainID, gbk_fname, protein_fname, nucleotide_fname, RNA_fn
                     geneName=''
                     product=feature.qualifiers['product'][0]
                     annotation= '_'.join(product.split(' '))
-                    locus_tag=feature.qualifiers['locus_tag'][0]
+                    try:
+                        locus_tag=feature.qualifiers['locus_tag'][0]
+                    except: # make a random string when locus_tag absent
+                        locus_tag=time.strftime('%S',time.gmtime())+str(random.randint(0,10000000))
                     if "PROKKA" in locus_tag:
                         locus_tag=locus_tag.replace('PROKKA_','')
                     if '%s_'%strainID in locus_tag:

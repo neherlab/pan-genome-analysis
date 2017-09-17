@@ -47,7 +47,7 @@ def create_RNACluster_fa(path,folders_dict):
 def single_RNACluster_align_and_makeTree(fa_files_list, alignFile_path, simple_tree):
     fasttree_name= 'fasttree' if check_dependency('fasttree') else 'FastTree'
     for RNA_cluster_nu_filename in fa_files_list:
-        if 1:#try:
+        try:
             # extract GC_RNA002 from path/GC_RNA002.aln
             clusterID = RNA_cluster_nu_filename.split('/')[-1].split('.')[0]
             geneDiversity_file = open(alignFile_path+'gene_diversity.txt', 'a')
@@ -67,7 +67,7 @@ def single_RNACluster_align_and_makeTree(fa_files_list, alignFile_path, simple_t
                 if simple_tree==False:
                     myTree.build(raxml=False,fasttree_program=fasttree_name,treetime_used=True)
                     myTree.ancestral(translate_tree=True)
-                    myTree.refine()
+                    myTree.refine(CDS=False)
                 else:
                     myTree.build(raxml=False,fasttree_program=fasttree_name,treetime_used=False)
                 myTree.diversity_statistics_nuc()
@@ -76,7 +76,7 @@ def single_RNACluster_align_and_makeTree(fa_files_list, alignFile_path, simple_t
                 RNA_diversity_values='{0:.3f}'.format(myTree.diversity_nuc)
                 geneDiversity_file.write('%s\t%s\n'%(clusterID,RNA_diversity_values))
                 print clusterID,RNA_diversity_values
-        if 0:#except:
+        except:
             print("Aligning and tree building of RNA %s failed"%RNA_cluster_nu_filename)
 
 def RNAclusters_align_makeTree( path, folders_dict, parallel, simple_tree ):

@@ -177,7 +177,8 @@ class mpm_tree(object):
         if 'run_dir' not in kwarks:
             import random
             #self.run_dir = '_'.join(['tmp', self.clusterID])
-            self.run_dir = '_'.join([folderID, 'tmp', time.strftime('%H%M%S',time.gmtime()), str(random.randint(0,100000000))])
+            self.run_dir = 'tmp/'
+            self.run_dir += '_'.join([folderID, 'tmp', time.strftime('%H%M%S',time.gmtime()), str(random.randint(0,100000000))])
         else:
             self.run_dir = kwarks['run_dir']
         self.nuc=True
@@ -340,7 +341,7 @@ class mpm_tree(object):
             for node in self.tree.find_clades():
                 node.aa_sequence = np.fromstring(str(self.translate_seq("".join(node.sequence))), dtype='S1')
 
-    def refine(self):
+    def refine(self, CDS = True):
         '''
         determine mutations on each branch and attach as string to the branches
         '''
@@ -348,7 +349,8 @@ class mpm_tree(object):
 
             if node.up is not None:
                 node.muts = ",".join(["".join(map(str, x)) for x in node.mutations if '-' not in x])
-                node.aa_muts = ",".join([anc+str(pos+1)+der for pos, (anc, der)
+                if CDS == True:
+                    node.aa_muts = ",".join([anc+str(pos+1)+der for pos, (anc, der)
                                     in enumerate(zip(node.up.aa_sequence, node.aa_sequence))
                                     if anc!=der and '-' not in anc and '-' not in der])
 

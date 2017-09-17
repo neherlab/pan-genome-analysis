@@ -30,6 +30,13 @@ In folder `./data/TestSet/:`<br />
 In folder `./data/TestSet/:`<br />
 metainfo.tsv  (metadata for visualization)<br />
 
+User-provided metadata:
+
+  - -mi --metainfo_fpath
+
+    the absolute path for meta_information file (e.g.: /path/meta.out)
+
+
 **Step05: compute gene clusters**<br />
 all-against-all protein sequences comparison by Diamond and clustering of genes using MCL<br />
 - Input:<br />

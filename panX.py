@@ -55,11 +55,11 @@ parser.add_argument('-dmt', '--diamond_max_target_seqs', type = str, default = '
     help='Diamond: maximum number of target sequences per query\
     Estimation: #strain * #max_duplication (50*10=500)', metavar='')
 parser.add_argument('-dmi', '--diamond_identity', type = str, default = '0',
-    help='Diamond: sequence identity threshold to report an alignment. Default: empty.', metavar='')
+    help='Diamond: sequence identity threshold to report an alignment. Default: no restriction (0)', metavar='')
 parser.add_argument('-dmqc', '--diamond_query_cover', type = str, default = '0',
-    help='Diamond: query sequence coverage threshold to report an alignment.  Default: empty', metavar='')
+    help='Diamond: query sequence coverage threshold to report an alignment. Default: no restriction (0)', metavar='')
 parser.add_argument('-dmsc', '--diamond_subject_cover', type = str, default = '0',
-    help='Diamond: subject sequence coverage threshold to report an alignment.  Default: empty', metavar='')
+    help='Diamond: subject sequence coverage threshold to report an alignment. Default: no restriction (0)', metavar='')
 
 parser.add_argument('-dmdc', '--diamond_divide_conquer', action='store_true',
     help='running diamond alignment in divide-and-conquer(DC) algorithm for large dataset')

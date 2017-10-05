@@ -34,9 +34,11 @@ def RNA_cluster(path, threads,blastn_RNA_max_target_seqs, mcl_inflation ):
     ### make database
     run_makeblastdb=''.join(['makeblastdb -in ',RNA_path,all_RNA_filename,'.fna -dbtype nucl -out ',RNA_path,all_RNA_filename])
     os.system(run_makeblastdb)
+    print 'rRNA command line record (makeblastdb): ', run_makeblastdb
     ### run blastn
     run_blastn=''.join(['blastn -db ',RNA_path,all_RNA_filename,' -query ',RNA_path,all_RNA_filename,'.fna -out ',RNA_path,'query_matches.m8 -evalue 0.001 -outfmt 6 -max_target_seqs ',blastn_RNA_max_target_seqs,' -num_threads ',threads,' > ',RNA_path,'blastn-output.log'])
     os.system(run_blastn)
+    print 'rRNA command line record (blastn): ', run_blastn
     ## filtering hits via BS score
     filter_hits_single(RNA_path, threads)
     ## running mcl

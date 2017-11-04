@@ -199,15 +199,13 @@ class BranchAssociation(object):
 
         return max_score
 
-
-
-def infer_branch_associations(path, total_strains_count, strain_fraction_branch_association):
+def infer_branch_associations(path, metainfo_fpath, meta_data_config,
+    total_strains_count, strain_fraction_branch_association):
     from sf_geneCluster_align_makeTree import load_sorted_clusters
     from sf_coreTree_json import metadata_load
-    metaFile= '%s%s'%(path,'metainfo.tsv')
-    data_description = '%s%s'%(path,'meta_config.tsv')
+    data_description = meta_data_config
     association_dict = defaultdict(dict)
-    metadata = Metadata(metaFile, data_description)
+    metadata = Metadata(metainfo_fpath, data_description)
     metadata_dict = metadata.to_dict()
 
     sorted_genelist = load_sorted_clusters(path)
@@ -236,14 +234,13 @@ def load_gain_loss(path, clusterID):
     return map(int, list(tmp))
 
 
-def infer_presence_absence_associations(path, total_strains_count,
-    min_strain_fraction_association, max_strain_fraction_association):
+def infer_presence_absence_associations(path, metainfo_fpath, meta_data_config,
+    total_strains_count, min_strain_fraction_association, max_strain_fraction_association):
     from sf_geneCluster_align_makeTree import load_sorted_clusters
     from sf_coreTree_json import metadata_load
-    metaFile= '%s%s'%(path,'metainfo.tsv')
-    data_description = '%s%s'%(path,'meta_config.tsv')
+    data_description = meta_data_config
     association_dict = defaultdict(dict)
-    metadata = Metadata(metaFile, data_description)
+    metadata = Metadata(metainfo_fpath, data_description)
     metadata_dict = metadata.to_dict()
     min_strains_association = total_strains_count*min_strain_fraction_association
     max_strains_association = total_strains_count*max_strain_fraction_association

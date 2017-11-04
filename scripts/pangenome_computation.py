@@ -215,8 +215,8 @@ class pangenome:
 
     def inferAssociations(self):
         from sf_association import infer_branch_associations, infer_presence_absence_associations
-        infer_branch_associations(self.path, self.nstrains, self.min_strain_fraction_branch_association)
-        infer_presence_absence_associations(self.path, self.nstrains,
+        infer_branch_associations(self.path, self.metainfo_fpath, self.meta_data_config, self.nstrains, self.min_strain_fraction_branch_association)
+        infer_presence_absence_associations(self.path, self.metainfo_fpath, self.meta_data_config, self.nstrains,
             self.min_strain_fraction_presence_association, self.max_strain_fraction_presence_association)
         # TODO: gain loss associations
 

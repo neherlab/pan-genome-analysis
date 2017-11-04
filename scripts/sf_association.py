@@ -205,7 +205,7 @@ def infer_branch_associations(path, total_strains_count, strain_fraction_branch_
     from sf_geneCluster_align_makeTree import load_sorted_clusters
     from sf_coreTree_json import metadata_load
     metaFile= '%s%s'%(path,'metainfo.tsv')
-    data_description = '%s%s'%(path,'meta_tidy.tsv')
+    data_description = '%s%s'%(path,'meta_config.tsv')
     association_dict = defaultdict(dict)
     metadata = Metadata(metaFile, data_description)
     metadata_dict = metadata.to_dict()
@@ -241,7 +241,7 @@ def infer_presence_absence_associations(path, total_strains_count,
     from sf_geneCluster_align_makeTree import load_sorted_clusters
     from sf_coreTree_json import metadata_load
     metaFile= '%s%s'%(path,'metainfo.tsv')
-    data_description = '%s%s'%(path,'meta_tidy.tsv')
+    data_description = '%s%s'%(path,'meta_config.tsv')
     association_dict = defaultdict(dict)
     metadata = Metadata(metaFile, data_description)
     metadata_dict = metadata.to_dict()

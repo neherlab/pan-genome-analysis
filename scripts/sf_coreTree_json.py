@@ -161,14 +161,18 @@ def process_metajson(path, meta_data_config, metajson_dict):
     metajson_exp={"color_options":{ }}
     meta_display_choice_dt={}
     meta_display_order=[]
+    association_columns=[]
     if meta_data_config!='':
         with open(meta_data_config,'r') as meta_tidy_file:
             next(meta_tidy_file)
-            ## meta_category data_type display
+            ## meta_category data_type display and association
             for iline in meta_tidy_file:
-                meta_category, data_type, display= iline.rstrip().split('\t')[:3]
+                #meta_category  data_type  display  associate   log_scale
+                meta_category, data_type, display, associate= iline.rstrip().split('\t')[:4]
                 meta_display_order.append(meta_category)
                 meta_display_choice_dt[meta_category]=(data_type, display)
+                if associate=='yes':
+                    association_columns.append(meta_category)
         metajson_exp['meta_display_order']=meta_display_order
     else:
         metajson_exp['meta_display_order']=metajson_dict.keys()
@@ -222,10 +226,9 @@ def process_metajson(path, meta_data_config, metajson_dict):
             if 'organism' in metajson_exp['meta_display_order']:
                 metajson_exp['meta_display_order'].remove('organism')
                 del metajson_exp['color_options']['organism']
-        meta_js_out.write('var meta_details=')
-        meta_js_out.write('%s'%json.dumps(metajson_dict))
-        meta_js_out.write(', meta_display=')
-        meta_js_out.write('%s;'%json.dumps(metajson_exp))
+        meta_js_content='var meta_details=%s,\nmeta_display=%s;\n'%(json.dumps(metajson_dict),json.dumps(metajson_exp))
+        meta_js_content='%svar association_columns=%s;'%(meta_js_content,json.dumps(association_columns))
+        meta_js_out.write(meta_js_content)
 
 def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
                  meta_data_config, clean_temporary_files ):

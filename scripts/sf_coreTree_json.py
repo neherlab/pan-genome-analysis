@@ -77,10 +77,6 @@ def metadata_load(path, infile):
         for icsv_line in csv_reader:
             #assign unknown to empty meta-item
             icsv_line= ["unknown" if len(i)==0 else i for i in icsv_line ]
-            #capitalize host string to harmonize GenBank meta-data
-            host_rawdata= icsv_line[4]
-            if host_rawdata!='unknown':
-                icsv_line[4]= host_rawdata[0].upper() + host_rawdata[1:]
             accession=icsv_line[0]
             strain_meta_dict[ accession ] = icsv_line
 
@@ -151,7 +147,12 @@ def process_mixed_continuous(meta_detail):
             numer,denom=new_elem.split('/')
             new_elem=str(round(float(numer)/float(denom),3))
         if new_elem.replace('.','').isdigit():
-            new_elem=round(math.log(float(new_elem),2),2)
+            #new_elem=round(math.log(float(new_elem),2),2)
+           new_elem = float(new_elem)
+           if new_elem <= 0:
+                new_elem=round(new_elem,2)
+           else:
+                new_elem=round(math.log(new_elem,2),2)
 
         processed_elems.append([raw_elem,new_elem])
     return processed_elems

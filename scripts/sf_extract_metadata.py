@@ -15,13 +15,15 @@ def extract_metadata(path, strain_list, folders_dict, gbk_present):
         new_tag=raw_data.replace('[','').replace(']','').split(' ')[:2]
         new_tag=new_tag[0][:1]+'.'+new_tag[1]
         return new_tag
-
+    check_synoym=True
     from Bio import SeqIO
     with open('%s%s'%(path,'metainfo.tsv'), 'wb') as writeseq:
         #headers: accession, strainName, dateInfo, country, host
         header=['accession' , 'strain', 'collection_date', 'country', 'host', 'organism']
         writeseq.write( "%s\n"%('\t'.join(header)) )
         if gbk_present==True:
+            if check_synoym:
+                host_synonym_file= path+'../../metadata/host_synonym.tsv'
             gbk_path=folders_dict['gbk_path']
             for strainID in strain_list:
                 gbk_fpath=''.join([gbk_path,strainID,'.gbk'])
@@ -38,6 +40,18 @@ def extract_metadata(path, strain_list, folders_dict, gbk_present):
                                 strainName= feature.qualifiers['strain'][0]
                             if 'host' in feature.qualifiers:
                                 host= feature.qualifiers['host'][0]
+                                #capitalize host string to harmonize GenBank meta-data
+                                if host!='unknown':
+                                    host= host.capitalize()
+                                if check_synoym:
+                                    host_synonym_dict={}
+                                    with open(host_synonym_file) as host_synonym_items:
+                                        host_synonym_items.next()
+                                        for host_synonym in host_synonym_items:
+                                            host_original, host_unified = host_synonym.rstrip().split('\t')
+                                            host_synonym_dict[host_original] = host_unified
+                                    if host in host_synonym_dict:
+                                        host=host_synonym_dict[host]
                             if 'collection_date' in feature.qualifiers:
                                 datacolct= feature.qualifiers['collection_date'][0]
                             if 'country' in feature.qualifiers:

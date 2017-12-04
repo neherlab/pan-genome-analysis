@@ -130,7 +130,7 @@ class pangenome:
 
     def extract_gbk_metadata(self):
         """ extract metainfo (collection date, country, etc.) from GenBank file """
-        extract_metadata(self.path, self.strain_list, self.folders_dict, self.gbk_present)
+        extract_metadata(self.path, self.strain_list, self.folders_dict, self.gbk_present, self.metainfo_reconcile)
 
     def clustering_protein_sequences(self):
         """ clustering protein sequences"""

@@ -1,4 +1,4 @@
-def extract_metadata(path, strain_list, folders_dict, gbk_present):
+def extract_metadata(path, strain_list, folders_dict, gbk_present, metainfo_reconcile):
     """
     extract metainfo (date/country) from genBank file
     This step is not necessary if the user provides a tab-delimited
@@ -15,21 +15,35 @@ def extract_metadata(path, strain_list, folders_dict, gbk_present):
         new_tag=raw_data.replace('[','').replace(']','').split(' ')[:2]
         new_tag=new_tag[0][:1]+'.'+new_tag[1]
         return new_tag
-    check_synoym=True
     from Bio import SeqIO
     with open('%s%s'%(path,'metainfo.tsv'), 'wb') as writeseq:
         #headers: accession, strainName, dateInfo, country, host
         header=['accession' , 'strain', 'collection_date', 'country', 'host', 'organism']
+        if metainfo_reconcile:
+            header.insert(4,'region')
         writeseq.write( "%s\n"%('\t'.join(header)) )
         if gbk_present==True:
-            if check_synoym:
+            if metainfo_reconcile:
                 host_synonym_file= path+'../../metadata/host_synonym.tsv'
+                country_to_region_file=path+'../../metadata/country2region.tsv'
+                host_synonym_dict={}
+                country_to_region_dict={}
+                with open(host_synonym_file) as host_synonym_items:
+                    host_synonym_items.next()
+                    for host_synonym in host_synonym_items:
+                        host_original, host_unified = host_synonym.rstrip().split('\t')
+                        host_synonym_dict[host_original] = host_unified
+                with open(country_to_region_file) as country_to_region_input:
+                    country_to_region_input.next()
+                    for country_to_region in country_to_region_input:
+                        country, region= country_to_region.rstrip().split('\t')
+                        country_to_region_dict[country]=region
             gbk_path=folders_dict['gbk_path']
             for strainID in strain_list:
                 gbk_fpath=''.join([gbk_path,strainID,'.gbk'])
                 for record in SeqIO.parse(gbk_fpath, "genbank"):
                     for feature in record.features:
-                        host, datacolct, country, strainName, organismName ='unknown', 'unknown', 'unknown', 'unknown','unknown'
+                        host, datacolct, country, region, strainName, organismName ='unknown','unknown','unknown','unknown','unknown','unknown'
                         if feature.type=='source':
                             if 'organism' in feature.qualifiers:
                                 raw_data=feature.qualifiers['organism'][0]
@@ -43,13 +57,7 @@ def extract_metadata(path, strain_list, folders_dict, gbk_present):
                                 #capitalize host string to harmonize GenBank meta-data
                                 if host!='unknown':
                                     host= host.capitalize()
-                                if check_synoym:
-                                    host_synonym_dict={}
-                                    with open(host_synonym_file) as host_synonym_items:
-                                        host_synonym_items.next()
-                                        for host_synonym in host_synonym_items:
-                                            host_original, host_unified = host_synonym.rstrip().split('\t')
-                                            host_synonym_dict[host_original] = host_unified
+                                if metainfo_reconcile:
                                     if host in host_synonym_dict:
                                         host=host_synonym_dict[host]
                             if 'collection_date' in feature.qualifiers:
@@ -57,7 +65,11 @@ def extract_metadata(path, strain_list, folders_dict, gbk_present):
                             if 'country' in feature.qualifiers:
                                 country= feature.qualifiers['country'][0]
                                 country= country.split(':')[0] #USA: New...
-
+                                if metainfo_reconcile:
+                                    if country in country_to_region_dict:
+                                        region=country_to_region_dict[country]
+                                    else:
+                                        print 'country name %s not found in country2region.tsv'%country
                             # date processing
                             if datacolct!='unknown':
                                 import re, calendar
@@ -85,6 +97,8 @@ def extract_metadata(path, strain_list, folders_dict, gbk_present):
                             datacolct = datacolct.split('-')[0]
                         break
                     metadata_row=[strainID, strainName, datacolct, country, host, organismName]
+                    if metainfo_reconcile:
+                        metadata_row.insert(4,region)
                     writeseq.write( "%s\n"%('\t'.join(metadata_row)) )
                     break
         else: #gbk files are not provided

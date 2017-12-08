@@ -34,11 +34,11 @@ The results can be explored via our interactive [**pan-genome-visualization**](h
 Install these dependencies:
   - Required software:
       `sudo apt-get install mcl mafft fasttree raxml`
-      * [DIAMOND](https://github.com/bbuchfink/diamond) (linux version already located in `./tools/diamond`)
       * [MCL](http://micans.org/mcl/)
       * [mafft](http://mafft.cbrc.jp/alignment/software/)
       * [fasttree](http://www.microbesonline.org/fasttree/)
       * [raxml](https://github.com/stamatak/standard-RAxML)
+      * [DIAMOND](https://github.com/bbuchfink/diamond) (install via Conda or specify diamond path by the parameter -dmp)
 
   - Required python packages:
       - `pip install -r requirements.txt`

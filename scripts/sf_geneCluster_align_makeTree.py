@@ -306,7 +306,7 @@ class mpm_tree(object):
 
         if treetime_used:
             # load the resulting tree as a treetime instance
-            from treetime.treetime import TreeAnc
+            from treetime import TreeAnc
             self.tt = TreeAnc(tree=out_fname, aln=self.aln, gtr='Jukes-Cantor', verbose=0)
             # provide short cut to tree and revert names that conflicted with newick format
             self.tree = self.tt.tree

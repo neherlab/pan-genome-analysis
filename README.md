@@ -34,12 +34,11 @@ The results can be explored via our interactive [**pan-genome-visualization**](h
 Install these dependencies:
   - Required software:
       `sudo apt-get install mcl mafft fasttree raxml`
-      * [DIAMOND](https://github.com/bbuchfink/diamond) (linux version already located in `./tools/diamond`)
       * [MCL](http://micans.org/mcl/)
       * [mafft](http://mafft.cbrc.jp/alignment/software/)
       * [fasttree](http://www.microbesonline.org/fasttree/)
       * [raxml](https://github.com/stamatak/standard-RAxML)
-
+      * [DIAMOND](https://github.com/bbuchfink/diamond) (move diamond binary file to a directory included in the executable search path or specify diamond path by the parameter `-dmp`)
   - Required python packages:
       - `pip install -r requirements.txt`
       - [treetime](http://github.com/neherlab/treetime):
@@ -59,7 +58,7 @@ source activate panX
 ### How to run
 To run the test set: ` sh run-TestSet.sh `
 
-In `data/TestSet`, you will find a small set of five *Mycoplasma genitalium* genomes that is used in this tutorial. Your own data should also reside in such a folder within `data/` -- we will refer to this folder as *run directory* below. The name of the run directory is used as a species name in down-stream analysis.
+In `data/TestSet`, you will find a small set of four *Mycoplasma genitalium* genomes that is used in this tutorial. Your own data should also reside in such a folder within `data/` -- we will refer to this folder as *run directory* below. The name of the run directory is used as a species name in down-stream analysis.
 
 All steps can be run in order by omitting the `-st` option, whereas using `-st 5 6` will specify the analysis steps. If running only specific steps such as `-st 5 6`, steps before 5 should already be finished.
 

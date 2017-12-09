@@ -1,4 +1,5 @@
 import os, sys, time, glob
+from distutils.spawn import find_executable
 from collections import defaultdict, Counter
 from sf_miscellaneous import times, read_fasta, load_pickle, write_pickle
 
@@ -7,9 +8,8 @@ def diamond_run(output_path, dmd_ref_file, threads,
     diamond_query_cover, diamond_subject_cover, diamond_path, diamond_no_self_hits=0):
     """ run diamond using sensitive alignment mode """
     if diamond_path=='':
-        diam= ''.join([os.path.dirname(os.path.realpath(__file__)), '/../tools/diamond'])
-    else:
-        diam=diamond_path
+        diamond_path=find_executable('diamond')
+    diam=diamond_path
     print 'diamond inputfile:', dmd_ref_file
     input_prefix= dmd_ref_file.split('.faa')[0]
     if input_prefix=='reference':

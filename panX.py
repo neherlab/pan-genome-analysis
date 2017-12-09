@@ -35,7 +35,7 @@ parser.add_argument('-rt', '--raxml_max_time', type = int, default = 30,
     help='RAxML tree optimization: maximal runing time (minutes, default:30min)' , metavar='')
 parser.add_argument('-t', '--threads', type = int, default = 1,
     help='number of threads', metavar='')
-
+parser.add_argument('-v', '--version', action='version', version='panX analysis v1.5.1')
 #/*==================================
 #            clustering
 #==================================*/

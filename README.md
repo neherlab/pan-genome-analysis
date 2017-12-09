@@ -38,7 +38,7 @@ Install these dependencies:
       * [mafft](http://mafft.cbrc.jp/alignment/software/)
       * [fasttree](http://www.microbesonline.org/fasttree/)
       * [raxml](https://github.com/stamatak/standard-RAxML)
-      * [DIAMOND](https://github.com/bbuchfink/diamond) (install via Conda or specify DIAMOND path by the parameter `-dmp`)
+      * [DIAMOND](https://github.com/bbuchfink/diamond) (move diamond binary file to a directory included in the executable search path or specify diamond path by the parameter `-dmp`)
   - Required python packages:
       - `pip install -r requirements.txt`
       - [treetime](http://github.com/neherlab/treetime):

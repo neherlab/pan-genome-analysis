@@ -163,6 +163,8 @@ print 'Running panX in main folder: %s'%path
 #species=params.species_name
 
 programs={'mcl':'mcl', 'mafft':'mafft', 'fasttree':'FastTree', 'raxml':'raxmlHPC'}
+if params.diamond_path=='':
+    programs['diamond']='diamond'
 for program_alias, program_name in programs.items():
     passed=False
     ## check whether program_alias exists (if yes, test passed)
@@ -173,7 +175,13 @@ for program_alias, program_name in programs.items():
         continue
     ## if the program is not installed, exit
     if not passed:
-        print 'program '+program_name+' not found, please install it.'
+        if program_name=='diamond':
+            warning='\ndiamond not found:\nplease make sure that diamond is installed '+\
+            'and diamond binary file is included in the executable search path (e.g.: /usr/bin/diamond);\n'+\
+            'alternatively, one can specify diamond path via the parameter -dmp (e.g.: ./panX.py -dmp /mypath/diamond -fn ...)'
+            print warning
+        else:
+            print 'program '+program_name+' not found, please install it.'
         exit()
 
 myPangenome=pangenome(

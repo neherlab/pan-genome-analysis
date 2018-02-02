@@ -38,10 +38,13 @@ def gbk_translation(strainID, gbk_fname, protein_fname, nucleotide_fname, RNA_fn
         RNA_sequence_file=open(RNA_fname, 'wb')
 
     contig_index=0
+    check_CDS_passed=0
     for contig in SeqIO.parse(gbk_fname,'genbank'):
         contig_index+=1
         for feature in contig.features:
             if feature.type=='CDS':
+                if not check_CDS_passed:
+                    check_CDS_passed=1
                 if 'product' in feature.qualifiers and 'translation' in feature.qualifiers :
                     if 'gene' in feature.qualifiers :
                         geneName='%s'%(feature.qualifiers['gene'][0]).replace(' ','_')
@@ -108,6 +111,8 @@ def gbk_translation(strainID, gbk_fname, protein_fname, nucleotide_fname, RNA_fn
 
     aa_sequence_file.close(); nu_sequence_file.close()
 
+    return check_CDS_passed
+
 def extract_sequences(path, strain_list, folders_dict, gbk_present, enable_RNA_clustering):
     '''
         go through all GenBank files and extract sequences and metadata for each one
@@ -138,16 +143,22 @@ def extract_sequences(path, strain_list, folders_dict, gbk_present, enable_RNA_c
         ## clean up folder when data from previous run exist.
         os.system('rm -rf '+protein_path+'*.faa')
         os.system('rm -rf '+nucleotide_path+'*.fna')
+        missing_CDS_list=[] ## a list containing strains which have no CDS (if any)
         ## process gbk file
         for strainID in strain_list:
             gbk_fname= ''.join([gbk_path,strainID,'.gbk'])
             protein_fname= ''.join([protein_path,strainID,'.faa'])
             nucleotide_fname= ''.join([nucleotide_path,strainID,'.fna'])
             RNA_fname= ''.join([RNA_path,strainID,'.fna'])
-            gbk_translation(strainID, gbk_fname, protein_fname, nucleotide_fname, RNA_fname,
+            check_CDS_passed= gbk_translation(strainID, gbk_fname, protein_fname, nucleotide_fname, RNA_fname,
                 geneID_to_geneSeqID_dict,geneID_to_description_dict,
                 RNAID_to_SeqID_dict, RNAID_to_description_dict,
                 gene_aa_dict, gene_na_dict, RNA_dict, enable_RNA_clustering)
+            if not check_CDS_passed:
+                missing_CDS_list.append(strainID)
+        if len(missing_CDS_list)!=0:
+            print 'Warning: no CDS found in the following genome/genomes, please double-check\n', missing_CDS_list
+            exit()
     else:
         ## process fna/faa files if gbk files are not given.
         for strainID in strain_list:

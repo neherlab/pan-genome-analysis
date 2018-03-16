@@ -12,8 +12,10 @@ def extract_metadata(path, strain_list, folders_dict, gbk_present, metainfo_reco
         """"""
         #Pseudomonas putida ND6
         #[Pseudomonas syringae] pv. tomato str. DC3000
-        new_tag=raw_data.replace('[','').replace(']','').split(' ')[:2]
-        new_tag=new_tag[0][:1]+'.'+new_tag[1]
+        new_tag=raw_data
+        if ' ' in raw_data: #Binomial nomenclature
+            new_tag=raw_data.replace('[','').replace(']','').split(' ')[:2]
+            new_tag=new_tag[0][:1]+'.'+new_tag[1]
         return new_tag
     from Bio import SeqIO
     with open('%s%s'%(path,'metainfo.tsv'), 'wb') as writeseq:

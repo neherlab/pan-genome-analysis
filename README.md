@@ -21,7 +21,6 @@ The results can be interactively explored using a [**powerful web-based visualiz
 ```
 git clone https://github.com/neherlab/pan-genome-analysis.git
 cd pan-genome-analysis
-git submodule update --init
 ```
 
 Install dependencies and then run the test:

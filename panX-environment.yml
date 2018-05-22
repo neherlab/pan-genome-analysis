@@ -5,6 +5,7 @@ channels:
 - conda-forge
 dependencies:
 - python=2.7.13
+- python-dateutil>=2.5.0
 - biopython
 - numpy
 - scipy

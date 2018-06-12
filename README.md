@@ -23,15 +23,14 @@ git clone https://github.com/neherlab/pan-genome-analysis.git
 cd pan-genome-analysis
 ```
 
-Install dependencies via Conda and then run the test:
+Install dependencies easily via Conda and then run the test:
 `sh run-TestSet.sh`
 
-The results can be explored via our interactive [**pan-genome-visualization**](https://github.com/neherlab/pan-genome-visualization) application.
+The results can be explored using our interactive [**pan-genome-visualization**](https://github.com/neherlab/pan-genome-visualization) application.
 
 ### Installing dependencies
 #### Conda
-The required software and python packages can be easily installed via Conda.
-How to download and set up Conda:
+The required software and python packages can be readily installed using Conda.
 ```
 wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh
 bash Miniconda2-latest-Linux-x86_64.sh
@@ -41,13 +40,12 @@ source activate panX
 ```
 
 #### Overview of dependencies:
-  Required software/packages:
-      * [MCL](http://micans.org/mcl/)
-      * [mafft](http://mafft.cbrc.jp/alignment/software/)
-      * [fasttree](http://www.microbesonline.org/fasttree/)
-      * [raxml](https://github.com/stamatak/standard-RAxML)
-      * [DIAMOND](https://github.com/bbuchfink/diamond) (move diamond binary file to a directory included in the executable search path or specify diamond path by the parameter `-dmp`)
-      * [treetime](http://github.com/neherlab/treetime)
+  * [MCL](http://micans.org/mcl/)
+  * [mafft](http://mafft.cbrc.jp/alignment/software/)
+  * [fasttree](http://www.microbesonline.org/fasttree/)
+  * [raxml](https://github.com/stamatak/standard-RAxML)
+  * [DIAMOND](https://github.com/bbuchfink/diamond)
+  * [treetime](http://github.com/neherlab/treetime)
 
 ### How to run
 To run the test set: ` sh run-TestSet.sh `

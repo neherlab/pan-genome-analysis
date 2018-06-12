@@ -23,28 +23,14 @@ git clone https://github.com/neherlab/pan-genome-analysis.git
 cd pan-genome-analysis
 ```
 
-Install dependencies and then run the test:
+Install dependencies via Conda and then run the test:
 `sh run-TestSet.sh`
 
 The results can be explored via our interactive [**pan-genome-visualization**](https://github.com/neherlab/pan-genome-visualization) application.
 
-### Dependencies
-#### Manual installation
-Install these dependencies:
-  - Required software:
-      `sudo apt-get install mcl mafft fasttree raxml`
-      * [MCL](http://micans.org/mcl/)
-      * [mafft](http://mafft.cbrc.jp/alignment/software/)
-      * [fasttree](http://www.microbesonline.org/fasttree/)
-      * [raxml](https://github.com/stamatak/standard-RAxML)
-      * [DIAMOND](https://github.com/bbuchfink/diamond) (move diamond binary file to a directory included in the executable search path or specify diamond path by the parameter `-dmp`)
-  - Required python packages:
-      - `pip install -r requirements.txt`
-      - [treetime](http://github.com/neherlab/treetime):
-      `git submodule update --init`
-
+### Installing dependencies
 #### Conda
-The required software and python packages can be installed via Conda.
+The required software and python packages can be easily installed via Conda.
 How to download and set up Conda:
 ```
 wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh
@@ -53,6 +39,15 @@ export PATH=~/miniconda2/bin:$PATH
 conda env create -f panX-environment.yml
 source activate panX
 ```
+
+#### Overview of dependencies:
+  Required software/packages:
+      * [MCL](http://micans.org/mcl/)
+      * [mafft](http://mafft.cbrc.jp/alignment/software/)
+      * [fasttree](http://www.microbesonline.org/fasttree/)
+      * [raxml](https://github.com/stamatak/standard-RAxML)
+      * [DIAMOND](https://github.com/bbuchfink/diamond) (move diamond binary file to a directory included in the executable search path or specify diamond path by the parameter `-dmp`)
+      * [treetime](http://github.com/neherlab/treetime)
 
 ### How to run
 To run the test set: ` sh run-TestSet.sh `

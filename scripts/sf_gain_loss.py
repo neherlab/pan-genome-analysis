@@ -4,7 +4,6 @@ from collections import defaultdict
 sys.path.append('./')
 from treetime import treeanc as ta
 from treetime.gtr import GTR
-from treetime import io
 from treetime import seq_utils
 from Bio import Phylo, AlignIO
 from sf_miscellaneous import write_json, write_pickle

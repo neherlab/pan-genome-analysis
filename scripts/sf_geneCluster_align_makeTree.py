@@ -359,7 +359,7 @@ class mpm_tree(object):
         '''
         custom translation sequence that handles gaps
         '''
-        if type(seq)!=str:
+        if type(seq) not in [str, unicode]:
             str_seq = str(seq.seq)
         else:
             str_seq = seq

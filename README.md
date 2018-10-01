@@ -10,8 +10,9 @@ The results can be interactively explored using a [**powerful web-based visualiz
 ## Table of contents
   * [Pipeline overview](#pipeline-overview)
   * [Quick start](#quick-start)
-  * [Dependencies](#dependencies)
   * [How to run](#how-to-run)
+  * [Directory structure and analysis output](#directory-structure-and-analysis-output)
+  * [Command line arguments](#command-line-arguments)
 
 ### Pipeline overview
 ![panX](/panX-pipeline.png)
@@ -70,6 +71,7 @@ Mandatory parameters: -fn folder_name / -sl species_name
 NOTICE: species_name e.g.: S_aureus
 Example: ./panX.py -fn ./data/TestSet -sl TestSet -t 32 > TestSet.log 2> TestSet.err
 ```
+### Directory structure and analysis output
 The analysis generates clustering result
 `./data/YourSpecies/allclusters_final.tsv `
 
@@ -101,7 +103,8 @@ The analysis generates clustering result
 ```
 In which step different files and directories are produced is described in more details in [step-tutorials.md](https://github.com/neherlab/pan-genome-analysis/blob/master/step-tutorials.md).
 
-**Command line arguments** [(Click here for more details)](https://github.com/neherlab/pan-genome-analysis/blob/master/advanced_options.md)
+### Command line arguments
+[(Click here for more details)](https://github.com/neherlab/pan-genome-analysis/blob/master/advanced_options.md)
 
   Soft core-gene:
 

@@ -188,8 +188,9 @@ def process_metajson(path, meta_data_config, metajson_dict):
         elif metatype=='host':
             metajson_exp['color_options'][metatype]["type"]="discrete"
         else:
+            print(meta_display_choice_dt)
             if len(meta_display_choice_dt)!=0:
-                if meta_display_choice_dt[metatype][1]=='yes': #display
+                if metatype in meta_display_choice_dt and meta_display_choice_dt[metatype][1]=='yes': #display
                     metajson_exp['color_options'][metatype]["type"]= meta_display_choice_dt[metatype][0]
                     if metajson_exp['color_options'][metatype]["type"]=='mixed_continuous':
                         metajson_dict[metatype]=process_mixed_continuous(metajson_dict[metatype])

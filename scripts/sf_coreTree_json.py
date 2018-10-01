@@ -75,9 +75,11 @@ def metadata_load(path, infile):
 
         #store metadata for each accession
         for icsv_line in csv_reader:
+            if len(icsv_line)==0:
+                continue
             #assign unknown to empty meta-item
             icsv_line= ["unknown" if len(i)==0 else i for i in icsv_line ]
-            accession=icsv_line[0]
+            accession=str(icsv_line[0])
             strain_meta_dict[ accession ] = icsv_line
 
             #store metadata belonging to each metadata_type (metadata_type as key)

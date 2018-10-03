@@ -46,7 +46,12 @@ class PresenceAbsenceAssociation(object):
         for n in self.tree.find_clades(order='postorder'):
             if n.is_terminal():
                 n.strain = n.name.split('|')[0]
-                n.meta_value = transform(self.meta_info[n.strain][meta_column])
+                try:
+                    n.meta_value = transform(self.meta_info[n.strain][meta_column])
+                except:
+                    print("WARNING: reading field %s for strain %s failed"%(meta_column, n.strain))
+                    n.meta_value = np.nan
+
                 if not np.isnan(n.meta_value):
                     all_values.append(n.meta_value)
                     values_by_state[n.present].append(n.meta_value)

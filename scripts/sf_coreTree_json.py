@@ -271,9 +271,10 @@ def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
     os.chdir(output_path)
     os.system('mv coreGenomeTree.json strainMetainfo.json '+main_data_path+'metaConfiguration.js '+vis_json_path)
     os.system('cp strain_tree.nwk '+vis_json_path+'/strain_tree.nwk')
-    os.system('mv *_tree.json *.nwk '+vis_cluster_path)
-    os.system('mv *_aln*.fa '+vis_cluster_path)
-    os.system('mv *patterns.json '+vis_cluster_path)
+    os.system('find . -name "*_tree.json" -exec mv {} '+vis_cluster_path+' \;')
+    os.system('find . -name "*.nwk" -exec mv {} '+vis_cluster_path+' \;')
+    os.system('find . -name "*_aln*.fa" -exec mv {} '+vis_cluster_path+' \;')
+    os.system('find . -name "*patterns.json" -exec mv {} '+vis_cluster_path+' \;')
     os.system('mv '+clustering_path+'allclusters_final.tsv'+' '+main_data_path)
 
     ## gzip aln files

@@ -283,7 +283,7 @@ def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
 
 
     ## gzip aln files
-    os.system('find '+vis_cluster_path+' -name \*.fa | xargs gzip')
+    os.system('find '+vis_cluster_path+' -name \*.fa | xargs gzip -f ')
     if clean_temporary_files:
         # clean up record folders
         os.chdir(main_data_path);

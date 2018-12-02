@@ -269,13 +269,13 @@ def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
     os.chdir(output_path)
     for f in ['coreGenomeTree.json', 'strainMetainfo.json', main_data_path+'metaConfiguration.js']:
         try:
-            shutil.move(f,vis_cluster_path)
+            shutil.move(f,vis_json_path+f)
         except:
             print("can't move ",f)
 
     shutil.copy('strain_tree.nwk', vis_json_path+'/strain_tree.nwk')
     for f in glob.glob('*_tree.json') + glob.glob('*.nwk') + glob.glob('*_aln*.fa') + glob.glob('*patterns.json'):
-        shutil.move(f,vis_json_path+f)
+        shutil.move(f,vis_cluster_path+f)
     try:
         shutil.move(clustering_path+'allclusters_final.tsv', main_data_path+'allclusters_final.tsv')
     except:

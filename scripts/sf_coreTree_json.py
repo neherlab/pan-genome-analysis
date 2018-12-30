@@ -261,13 +261,14 @@ def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
 
     ## process meta json
     process_metajson(path, meta_data_config, metajson_dict)
+    shutil.move(path+"metaConfiguration.js",vis_json_path+"metaConfiguration.js")
 
     ## Data organization
     ## Move: visualization-related files into ./vis/geneCluster/ folder
     #os.system('ln -sf %s/*.cpk %s/../'%(output_path,output_path))
 
     os.chdir(output_path)
-    for f in ['coreGenomeTree.json', 'strainMetainfo.json', main_data_path+'metaConfiguration.js']:
+    for f in ['coreGenomeTree.json', 'strainMetainfo.json']:
         try:
             shutil.move(f,vis_json_path+f)
         except:
@@ -295,12 +296,18 @@ def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
         split_long= cluster_seq_path+'update_long_branch_splits/'
         resolve_peak= cluster_seq_path+'update_uncluster_splits/'
         for dirname in [tmp_core, deleted, split_long, resolve_peak]:
-            shutil.rmtree(dirname)
+            try:
+                shutil.rmtree(dirname)
+            except:
+                print("{} can't be deleted".format(dirname))
 
         # clean up files
         for key, fpath in fpaths_dict.items():
             if key in ['cluster_fpath','cluster_final_fpath','cluster_cpk_final_fpath']:
                 continue
-            os.remove(fpath)
+            try:
+                os.remove(fpath)
+            except:
+                print("{} can't be deleted".format(fpath))
 
     print('Pan-genome analysis is successfully accomplished, the results can be transferred to the local server for panX data visualization and exploration via link-to-server.py in the main folder.')

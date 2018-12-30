@@ -1,7 +1,6 @@
-import os, sys, csv, json
+import os, sys, csv, json, glob, shutil
 from collections import defaultdict, Counter, OrderedDict
 from ete2 import Tree
-from itertools import izip
 from sf_miscellaneous import write_json
 import math
 import pandas as pd
@@ -85,7 +84,7 @@ def metadata_load(path, infile):
             #store metadata belonging to each metadata_type (metadata_type as key)
             #headers[1:]: not consider accession as metadata
             metatable_strain_dt={}
-            for header, meta_element in izip(headers, icsv_line):
+            for header, meta_element in zip(headers, icsv_line):
                 if len(meta_element)==0:
                     meta_element="unknown"
                 metatable_strain_dt[header]=meta_element
@@ -102,7 +101,7 @@ def metadata_process(path, infile):
     (headers, metajson_dict, metatable_strains_json_dict,
             strain_meta_dict) = metadata_load(path, infile)
     #filter the redundant metadata for each metadata_type
-    for k,v in metajson_dict.iteritems():
+    for k,v in metajson_dict.items():
         meta_list=list(set(v));meta_list.sort()
         metajson_dict[k]=meta_list
     output_path= ''.join([path,'geneCluster/'])
@@ -222,7 +221,7 @@ def process_metajson(path, meta_data_config, metajson_dict):
                 else:
                     coloring_type="discrete"
                 metajson_exp['color_options'][metatype]["type"]=coloring_type
-                print metatype, ': undefined coloring type is now set to %s.'%coloring_type
+                print(metatype, ': undefined coloring type is now set to %s.'%coloring_type)
 
     with open(''.join([path,'metaConfiguration.js']),'wb') as meta_js_out:
         if len(metajson_dict['organism'])<=1:
@@ -243,7 +242,7 @@ def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
     metaFile= '%s%s'%(path,'metainfo.tsv')
     ## create a link of user-provided meta_info_file
     if meta_info_file_path !='none':
-        os.system('cp %s %s'%(meta_info_file_path, metaFile))
+        shutil.copy(meta_info_file_path, metaFile)
 
     main_data_path= path
     clustering_path= folders_dict['clustering_path']
@@ -263,35 +262,53 @@ def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
 
     ## process meta json
     process_metajson(path, meta_data_config, metajson_dict)
+    shutil.move(path+"metaConfiguration.js",vis_json_path+"metaConfiguration.js")
 
     ## Data organization
     ## Move: visualization-related files into ./vis/geneCluster/ folder
     #os.system('ln -sf %s/*.cpk %s/../'%(output_path,output_path))
 
     os.chdir(output_path)
-    os.system('mv coreGenomeTree.json strainMetainfo.json '+main_data_path+'metaConfiguration.js '+vis_json_path)
-    os.system('cp strain_tree.nwk '+vis_json_path+'/strain_tree.nwk')
-    os.system('mv *_tree.json *.nwk '+vis_cluster_path)
-    os.system('mv *_aln*.fa '+vis_cluster_path)
-    os.system('mv *patterns.json '+vis_cluster_path)
-    os.system('mv '+clustering_path+'allclusters_final.tsv'+' '+main_data_path)
+    for f in ['coreGenomeTree.json', 'strainMetainfo.json']:
+        try:
+            shutil.move(f,vis_json_path+f)
+        except:
+            print("can't move ",f)
+
+    shutil.copy('strain_tree.nwk', vis_json_path+'/strain_tree.nwk')
+    for f in glob.glob('*_tree.json') + glob.glob('*.nwk') + glob.glob('*_aln*.fa') + glob.glob('*patterns.json'):
+        shutil.move(f,vis_cluster_path+f)
+    try:
+        shutil.move(clustering_path+'allclusters_final.tsv', main_data_path+'allclusters_final.tsv')
+    except:
+        print("can't move allclusters_final.tsv")
+
 
     ## gzip aln files
-    os.system('find '+vis_cluster_path+' -name \*.fa | xargs gzip')
+    os.system('find '+vis_cluster_path+' -name \*.fa | xargs gzip -f ')
     if clean_temporary_files:
         # clean up record folders
         os.chdir(main_data_path);
 
-        print 'clean up temporary files (temporary core gene and post-processed cluster records, etc.)\n'
+        print('clean up temporary files (temporary core gene and post-processed cluster records, etc.)\n')
         tmp_core= folders_dict['tmp_core_seq_path']
         cluster_seq_path= folders_dict['cluster_seq_path']
         deleted= cluster_seq_path+'deleted_clusters/'
         split_long= cluster_seq_path+'update_long_branch_splits/'
         resolve_peak= cluster_seq_path+'update_uncluster_splits/'
-        os.system('rm -rf '+' '.join([tmp_core, deleted, split_long, resolve_peak]))
+        for dirname in [tmp_core, deleted, split_long, resolve_peak]:
+            try:
+                shutil.rmtree(dirname)
+            except:
+                print("{} can't be deleted".format(dirname))
+
         # clean up files
-        for key, fpath in fpaths_dict.iteritems():
-            if any( key==i for i in ['cluster_fpath','cluster_final_fpath','cluster_cpk_final_fpath']): continue
-            os.system('rm -f '+fpath)
+        for key, fpath in fpaths_dict.items():
+            if key in ['cluster_fpath','cluster_final_fpath','cluster_cpk_final_fpath']:
+                continue
+            try:
+                os.remove(fpath)
+            except:
+                print("{} can't be deleted".format(fpath))
 
     print('Pan-genome analysis is successfully accomplished, the results can be transferred to the local server for panX data visualization and exploration via link-to-server.py in the main folder.')

@@ -2,8 +2,8 @@ from __future__ import print_function, division
 import os,sys,copy;import numpy as np
 from collections import defaultdict
 sys.path.append('./')
-from treetime import treeanc as ta
-from treetime.gtr import GTR
+from treetime import TreeAnc
+from treetime import GTR
 from treetime import seq_utils
 from Bio import Phylo, AlignIO
 from sf_miscellaneous import write_json, write_pickle
@@ -27,7 +27,7 @@ def infer_gene_gain_loss(path, rates = [1.0, 1.0]):
     nwk =  sep.join([path.rstrip(sep), 'geneCluster', 'strain_tree.nwk'])
 
     # instantiate treetime with custom GTR
-    t = ta.TreeAnc(nwk, gtr =gain_loss_model, verbose=2)
+    t = TreeAnc(nwk, gtr =gain_loss_model, verbose=2)
     # fix leaves names since Bio.Phylo interprets numeric leaf names as confidence
     for leaf in t.tree.get_terminals():
         if leaf.name is None:

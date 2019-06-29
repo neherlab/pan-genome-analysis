@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 import argparse
 import os, sys, time
 panX_script_dir= os.path.dirname(os.path.realpath(__file__))

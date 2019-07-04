@@ -10,7 +10,7 @@ def diamond_run(output_path, dmd_ref_file, threads,
     if diamond_path=='':
         diamond_path=find_executable('diamond')
     diam=diamond_path
-    print 'diamond inputfile:', dmd_ref_file
+    print('diamond inputfile:', dmd_ref_file)
     input_prefix= dmd_ref_file.split('.faa')[0]
     if input_prefix=='reference':
         output_m8_filename='query_matches.m8'
@@ -24,8 +24,8 @@ def diamond_run(output_path, dmd_ref_file, threads,
                         ])
     start = time.time()
     os.system(makedb_command)
-    print 'diamond build index (makedb):', times(start)
-    print 'command line record:', makedb_command
+    print('diamond build index (makedb):', times(start))
+    print('command line record:', makedb_command)
     ## option to enable --no-self-hits
     if diamond_no_self_hits==0:
         option_no_self_hits=''
@@ -47,9 +47,9 @@ def diamond_run(output_path, dmd_ref_file, threads,
                         ])
     start = time.time()
     os.system(blastp_command)
-    print 'diamond alignment (blastp):', times(start)
-    print 'diamond_max_target_seqs used: %s'%diamond_max_target_seqs
-    print 'command line record:', blastp_command
+    print('diamond alignment (blastp):', times(start))
+    print('diamond_max_target_seqs used: %s'%diamond_max_target_seqs)
+    print('command line record:', blastp_command)
 
     ## remove diamond binary database (dmnd) file
     os.system(''.join(['rm ',output_path,'nr_', input_prefix,'.dmnd']))
@@ -58,7 +58,7 @@ def gather_seq_length(faa_path):
     """ """
     seq_length_dt=defaultdict()
     for faa_file in glob.iglob(''.join([faa_path,'*faa'])):
-        for gene_tag, seq in read_fasta(faa_file).iteritems():
+        for gene_tag, seq in read_fasta(faa_file).items():
             seq_length_dt[gene_tag]=len(seq)
     return seq_length_dt
 
@@ -80,8 +80,8 @@ def filter_hits_single(output_path, threads,
         filtered_hits_fpath=os.path.abspath(output_path+filtered_hits_filename)
         os.system(' '.join(['ln -s',m8_fpath,filtered_hits_fpath]))
     else:
-        with open(output_path+m8_filename,'rb') as m8_file,\
-            open(output_path+filtered_hits_filename,'wb') as abc_file:
+        with open(output_path+m8_filename,'r') as m8_file,\
+            open(output_path+filtered_hits_filename,'w') as abc_file:
             print('filter hits:')
             #using_BS=1; using_BAL=0
             for iline in m8_file:
@@ -95,9 +95,9 @@ def filter_hits_single(output_path, threads,
                 #     abc_file.write('%s\n'%'\t'.join([cols_list[0], cols_list[1], \
                 #         str(round( float(cols_list[-1])/float(cols_list[3]),5 ))]))
         if input_prefix=='':
-            print 'filter hits runtime:', times(start),'\n'
+            print('filter hits runtime:', times(start),'\n')
         else:
-            print 'filter hits runtime for ',input_prefix,':', times(start),'\n'
+            print('filter hits runtime for ',input_prefix,':', times(start),'\n')
 
 def mcl_run(output_path, threads, mcl_inflation, input_prefix=''):
     """ """
@@ -111,8 +111,8 @@ def mcl_run(output_path, threads, mcl_inflation, input_prefix=''):
                         '-o ',output_path,'allclusters.tsv -I ',str(mcl_inflation),\
                         ' -te ',str(threads),' > ',output_path,'mcl.log 2>&1'])
     os.system(command_mcl)
-    print 'command line mcl:', command_mcl
-    print 'mcl runtime:', times(start),'\n'
+    print('command line mcl:', command_mcl)
+    print('mcl runtime:', times(start),'\n')
 
 
 def cleanup_clustering(clustering_path):
@@ -123,13 +123,13 @@ def cleanup_clustering(clustering_path):
 
 def parse_geneCluster(input_fpath, output_fpath, cluster_log=False):
     """ store clusters as dictionary in cpk file """
-    with open(input_fpath, 'rb') as infile:
+    with open(input_fpath, 'r') as infile:
         geneCluster_dt=defaultdict(list)
         for gid, iline in enumerate(infile,1): ##format: NC_022226|1-1956082:1956435
             col=iline.rstrip().split('\t')
             clusterID="GC%08d"%gid
-            num_strains=len(dict(Counter([ ivg.split('|')[0] for ivg in col])).keys())
-            num_genes=len(dict(Counter([ ivg for ivg in col])).keys())
+            num_strains=len(list(dict(Counter([ ivg.split('|')[0] for ivg in col])).keys()))
+            num_genes=len(list(dict(Counter([ ivg for ivg in col])).keys()))
             gene_mem=[ icol for icol in col ]
             geneCluster_dt[clusterID]=[num_strains,gene_mem,num_genes]
     write_pickle(output_fpath,geneCluster_dt)
@@ -137,9 +137,9 @@ def parse_geneCluster(input_fpath, output_fpath, cluster_log=False):
 
 def roary_cluster_process(locus_tag_to_geneID_dict, input_fpath, output_fpath):
     """ """
-    print input_fpath,output_fpath
-    with open(input_fpath,'rb') as in_clusters:
-        with open(output_fpath,'wb') as out_clusters:
+    print(input_fpath,output_fpath)
+    with open(input_fpath,'r') as in_clusters:
+        with open(output_fpath,'w') as out_clusters:
             for cluster in in_clusters:
                 cluster_line_lst=[]
                 #out_clusters.write('%s\n'%'\t'.join([ locus_tag_to_geneID_dict[gene.split('.')[0]] for gene in cluster.rstrip().split(': ')[1].split('\t') ]) )
@@ -147,7 +147,7 @@ def roary_cluster_process(locus_tag_to_geneID_dict, input_fpath, output_fpath):
                     if gene.split('.')[0] not in locus_tag_to_geneID_dict:
                         ## Roary also clusters non-CDS genes (skip and record them)
                         #print gene.split('.')[0], 'not in locus_tag_to_geneID_dict'
-                        print gene.split('.')[0], ' non-coding gene from Roary file (skipped) '
+                        print(gene.split('.')[0], ' non-coding gene from Roary file (skipped) ')
                     else:
                         cluster_line_lst.append(locus_tag_to_geneID_dict[gene.split('.')[0]])
                 if len(cluster_line_lst)!=0: # skip clusters on single non-CDS gene
@@ -159,8 +159,8 @@ def process_orthofinder(input_fpath,output_fpath):
     Orthogroups_UnassignedGenes.csv: inputfile_singleton
     """
     #outfilename='orthofinder_cluster.tsv'
-    with open(input_fpath,'rb') as orthogroups,\
-        open(output_fpath,'wb') as outfile:
+    with open(input_fpath,'r') as orthogroups,\
+        open(output_fpath,'w') as outfile:
         for iline in orthogroups:
             cluster_line='\t'.join([gene for gene in iline.rstrip().split(': ')[1].split(' ')])
             outfile.write('%s\n'%cluster_line)
@@ -195,7 +195,7 @@ def clustering_protein(path, folders_dict, threads,
     if any( i!='none' for i in [blast_fpath, roary_fpath, orthofinder_fpath, other_tool_fpath]):
         geneID_to_geneSeqID_dict= load_pickle('%sgeneID_to_geneSeqID.cpk'%path)
         locus_tag_to_geneID_dict= defaultdict(list)
-        for geneID in geneID_to_geneSeqID_dict.keys():
+        for geneID in list(geneID_to_geneSeqID_dict.keys()):
             locus_tag=geneID.split('|')[1]
             locus_tag_to_geneID_dict[locus_tag]=geneID
     ## using standard pipeline (roary_fpath=='none')
@@ -221,7 +221,7 @@ def clustering_protein(path, folders_dict, threads,
     elif roary_fpath!='none': ## using cluster files from roary
         roary_cluster_process(locus_tag_to_geneID_dict, roary_fpath, cluster_fpath)
         # with open(roary_fpath, 'rb') as cluster_external_file:
-        #     with open(cluster_fpath, 'wb') as cluster_final_file:
+        #     with open(cluster_fpath, 'w') as cluster_final_file:
         #         for cluster_line in cluster_external_file:
         #              cluster_final_file.write( '%s\n'%'\t'.join([ gene_tag.replace('_','|') if '|' not in gene_tag else gene_tag for gene_tag in cluster_line.rstrip().split(': ')[1].split('\t')]) )
     elif orthofinder_fpath!='none':

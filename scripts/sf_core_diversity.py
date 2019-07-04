@@ -8,10 +8,10 @@ from sf_geneCluster_align_makeTree import mpm_tree#, prepare_cluster_seq
 def export_cluster_seq_tmp(cluster_seqs_path, geneCluster_dt,
     geneID_to_geneSeqID_dict, gene_na_dict, gene_aa_dict):
     """ write nuc/aa sequences for each cluster  """
-    for clusterID, gene in geneCluster_dt.iteritems():
+    for clusterID, gene in geneCluster_dt.items():
         ## geneCluster file name
         gene_cluster_nu_filename="%s%s"%(clusterID,'.fna')
-        with open( cluster_seqs_path+gene_cluster_nu_filename, 'wb') as gene_cluster_nu_write:
+        with open( cluster_seqs_path+gene_cluster_nu_filename, 'w') as gene_cluster_nu_write:
             ## write nucleotide sequences into geneCluster files
             for gene_memb in gene[1]:
                 ## gene_name format: strain_1|locusTag
@@ -30,11 +30,11 @@ def calculate_diversity( files_list, file_path, species):
             myTree.diversity_statistics_nuc()
             diversity_dict[input_filepath.split('/')[-1]]=round(myTree.diversity_nuc,4)
         except:
-            print('problem in sequence diversity calculation:', input_filepath)
+            print(('problem in sequence diversity calculation:', input_filepath))
 
     ## write records in gene_diversity file
     with open(file_path+'tmp_core_diversity.txt', 'a') as tmp_core_diversity_file:
-        for clusterID, diversity in diversity_dict.iteritems():
+        for clusterID, diversity in diversity_dict.items():
             tmp_core_diversity_file.write('%s\t%f\n'%(clusterID, diversity))
 
 def tmp_average_core_diversity(file_path):
@@ -64,7 +64,7 @@ def estimate_core_gene_diversity(path, folders_dict, strain_list, parallel, core
     ## create core gene list
     core_geneCluster_dt= defaultdict()
     # geneCluster_dt: {clusterID:[ count_strains,[memb1,...],count_genes }
-    for clusterID, cluster_stats in geneCluster_dt.iteritems():
+    for clusterID, cluster_stats in geneCluster_dt.items():
         if core_cutoff==1.0:
             strain_core_cutoff=totalStrain
         else:
@@ -101,9 +101,9 @@ def estimate_core_gene_diversity(path, folders_dict, strain_list, parallel, core
 
     calculated_core_diversity=tmp_average_core_diversity(tmp_core_seq_path)
     refined_core_diversity= round((0.1+factor_core_diversity*calculated_core_diversity)/(1+factor_core_diversity*calculated_core_diversity),4)
-    print('factor used: '+str(factor_core_diversity))
-    print('average core genome diversity: '+str(calculated_core_diversity))
-    print('defined core genome diversity cutoff for splitting long branches: '+str(refined_core_diversity))
+    print(('factor used: '+str(factor_core_diversity)))
+    print(('average core genome diversity: '+str(calculated_core_diversity)))
+    print(('defined core genome diversity cutoff for splitting long branches: '+str(refined_core_diversity)))
 
     ## move folder tmp_core to the central data folder
     new_clustering_path= '%stmp_core'%path

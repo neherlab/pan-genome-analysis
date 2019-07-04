@@ -31,11 +31,11 @@ def gbk_translation(strainID, gbk_fname, protein_fname, nucleotide_fname, RNA_fn
         - enable_RNA_clustering: not cluster rRNA
     '''
 
-    aa_sequence_file=open(protein_fname, 'wb')
-    nu_sequence_file=open(nucleotide_fname, 'wb')
+    aa_sequence_file=open(protein_fname, 'w')
+    nu_sequence_file=open(nucleotide_fname, 'w')
 
     if enable_RNA_clustering:
-        RNA_sequence_file=open(RNA_fname, 'wb')
+        RNA_sequence_file=open(RNA_fname, 'w')
 
     contig_index=0
     check_CDS_passed=0
@@ -157,7 +157,7 @@ def extract_sequences(path, strain_list, folders_dict, gbk_present, enable_RNA_c
             if not check_CDS_passed:
                 missing_CDS_list.append(strainID)
         if len(missing_CDS_list)!=0:
-            print 'Warning: no CDS found in the following genome/genomes, please double-check\n', missing_CDS_list
+            print('Warning: no CDS found in the following genome/genomes, please double-check\n', missing_CDS_list)
             exit()
     else:
         ## process fna/faa files if gbk files are not given.
@@ -168,7 +168,7 @@ def extract_sequences(path, strain_list, folders_dict, gbk_present, enable_RNA_c
             aa_sequence_dt=read_fasta(protein_fname)
             na_sequence_dt=read_fasta(nucleotide_fname)
             ## prepare geneSeqID and description
-            for geneID in aa_sequence_dt.keys():
+            for geneID in list(aa_sequence_dt.keys()):
                 geneName, annotation= '',''
                 geneID_to_geneSeqID_dict[geneID]=geneID
                 geneID_to_description_dict[geneID]={'geneName': geneName,

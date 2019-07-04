@@ -42,7 +42,7 @@ def make_genepresence_alignment(path, disable_gain_loss, merged_gain_loss_output
         ## append 0/1 to each strain
         create_genePresence(dt_strainGene, totalStrain, set_totalStrain, gene[1])
 
-    with open('%s%s'%(output_path,'genePresence.aln'),'wb') as presence_outfile:
+    with open('%s%s'%(output_path,'genePresence.aln'),'w') as presence_outfile:
         for istkey in dt_strainGene:
             write_in_fa( presence_outfile, istkey, dt_strainGene[istkey])
     write_pickle('%s%s'%(output_path,'dt_genePresence.cpk'), dt_strainGene)
@@ -55,7 +55,7 @@ def make_genepresence_alignment(path, disable_gain_loss, merged_gain_loss_output
             write_json(dt_strainGene, gene_loss_fname, indent=1)
         else:
             ## strainID as key, presence pattern as value (converted into np.array)
-            keylist= dt_strainGene.keys(); keylist.sort()
+            keylist= list(dt_strainGene.keys()); keylist.sort()
             strainID_keymap= {ind:k for ind, k in enumerate(keylist)} # dict(zip(keylist, range(3)))
             presence_arr= np.array([ np.array(dt_strainGene[k],'c') for k in keylist]) # 0: present, 3: absent
             presence_arr[presence_arr=='1']='3'

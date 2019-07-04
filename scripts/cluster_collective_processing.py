@@ -7,7 +7,7 @@ from sf_unclustered_genes import postprocess_unclustered_genes
 class clusterCollector(object):
     """docstring for clusterCollector"""
     def __init__(self, **kwargs):
-        for k, v in kwargs.iteritems():
+        for k, v in kwargs.items():
             setattr(self, k, v)
 
     def estimate_raw_core_diversity(self):

@@ -16,7 +16,7 @@ def consolidate_annotation(path,all_gene_names, geneID_to_description_dict):
     annotations=dict(Counter( [ geneID_to_description_dict[igi]['annotation'] for igi in all_gene_names]) )
     ## create split cluster generating new ID conflict
 
-    annotations_sorted=sorted(annotations.iteritems(), key=itemgetter(1),reverse=True)
+    annotations_sorted=sorted(iter(annotations.items()), key=itemgetter(1),reverse=True)
     # take majority, unless majority is hypothetical protein and other annotations exist
     majority = annotations_sorted[0][0]
     if majority=='hypothetical_protein' and len(annotations)!=1:
@@ -38,7 +38,7 @@ def consolidate_geneName(path,all_gene_names, geneID_to_description_dict):
     geneNames=dict(Counter( [ geneID_to_description_dict[igi]['geneName'] for igi in all_gene_names ]) )
     ## create split cluster generating new ID conflict
 
-    geneNames_sorted=sorted(geneNames.iteritems(), key=itemgetter(1),reverse=True)
+    geneNames_sorted=sorted(iter(geneNames.items()), key=itemgetter(1),reverse=True)
     majority = geneNames_sorted[0][0]
     if majority=='':
         if len(geneNames)!=1:
@@ -67,7 +67,7 @@ def optional_geneCluster_properties(gene_list, optional_table_column):
 
 
 def geneCluster_associations(associations, suffix='BA'):
-    return ['"%s %s":%1.2f'%(k.split()[0], suffix , np.abs(v)) for k,v in associations.iteritems() if not np.isnan(v)]
+    return ['"%s %s":%1.2f'%(k.split()[0], suffix , np.abs(v)) for k,v in associations.items() if not np.isnan(v)]
 
 
 def geneCluster_to_json(path, enable_RNA_clustering, store_locus_tag,
@@ -82,10 +82,10 @@ def geneCluster_to_json(path, enable_RNA_clustering, store_locus_tag,
     output_path='%s%s'%(path,'vis/')
 
     # open files
-    geneClusterJSON_outfile=open(output_path+'geneCluster.json', 'wb')
+    geneClusterJSON_outfile=open(output_path+'geneCluster.json', 'w')
     ##store locus_tags in a separate file for large dataset
     if store_locus_tag:
-        locus_tag_outfile=open(path+'search_locus_tag.tsv', 'wb')
+        locus_tag_outfile=open(path+'search_locus_tag.tsv', 'w')
 
 
     ### load precomputed annotations, diversity, associations etc
@@ -132,7 +132,7 @@ def geneCluster_to_json(path, enable_RNA_clustering, store_locus_tag,
         gene_event= dt_geneEvents[gid]
 
         ## average length
-        seqs = read_fasta(geneCluster_path+'%s%s'%(clusterID,'.fna')).values()
+        seqs = list(read_fasta(geneCluster_path+'%s%s'%(clusterID,'.fna')).values())
         geneClusterLength = int(np.mean([ len(igene) for igene in seqs]))
 
         ## msa
@@ -145,7 +145,7 @@ def geneCluster_to_json(path, enable_RNA_clustering, store_locus_tag,
             dup_list=[ ig.split('|')[0] for ig in gene_list]
             # "#" to delimit (gene/gene_count)key/value ; "@" to seperate genes
             # Counter({'g1': 2, 'g2': 1})
-            dup_detail=''.join(['%s#%s@'%(kd,vd) for kd, vd in Counter(dup_list).iteritems() if vd>1 ])[:-1]
+            dup_detail=''.join(['%s#%s@'%(kd,vd) for kd, vd in Counter(dup_list).items() if vd>1 ])[:-1]
         else:
             duplicated_state='no';dup_detail=''
 

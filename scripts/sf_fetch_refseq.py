@@ -8,9 +8,9 @@ def fetch_refseq(path, strain_lst, species_to_search='Mycoplasma genitalium'):
     os.system('wget -c ftp://ftp.ncbi.nlm.nih.gov/genomes/refseq/bacteria/assembly_summary.txt > %sassembly_summary.txt'%path)
     with open('assembly_summary.txt','rb') as csvfile:
         outfile='downloadlink.txt'
-        with open(path+outfile,'wb') as output:
+        with open(path+outfile,'w') as output:
             csv_reader = csv.reader(csvfile, delimiter='\t')
-            headers = csv_reader.next()
+            headers = next(csv_reader)
             for icsv_line in csv_reader:
                 # species name and complete
                 if species_to_search in icsv_line[7] and 'Complete' in icsv_line[11]:
@@ -25,7 +25,7 @@ def fetch_refseq(path, strain_lst, species_to_search='Mycoplasma genitalium'):
     for each_gbk_path in glob.iglob('%s*gbff*'%gbk_path):
         with open(each_gbk_path) as gbk_file:
             for record in GenBank.parse(gbk_file):
-                print(each_gbk_path,record.accession[0])
+                print((each_gbk_path,record.accession[0]))
                 break
             os.system('mv %s %s%s.gbk'%(each_gbk_path, gbk_path, record.accession[0]))
 
@@ -39,9 +39,9 @@ def fetch_refseq(path, strain_lst, species_to_search='Mycoplasma genitalium'):
         # rename gbk file
         for each_gbk_path in glob.iglob('*gbff*'):
             with open(each_gbk_path) as handle:
-                print handle
+                print(handle)
                 for record in GenBank.parse(handle):
-                    print(each_gbk_path,record.accession[0])
+                    print((each_gbk_path,record.accession[0]))
                     break
             os.system('mv %s %s'%(each_gbk_path, record.accession[0]))
         for each_gbk_path in glob.iglob('*'):

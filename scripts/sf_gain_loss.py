@@ -1,4 +1,4 @@
-from __future__ import print_function, division
+
 import os,sys,copy;import numpy as np
 from collections import defaultdict
 sys.path.append('./')
@@ -66,7 +66,7 @@ def export_gain_loss(tree, path, merged_gain_loss_output):
             preorder_strain_list.append(node.name)
 
     gain_loss_array = np.array([[i for i in gain_loss_str]
-                                for gain_loss_str in gene_gain_loss_dict.values()], dtype=int)
+                                for gain_loss_str in list(gene_gain_loss_dict.values())], dtype=int)
     # 1 and 2 are codes for gain/loss events
     events_array = ((gain_loss_array == 1) | (gain_loss_array == 2)).sum(axis=0)
     events_dict =  { index:event for index, event in enumerate(events_array) }
@@ -233,7 +233,7 @@ def create_ignoring_pattern_dictionary(tree,p = 0):
     #all sets of indices for p or less of numstrains individuals
     myindices = iter(())
     for i in range(p):
-        myindices = itertools.chain(myindices, itertools.combinations(range(numstrains),i+1))
+        myindices = itertools.chain(myindices, itertools.combinations(list(range(numstrains)),i+1))
 
     for indices in myindices:
         tree.tree.unpatterndict[index2pattern(indices,numstrains)] = [-1,0,0]
@@ -273,10 +273,10 @@ def set_visible_pattern_to_ignore(tree,p = -1,mergeequalstrains = False,lowfreq 
     if mergeequalstrains:
         if not hasattr(tree.tree,'distance_matrix'):
             create_distance_matrix(tree)
-        numstrains = merge_strains(tree.tree.distance_matrix,np.array(range(numstrains)) )
+        numstrains = merge_strains(tree.tree.distance_matrix,np.array(list(range(numstrains))) )
     if p == -1:
         p = int(numstrains/10)
-    for pattern in tree.tree.patterndict.keys():
+    for pattern in list(tree.tree.patterndict.keys()):
         #freq = sum([int(i) for i in pattern])
         freq = pattern.count('1')
         if lowfreq:

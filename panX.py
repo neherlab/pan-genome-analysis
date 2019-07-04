@@ -1,4 +1,4 @@
-#!/usr/bin/env python2
+#!/usr/bin/env python
 import argparse
 import os, sys, time
 panX_script_dir= os.path.dirname(os.path.realpath(__file__))
@@ -157,15 +157,15 @@ params = parser.parse_args()
 path = os.path.abspath(params.folder_name)+'/'
 if params.steps[0]=='all':
     ## run all steps
-    params.steps=range(1,12)
+    params.steps=list(range(1,12))
 
-print 'Running panX in main folder: %s'%path
+print('Running panX in main folder: %s'%path)
 #species=params.species_name
 
 programs={'mcl':'mcl', 'mafft':'mafft', 'fasttree':'FastTree', 'raxml':'raxmlHPC'}
 if params.diamond_path=='':
     programs['diamond']='diamond'
-for program_alias, program_name in programs.items():
+for program_alias, program_name in list(programs.items()):
     passed=False
     ## check whether program_alias exists (if yes, test passed)
     if check_dependency(program_alias):
@@ -179,9 +179,9 @@ for program_alias, program_name in programs.items():
             warning='\ndiamond not found:\nplease make sure that diamond is installed '+\
             'and diamond binary file is included in the executable search path (e.g.: /usr/bin/diamond);\n'+\
             'alternatively, one can specify diamond path via the parameter -dmp (e.g.: ./panX.py -dmp /mypath/diamond -fn ...)'
-            print warning
+            print(warning)
         else:
-            print 'program '+program_name+' not found, please install it.'
+            print('program '+program_name+' not found, please install it.')
         exit()
 
 myPangenome=pangenome(
@@ -240,32 +240,32 @@ myPangenome=pangenome(
 
 if 1 in params.steps:#step 01:
     myPangenome.make_strain_list()
-    print '======  step01: strain list successfully loaded'
+    print('======  step01: strain list successfully loaded')
 
 ## deactivated  (activation:'2' -> 2)
 if '2' in params.steps:# step02:
-    print '======  starting step02: download NCBI RefSeq GenBank file from strain list'
+    print('======  starting step02: download NCBI RefSeq GenBank file from strain list')
     start = time.time()
     fetch_refseq(path, strain_list)
-    print '======  time for step02:'
-    print times(start),'\n'
+    print('======  time for step02:')
+    print(times(start),'\n')
 
 if 3 in params.steps:# step03:
-    print '======  starting step03: extract sequences from GenBank file'
+    print('======  starting step03: extract sequences from GenBank file')
     start = time.time()
     myPangenome.extract_gbk_sequences()
-    print '======  time for step03:'
-    print times(start),'\n'
+    print('======  time for step03:')
+    print(times(start),'\n')
 
 if 4 in params.steps:# step04:
-    print '======  starting step04: extract metadata from GenBank file'
+    print('======  starting step04: extract metadata from GenBank file')
     start = time.time()
     myPangenome.extract_gbk_metadata()
-    print '======  time for step04:'
-    print times(start),'\n'
+    print('======  time for step04:')
+    print(times(start),'\n')
 
 if 5 in params.steps:# step05:
-    print '======  starting step05: cluster proteins'
+    print('======  starting step05: cluster proteins')
     start = time.time()
     if params.diamond_divide_conquer:
         ## clustering with divide_and_conquer method for large dataset
@@ -278,34 +278,34 @@ if 5 in params.steps:# step05:
     ## clustering RNA when option activated
     if params.enable_RNA_clustering:
         myPangenome.RNA_clustering()
-    print '======  time for step05:'
-    print times(start),'\n'
+    print('======  time for step05:')
+    print(times(start),'\n')
 
 if 6 in params.steps:# step06:
-    print '======  starting step06: align genes in geneCluster by mafft and build gene trees'
+    print('======  starting step06: align genes in geneCluster by mafft and build gene trees')
     start = time.time()
     myPangenome.process_clusters()
     if params.enable_RNA_clustering:
         myPangenome.make_RNACluster_alignment_and_tree()
-    print '======  time for step06:'
-    print times(start),'\n'
+    print('======  time for step06:')
+    print(times(start),'\n')
 
 if 7 in params.steps:# step07:
-    print '======  starting step07: call SNPs from core genes'
+    print('======  starting step07: call SNPs from core genes')
     start = time.time()
     myPangenome.create_SNP_alignment()
-    print '======  time for step07:'
-    print times(start),'\n'
+    print('======  time for step07:')
+    print(times(start),'\n')
 
 if 8 in params.steps:# step08:
-    print '======  starting step08: run fasttree and raxml for tree construction'
+    print('======  starting step08: run fasttree and raxml for tree construction')
     start = time.time()
     myPangenome.build_core_tree()
-    print '======  time for step08:'
-    print times(start),'\n'
+    print('======  time for step08:')
+    print(times(start),'\n')
 
 if 9 in params.steps:# step09:
-    print '======  starting step09: infer presence/absence and gain/loss patterns of all genes'
+    print('======  starting step09: infer presence/absence and gain/loss patterns of all genes')
     start = time.time()
     myPangenome.compute_gene_presence_pattern()
     if not params.disable_gain_loss:
@@ -313,26 +313,26 @@ if 9 in params.steps:# step09:
     if params.infer_branch_association:
         myPangenome.inferAssociations()
 
-    print '======  time for step09:'
-    print times(start),'\n'
+    print('======  time for step09:')
+    print(times(start),'\n')
 
 if 10 in params.steps:# step10:
-    print '======  starting step10: create json file for geneDataTable visualization'
+    print('======  starting step10: create json file for geneDataTable visualization')
     start = time.time()
     myPangenome.export_geneCluster_json()
-    print '======  time for step10:'
-    print times(start),'\n'
+    print('======  time for step10:')
+    print(times(start),'\n')
 
 if 11 in params.steps:# step11:
-    print '======  starting step11: extract json files for tree and treeDataTable visualization,etc'
+    print('======  starting step11: extract json files for tree and treeDataTable visualization,etc')
     start = time.time()
     myPangenome.export_coreTree_json()
-    print '======  time for step11:'
-    print times(start),'\n'
+    print('======  time for step11:')
+    print(times(start),'\n')
 
 if 12 in params.steps:# step12:
     from SF12_create_panGenome import ete_tree_split
-    print '======  starting step12: create pan-genome'
+    print('======  starting step12: create pan-genome')
     start = time.time()
     ete_tree_split(path, species)
-    print times(start),'\n'
+    print(times(start),'\n')

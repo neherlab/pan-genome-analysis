@@ -18,9 +18,9 @@ def make_gene_presence_absence_matrix(input_filepath):
     gene_order= ','.join([gene.rstrip() for gene, content in load_sorted_clusters('./')])
 
     with open('./geneCluster/genePresence.aln') as inputf,\
-         open(output_filepath,'wb') as outputf:
+         open(output_filepath,'w') as outputf:
         outputf.write('accession,%s\n'%gene_order)
-        for strain, genes in read_fasta(inputf).iteritems():
+        for strain, genes in read_fasta(inputf).items():
             outputf.write('%s,%s\n'%(strain,','.join(genes)))
 
 make_gene_presence_absence_matrix(input_filepath)

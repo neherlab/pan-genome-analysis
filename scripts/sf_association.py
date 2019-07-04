@@ -49,7 +49,7 @@ class PresenceAbsenceAssociation(object):
                 try:
                     n.meta_value = transform(self.meta_info[n.strain][meta_column])
                 except:
-                    print("WARNING: reading field %s for strain %s failed"%(meta_column, n.strain))
+                    print(("WARNING: reading field %s for strain %s failed"%(meta_column, n.strain)))
                     n.meta_value = np.nan
 
                 if not np.isnan(n.meta_value):
@@ -75,7 +75,7 @@ class PresenceAbsenceAssociation(object):
                 self.averages[n.present].append(mean_var(n, pc=3, total_var = np.var(all_values)))
 
         from scipy.stats import ttest_ind
-        self.averages = {k:np.array(v) for k,v in self.averages.iteritems()}
+        self.averages = {k:np.array(v) for k,v in self.averages.items()}
         p = self.averages['present']
         a = self.averages['absent']
         if len(a) and len(p) and len(values_by_state['present']) and len(values_by_state['absent']):
@@ -236,7 +236,7 @@ def infer_branch_associations(path, metainfo_fpath, meta_data_config,
 def load_gain_loss(path, clusterID):
     with open('%s/geneCluster/%s_patterns.json'%(path, clusterID), 'r') as ifile:
         tmp = ifile.readlines()[-1].strip().split(':')[-1].split('"')[-2]
-    return map(int, list(tmp))
+    return list(map(int, list(tmp)))
 
 
 def infer_presence_absence_associations(path, metainfo_fpath, meta_data_config,

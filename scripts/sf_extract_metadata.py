@@ -18,7 +18,7 @@ def extract_metadata(path, strain_list, folders_dict, gbk_present, metainfo_reco
             new_tag=new_tag[0][:1]+'.'+new_tag[1]
         return new_tag
     from Bio import SeqIO
-    with open('%s%s'%(path,'metainfo.tsv'), 'wb') as writeseq:
+    with open('%s%s'%(path,'metainfo.tsv'), 'w') as writeseq:
         #headers: accession, strainName, dateInfo, country, host
         header=['accession' , 'strain', 'collection_date', 'country', 'host', 'organism']
         if metainfo_reconcile:
@@ -31,12 +31,12 @@ def extract_metadata(path, strain_list, folders_dict, gbk_present, metainfo_reco
                 host_synonym_dict={}
                 country_to_region_dict={}
                 with open(host_synonym_file) as host_synonym_items:
-                    host_synonym_items.next()
+                    next(host_synonym_items)
                     for host_synonym in host_synonym_items:
                         host_original, host_unified = host_synonym.rstrip().split('\t')
                         host_synonym_dict[host_original] = host_unified
                 with open(country_to_region_file) as country_to_region_input:
-                    country_to_region_input.next()
+                    next(country_to_region_input)
                     for country_to_region in country_to_region_input:
                         country, region= country_to_region.rstrip().split('\t')
                         country_to_region_dict[country]=region
@@ -71,7 +71,7 @@ def extract_metadata(path, strain_list, folders_dict, gbk_present, metainfo_reco
                                     if country in country_to_region_dict:
                                         region=country_to_region_dict[country]
                                     else:
-                                        print 'country name %s not found in country2region.tsv'%country
+                                        print('country name %s not found in country2region.tsv'%country)
                             # date processing
                             if datacolct!='unknown':
                                 import re, calendar

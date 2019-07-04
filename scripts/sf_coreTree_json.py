@@ -1,6 +1,6 @@
 import os, sys, csv, json, glob, shutil
 from collections import defaultdict, Counter, OrderedDict
-from ete2 import Tree
+from ete3 import Tree
 from sf_miscellaneous import write_json
 import math
 import pandas as pd
@@ -70,7 +70,7 @@ def metadata_load(path, infile):
     metatable_strains_json_dict={"data":[]}
     with open(infile) as csvfile:
         csv_reader = csv.reader(csvfile, delimiter='\t')
-        headers = csv_reader.next()
+        headers = next(csv_reader)
 
         #store metadata for each accession
         for icsv_line in csv_reader:
@@ -101,11 +101,11 @@ def metadata_process(path, infile):
     (headers, metajson_dict, metatable_strains_json_dict,
             strain_meta_dict) = metadata_load(path, infile)
     #filter the redundant metadata for each metadata_type
-    for k,v in metajson_dict.items():
+    for k,v in list(metajson_dict.items()):
         meta_list=list(set(v));meta_list.sort()
         metajson_dict[k]=meta_list
     output_path= ''.join([path,'geneCluster/'])
-    with open(output_path+'strainMetainfo.json', 'wb') as strain_metadata_json:
+    with open(output_path+'strainMetainfo.json', 'w') as strain_metadata_json:
         strain_metadata_json.write(json.dumps(metatable_strains_json_dict))
     return strain_meta_dict, headers, metajson_dict
 
@@ -177,7 +177,7 @@ def process_metajson(path, meta_data_config, metajson_dict):
                     association_columns.append(meta_category)
         metajson_exp['meta_display_order']=meta_display_order
     else:
-        metajson_exp['meta_display_order']=metajson_dict.keys()
+        metajson_exp['meta_display_order']=list(metajson_dict.keys())
 
     ## write meta-dict.js in metajson
     for metatype in metajson_dict:
@@ -221,9 +221,9 @@ def process_metajson(path, meta_data_config, metajson_dict):
                 else:
                     coloring_type="discrete"
                 metajson_exp['color_options'][metatype]["type"]=coloring_type
-                print(metatype, ': undefined coloring type is now set to %s.'%coloring_type)
+                print((metatype, ': undefined coloring type is now set to %s.'%coloring_type))
 
-    with open(''.join([path,'metaConfiguration.js']),'wb') as meta_js_out:
+    with open(''.join([path,'metaConfiguration.js']),'w') as meta_js_out:
         if len(metajson_dict['organism'])<=1:
             del metajson_dict['organism']
             if 'organism' in metajson_exp['meta_display_order']:
@@ -257,7 +257,7 @@ def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
     metadata_process_result=(strain_meta_dict, headers)
     coreTree_dict=core_tree_to_json(tree, path, metadata_process_result, strain_list)
     coreTree_jsonString=json.dumps(coreTree_dict)
-    with open(output_path+'coreGenomeTree.json', 'wb') as core_tree_json:
+    with open(output_path+'coreGenomeTree.json', 'w') as core_tree_json:
         core_tree_json.write(coreTree_jsonString)
 
     ## process meta json
@@ -273,7 +273,7 @@ def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
         try:
             shutil.move(f,vis_json_path+f)
         except:
-            print("can't move ",f)
+            print(("can't move ",f))
 
     shutil.copy('strain_tree.nwk', vis_json_path+'/strain_tree.nwk')
     for f in glob.glob('*_tree.json') + glob.glob('*.nwk') + glob.glob('*_aln*.fa') + glob.glob('*patterns.json'):
@@ -300,15 +300,15 @@ def json_parser( path, folders_dict, fpaths_dict, meta_info_file_path,
             try:
                 shutil.rmtree(dirname)
             except:
-                print("{} can't be deleted".format(dirname))
+                print(("{} can't be deleted".format(dirname)))
 
         # clean up files
-        for key, fpath in fpaths_dict.items():
+        for key, fpath in list(fpaths_dict.items()):
             if key in ['cluster_fpath','cluster_final_fpath','cluster_cpk_final_fpath']:
                 continue
             try:
                 os.remove(fpath)
             except:
-                print("{} can't be deleted".format(fpath))
+                print(("{} can't be deleted".format(fpath)))
 
     print('Pan-genome analysis is successfully accomplished, the results can be transferred to the local server for panX data visualization and exploration via link-to-server.py in the main folder.')

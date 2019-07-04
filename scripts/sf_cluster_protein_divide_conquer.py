@@ -17,8 +17,8 @@ def mcl_run(clustering_path, threads, input_prefix, mcl_inflation):
                         '-o ',input_prefix,'_cluster.output -I ',str(mcl_inflation),\
                         ' -te ',str(threads),' > ','mcl-',input_prefix,'.log 2>&1'])
     os.system(command_mcl)
-    print 'run command line mcl in ',clustering_path,': \n', command_mcl
-    print 'mcl runtime for ', input_prefix,': ', times(start), '\n'
+    print('run command line mcl in ',clustering_path,': \n', command_mcl)
+    print('mcl runtime for ', input_prefix,': ', times(start), '\n')
     os.chdir(cwd)
 
 def calculate_aln_consensus(aln_file):
@@ -28,11 +28,11 @@ def calculate_aln_consensus(aln_file):
     if len(aln_dt) == 1:
         ## only one seq
         ## if letters not in alphabet:
-        consensus_arr_seq=''.join([ ic if ic in alphabet else 'X' for ic in aln_dt.values()[0] ])
+        consensus_arr_seq=''.join([ ic if ic in alphabet else 'X' for ic in list(aln_dt.values())[0] ])
     else:
         ## consensus of multiple seqs
         try:
-            aln_array = np.array([ i for i in aln_dt.values()])
+            aln_array = np.array([ i for i in list(aln_dt.values())])
             aln_array = aln_array.view('S1').reshape((aln_array.size, -1))
             af = np.zeros((len(alphabet), aln_array.shape[1]))
             for ai, state in enumerate(alphabet):
@@ -41,7 +41,7 @@ def calculate_aln_consensus(aln_file):
             af[-1] = 1.0 - af[:-1].sum(axis=0)
             consensus_arr_seq=''.join([ alphabet[ic] for ic in af.argmax(axis=0) ])
         except:
-            print 'errors in calculating consensus seq: ', aln_file
+            print('errors in calculating consensus seq: ', aln_file)
     return consensus_arr_seq
 
 def build_representative_cluster(clustering_path, threads, input_prefix):
@@ -69,7 +69,7 @@ def build_representative_cluster(clustering_path, threads, input_prefix):
                 write_in_fa(representative_output, clusterID, representative_seq)
         ## write subproblem_geneCluster_dt
         write_pickle(''.join([clustering_path,input_prefix,'_dicts.cpk']), subproblem_geneCluster_dt)
-    print 'build representative clusters for', input_prefix,': ', times(start), '\n'
+    print('build representative clusters for', input_prefix,': ', times(start), '\n')
 
 def clustering_subproblem(clustering_path, threads, subproblem_merged_faa,
         diamond_evalue, diamond_max_target_seqs, diamond_identity,
@@ -102,7 +102,7 @@ def integrate_clusters(clustering_path, cluster_fpath):
         representative_to_origin_dict[subproblem_run_number]=load_pickle(idict)
     with open('%s%s'%(clustering_path,'subproblem_finalRound_cluster.output'))\
                                                     as finalRound_cluster,\
-        open(cluster_fpath,'wb') as integrated_cluster:
+        open(cluster_fpath,'w') as integrated_cluster:
             for iline in finalRound_cluster:
                 integrated_cluster.write('%s\n'%'\t'.join([geneID
                                     for representativeID in iline.rstrip().split('\t') \

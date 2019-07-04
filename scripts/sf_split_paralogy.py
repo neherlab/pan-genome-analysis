@@ -31,11 +31,11 @@ def explore_paralogs(path, nstrains, paralog_branch_cutoff, paralog_frac_cutoff=
         try:
             tree = Phylo.read(fname, 'newick')
         except:
-            print '(explore_paralogs) read tree problem: ', fname
+            print('(explore_paralogs) read tree problem: ', fname)
         best_split = find_best_split(tree)
         if best_split is not None:
             paralog_stat.append([fname, best_split.split_bl, len(best_split.para_nodes)])
-    with open(cluster_seqs_path+'paralogy_statistics.txt','wb') as paralogy_statistics:
+    with open(cluster_seqs_path+'paralogy_statistics.txt','w') as paralogy_statistics:
         for x,y,z in paralog_stat:
             paralogy_statistics.write('%s\t%s\t%s\n'%(x.split('/')[-1],y,z))
 
@@ -90,7 +90,7 @@ def create_split_cluster_files(file_path, fname,
         command_move_deleted_clusters=' '.join(['mv', tmp_files, file_path+'paralog_splits/'])
         os.system(command_move_deleted_clusters)
     except:
-        print("paralog splitting: can't delete",orgin_nwk_name)
+        print(("paralog splitting: can't delete",orgin_nwk_name))
         ##debug:
         ##print("can't delete",orgin_nwk_name,gene_list1,gene_list2, clusterID)
 
@@ -101,8 +101,8 @@ def create_split_cluster_files(file_path, fname,
         newClusterId="%s_p%s"%(clusterID,sgs_index)
         gene_cluster_nu_filename="%s%s"%(newClusterId,'.fna')
         gene_cluster_aa_filename="%s%s"%(newClusterId,'.faa')
-        gene_cluster_nu_write=open( file_path+gene_cluster_nu_filename, 'wb')
-        gene_cluster_aa_write=open( file_path+gene_cluster_aa_filename, 'wb')
+        gene_cluster_nu_write=open( file_path+gene_cluster_nu_filename, 'w')
+        gene_cluster_aa_write=open( file_path+gene_cluster_aa_filename, 'w')
 
         split_fa_files_set |=  set([file_path+gene_cluster_nu_filename])
 
@@ -114,15 +114,15 @@ def create_split_cluster_files(file_path, fname,
                 write_in_fa(gene_cluster_nu_write, gene_memb, origin_nu_fa_dt[gene_memb])
                 write_in_fa(gene_cluster_aa_write, gene_memb, origin_aa_fa_dt[gene_memb])
             except:
-                print 'paralogy splitting (problem to write new split cluster files)', fname #, gene_memb, gene_list1, gene_list2
+                print('paralogy splitting (problem to write new split cluster files)', fname) #, gene_memb, gene_list1, gene_list2
 
         gene_cluster_nu_write.close(); gene_cluster_aa_write.close();
 
         geneCluster_dt[ newClusterId ] = [0,[],0]
         ## num_stains
-        geneCluster_dt[ newClusterId ][0]=len(dict(Counter([ ig.split('|')[0] for ig in split_gene_list])).keys())
+        geneCluster_dt[ newClusterId ][0]=len(list(dict(Counter([ ig.split('|')[0] for ig in split_gene_list])).keys()))
         ## num_genes
-        geneCluster_dt[ newClusterId ][2]=len(dict(Counter([ ig for ig in split_gene_list])).keys())
+        geneCluster_dt[ newClusterId ][2]=len(list(dict(Counter([ ig for ig in split_gene_list])).keys()))
         ## gene members
         geneCluster_dt[ newClusterId ][1]=[ ig.split('-')[0] for ig in split_gene_list ]
     return split_fa_files_set
@@ -146,7 +146,7 @@ def postprocess_paralogs_iterative(parallel, path, nstrains, simple_tree,
     n_split_clusters, new_fa_files_set = split_result
     iteration=0
     while(n_split_clusters):
-        print '---- split a total of ',n_split_clusters, 'in iteration', iteration
+        print('---- split a total of ',n_split_clusters, 'in iteration', iteration)
         split_result= postprocess_paralogs( parallel, path, nstrains, simple_tree,
                                                 geneCluster_dt, new_fa_files_set,
                                                 paralog_branch_cutoff=paralog_branch_cutoff,
@@ -163,7 +163,7 @@ def postprocess_paralogs_iterative(parallel, path, nstrains, simple_tree,
     if os.path.exists(''.join([geneClusters_fpath,'old_clusters_paralogSplit.txt'])):
         with open(geneClusters_fpath+'old_clusters_paralogSplit.txt', 'r') as delete_cluster_file:
             deleted_file_count=len([ clus for clus in delete_cluster_file ])
-            print '#clusters split during the checking paralogy:',deleted_file_count
+            print('#clusters split during the checking paralogy:',deleted_file_count)
 
 def postprocess_paralogs(parallel, path, nstrains, simple_tree, geneCluster_dt,
     new_fa_files_set,  paralog_branch_cutoff, paralog_frac_cutoff=0.3, plot=0):
@@ -196,7 +196,7 @@ def postprocess_paralogs(parallel, path, nstrains, simple_tree, geneCluster_dt,
         try:
             tree = Phylo.read(fname, 'newick')
         except:
-            print 'debug(postprocess_paralogs read nwk file): ',fname, ' ', os.getcwd()
+            print('debug(postprocess_paralogs read nwk file): ',fname, ' ', os.getcwd())
 
         best_split = find_best_split(tree)
 

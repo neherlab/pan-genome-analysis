@@ -13,7 +13,7 @@ def update_geneCluster_dt(path,geneCluster_dt):
     """
     update_long_branch_splits=''.join([path,'geneCluster/update_long_branch_splits/'])
     for ifile in glob.iglob(update_long_branch_splits+'*.cpk'):
-        for k,v in load_pickle(ifile).iteritems():
+        for k,v in load_pickle(ifile).items():
             #print('adding newly split clusters %s'%k)
             geneCluster_dt[k] = v
 
@@ -54,6 +54,7 @@ def cut_tree_gather_clades(tree, cut_branch_threshold):
     except:
         #import ipdb; ipdb.set_trace();
         print("find_clades problem")
+        raise
 
     ## gather leftover genes in
     rest_genes= leaves
@@ -81,20 +82,22 @@ def delete_original_clusters(file_path, geneCluster_dt):
     return:
         updated geneCluster_dt
     """
-    cwd = os.getcwd()
-    os.chdir(file_path)
-    with open('old_clusters_longSplit.txt', 'rb') as delete_cluster_file:
-        uncluster_filename_list= [ uncluster_filename.split('.fna')[0] for  uncluster_filename in delete_cluster_file]
-        #geneCluster_dt.keys()[0]
-        suffix_list=['_aa_aln.fa','_na_aln.fa','.fna','.faa','.nwk','_tree.json']
-        for uncluster_filename in uncluster_filename_list:
-            if uncluster_filename in geneCluster_dt:
-                del geneCluster_dt[uncluster_filename]
-                tmp_files=' '.join([ uncluster_filename+suffix for suffix in suffix_list])
-                command_move_deleted_clusters=' '.join(['mv', tmp_files, './deleted_clusters_longSplit/'])
-                os.system(command_move_deleted_clusters)
-    os.chdir(cwd)
+    if os.path.isfile('old_clusters_longSplit.txt'):
+        cwd = os.getcwd()
+        os.chdir(file_path)
+        with open('old_clusters_longSplit.txt', 'r') as delete_cluster_file:
+            uncluster_filename_list= [ uncluster_filename.split('.fna')[0] for  uncluster_filename in delete_cluster_file]
+            #geneCluster_dt.keys()[0]
+            suffix_list=['_aa_aln.fa','_na_aln.fa','.fna','.faa','.nwk','_tree.json']
+            for uncluster_filename in uncluster_filename_list:
+                if uncluster_filename in geneCluster_dt:
+                    del geneCluster_dt[uncluster_filename]
+                    tmp_files=' '.join([ uncluster_filename+suffix for suffix in suffix_list])
+                    command_move_deleted_clusters=' '.join(['mv', tmp_files, './deleted_clusters_longSplit/'])
+                    os.system(command_move_deleted_clusters)
+        os.chdir(cwd)
     return geneCluster_dt
+
 
 def output_cutted_clusters(file_path, uncluster_filename, gene_list, cut_branch_threshold, treefile_used=None, cut_leftover=None):
     """
@@ -127,11 +130,11 @@ def output_cutted_clusters(file_path, uncluster_filename, gene_list, cut_branch_
         ## write new divided/split cluster files
         gene_cluster_nu_filename="%s%s"%(newClusterId,'.fna')
         gene_cluster_nu_filepath= file_path+gene_cluster_nu_filename
-        gene_cluster_nu_write=open(gene_cluster_nu_filepath , 'wb')
+        gene_cluster_nu_write=open(gene_cluster_nu_filepath , 'w')
 
         gene_cluster_aa_filename="%s%s"%(newClusterId,'.faa')
         gene_cluster_aa_filepath= file_path+gene_cluster_aa_filename
-        gene_cluster_aa_write=open( file_path+gene_cluster_aa_filename, 'wb')
+        gene_cluster_aa_write=open( file_path+gene_cluster_aa_filename, 'w')
 
         for gene_memb in split_gene_list:
             if "\\'" in gene_memb: # Replace '\' in node name:
@@ -162,9 +165,9 @@ def output_cutted_clusters(file_path, uncluster_filename, gene_list, cut_branch_
             addin_geneCluster_dt=defaultdict(list)
             addin_geneCluster_dt[ newClusterId ] = [0,[],0]
             ## num_stains
-            addin_geneCluster_dt[ newClusterId ][0]=len(dict(Counter([ ig.split('|')[0] for ig in split_gene_list])).keys())
+            addin_geneCluster_dt[ newClusterId ][0]=len(list(dict(Counter([ ig.split('|')[0] for ig in split_gene_list])).keys()))
             ## num_genes
-            addin_geneCluster_dt[ newClusterId ][2]=len(dict(Counter([ ig for ig in split_gene_list])).keys())
+            addin_geneCluster_dt[ newClusterId ][2]=len(list(dict(Counter([ ig for ig in split_gene_list])).keys()))
             ## gene members
             addin_geneCluster_dt[ newClusterId ][1]=[ ig.split('-')[0] for ig in split_gene_list ]
             ## cPickle new cluster statistics
@@ -188,9 +191,11 @@ def quick_align_makeTree(input_cluster_filepath,fasttree_name):
         myTree.codon_align()
         myTree.translate()
         myTree.build(raxml=False,fasttree_program=fasttree_name)
+        return myTree.tree
     except:
-        print('tree problem in', input_cluster_filepath)
-    return myTree.tree
+        print(('tree problem in', input_cluster_filepath))
+        raise
+
 
 def cutTree_outputCluster( file_list, file_path, cut_branch_threshold, treefile_used):
     """
@@ -205,7 +210,8 @@ def cutTree_outputCluster( file_list, file_path, cut_branch_threshold, treefile_
             try:
                 tree= Phylo.read(input_filepath, 'newick')
             except:
-                print 'reading tree failed: ',input_filepath
+                print('reading tree failed: ',input_filepath)
+                raise
         else:
             ## make tree
             input_cluster_filename=input_filepath.split('/')[-1]
@@ -290,10 +296,13 @@ def postprocess_split_long_branch(parallel, path, simple_tree, cut_branch_thresh
     if os.path.exists(''.join([file_path,'new_clusters_longSplit.txt'])):
         with open(file_path+'new_clusters_longSplit.txt', 'rb') as new_clusters_longSplit:
             new_fa_files_list=[ clus.rstrip() for clus in new_clusters_longSplit ]
-            print '#times of splitting long branches:',len(new_fa_files_list)-1
-        with open(file_path+'old_clusters_longSplit.txt', 'rb') as delete_cluster_file:
-            deleted_file_count=len([ clus for clus in delete_cluster_file ])
-            print '#clusters split during the checking of long branches:',deleted_file_count
+            print('#times of splitting long branches:',len(new_fa_files_list)-1)
+        if os.path.isfile('old_clusters_longSplit.txt'):
+            with open(file_path+'old_clusters_longSplit.txt', 'r') as delete_cluster_file:
+                deleted_file_count=len([ clus for clus in delete_cluster_file ])
+        else:
+            deleted_file_count=0
+        print('#clusters split during the checking of long branches:',deleted_file_count)
 
         ## parallelization of "align and make tree on new cluster"
         multips(align_and_makeTree, parallel, new_fa_files_list, file_path, simple_tree)

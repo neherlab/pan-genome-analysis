@@ -25,7 +25,7 @@ def create_core_SNP_matrix(path, core_cutoff=1.0, core_gene_strain_fpath=''):#1.
     if core_gene_strain_fpath!='':
         with open(core_gene_strain_fpath,'rb') as core_gene_strain_file:
             core_strain_set= set([i.rstrip().replace('-','_') for i in core_gene_strain_file])
-    with open(output_path+'core_geneList.txt','wb') as outfile:
+    with open(output_path+'core_geneList.txt','w') as outfile:
         for clusterID, vg in sorted_geneList:
             if core_cutoff==1.0:
                 strain_core_cutoff=totalStrain
@@ -56,13 +56,13 @@ def create_core_SNP_matrix(path, core_cutoff=1.0, core_gene_strain_fpath=''):#1.
         gene_seq_dt=read_fasta(alnFilePath+align_file)
         if core_cutoff!=1.0:
             # set sequences for missing gene (space*gene_length)
-            missing_gene_seq=' '*len(gene_seq_dt.values()[0])
+            missing_gene_seq=' '*len(list(gene_seq_dt.values())[0])
             totalStrain_sorted_lst=sorted(strain_list)
         # build strain_seq_dt from gene_seq_dt
         strain_seq_dt=defaultdict()
-        for gene, seq in gene_seq_dt.iteritems():
+        for gene, seq in gene_seq_dt.items():
             strain_seq_dt[gene.split('-')[0]]=seq # strain-locus_tag-...
-        strain_seq_sorted_lst=sorted(strain_seq_dt.items(), key=lambda x: x[0])
+        strain_seq_sorted_lst=sorted(list(strain_seq_dt.items()), key=lambda x: x[0])
 
         start_flag=0
         if core_cutoff==1.0:
@@ -80,20 +80,20 @@ def create_core_SNP_matrix(path, core_cutoff=1.0, core_gene_strain_fpath=''):#1.
             snp_pos_dt[align_file]=np.where(position_SNP)[0]
         else:
         ## add '-' for missing genes when dealing with soft core genes
-            core_gene_strain=[ gene for gene in strain_seq_dt.keys()]
+            core_gene_strain=[ gene for gene in list(strain_seq_dt.keys())]
             for strain in totalStrain_sorted_lst:
                 if start_flag==0:
                     if strain in core_gene_strain:
                         nuc_array=np.array(np.fromstring(strain_seq_dt[strain], dtype='S1'))
                     else:
-                        print 'Soft core gene: gene absent in strain %s on cluster %s'%(strain,align_file)
+                        print('Soft core gene: gene absent in strain %s on cluster %s'%(strain,align_file))
                         nuc_array=np.array(np.fromstring(missing_gene_seq, dtype='S1'))
                     start_flag=1
                 else:
                     if strain in core_gene_strain:
                         nuc_array=np.vstack((nuc_array,np.fromstring(strain_seq_dt[strain], dtype='S1')))
                     else:
-                        print 'Soft core gene: gene absent in strain %s on cluster %s'%(strain,align_file)
+                        print('Soft core gene: gene absent in strain %s on cluster %s'%(strain,align_file))
                         nuc_array=np.vstack((nuc_array,np.fromstring(missing_gene_seq, dtype='S1')))
             ## find SNP positions
             ## mask missing genes -- determine rows that have ' ' in every column
@@ -116,7 +116,7 @@ def create_core_SNP_matrix(path, core_cutoff=1.0, core_gene_strain_fpath=''):#1.
             snp_whole_matrix=np.hstack((snp_whole_matrix, snp_columns))
     write_pickle(output_path+'snp_pos.cpk',snp_pos_dt)
 
-    with open(output_path+'SNP_whole_matrix.aln','wb') as outfile:
+    with open(output_path+'SNP_whole_matrix.aln','w') as outfile:
         for ind, isw in enumerate(snp_whole_matrix):
-            write_in_fa( outfile, refSeqList[ind], isw.tostring() )
+            write_in_fa( outfile, refSeqList[ind], "".join(isw.astype('U')))
 

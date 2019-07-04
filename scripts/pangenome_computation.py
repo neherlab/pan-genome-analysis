@@ -27,7 +27,7 @@ class pangenome:
     exported fro visualization in a web browser.
     """
     def __init__(self, **kwargs):
-        for k, v in kwargs.iteritems():
+        for k, v in kwargs.items():
             setattr(self, k, v)
             #self.params_dict[k]=v todos
         self.folders_dict=defaultdict( str,
@@ -53,9 +53,9 @@ class pangenome:
         """ create folders for pangenome analysis """
         folders_dict=self.folders_dict
         command_mkdir='mkdir -p '
-        for k,v in folders_dict.iteritems():
+        for k,v in folders_dict.items():
             folders_dict[k]='%s%s'%(self.path,v)
-        for key, folder_path in folders_dict.iteritems():
+        for key, folder_path in folders_dict.items():
             if not os.path.isdir(folder_path):
                 os.system(''.join([command_mkdir,folder_path]))
         self.nucleotide_path=folders_dict['nucleotide_path']
@@ -236,5 +236,5 @@ def harmonize_filename(path, glob_list):
         if '-' in gbk_fname:
             ## force to replace '-' with '_' in GenBank filename
             gbk_fname= gbk_fname.replace('-','_')
-            print ''.join(['filename harmonized: ',fpath,' -> ',gbk_fname])
+            print(''.join(['filename harmonized: ',fpath,' -> ',gbk_fname]))
             os.system(''.join(['mv ',fpath,' ',path,gbk_fname]))

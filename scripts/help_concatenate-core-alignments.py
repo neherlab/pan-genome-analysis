@@ -24,8 +24,8 @@ def concatenate_core_gene_alignments(input_path, output_path):
                     accession=record.id.split('-')[0]
                     core_genes_dt[accession]= '%s%s'%(core_genes_dt[accession], record.seq)
 
-    with open(output_path,'wb') as output_file:
-        for gene_id, gene_seq in core_genes_dt.iteritems():
+    with open(output_path,'w') as output_file:
+        for gene_id, gene_seq in core_genes_dt.items():
             write_in_fa(output_file, gene_id, gene_seq)
 
 concatenate_core_gene_alignments(input_filepath, output_filepath)

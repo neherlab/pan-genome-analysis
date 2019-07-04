@@ -1,9 +1,9 @@
 import numpy as np
 import resource, multiprocessing
 import os, sys, glob, time, shutil
-from itertools import izip
+
 from collections import defaultdict, Counter
-from ete2 import Tree
+from ete3 import Tree
 from Bio import Phylo, SeqIO, AlignIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
@@ -21,7 +21,7 @@ def make_dir(dname):
         try:
             os.makedirs(dname)
         except OSError as e:
-            print "Cannot create run_dir",e
+            print("Cannot create run_dir",e)
 
 def remove_dir(dname):
     import os, shutil
@@ -44,7 +44,7 @@ def tree_to_json(node, extra_attr = []):
             try:
                 tree_json[prop] = round(node.__getattribute__(prop),7)
             except:
-                print "cannot round:", node.__getattribute__(prop), "assigned as is"
+                print("cannot round:", node.__getattribute__(prop), "assigned as is")
                 tree_json[prop] = node.__getattribute__(prop)
 
     for prop in extra_attr:
@@ -70,10 +70,10 @@ def make_strains_unique(aln):
     return name_translation
 
 def restore_strain_name(name_translation, seqs):
-    reverse_translation = {v:k for k,v in name_translation.iteritems()}
+    reverse_translation = {v:k for k,v in name_translation.items()}
     for seq in seqs:
         if seq.name not in reverse_translation:
-            print("item not found",seq.name)
+            print(("item not found",seq.name))
             continue
         if hasattr(seq, 'id'):
             seq.id = reverse_translation[seq.name]
@@ -124,8 +124,8 @@ def pad_nucleotide_sequences(aln_aa, seq_nuc):
         try:
             tmp_nuc_seq = str(seq_nuc[aa_seq.id].seq)
         except KeyError as e:
-            print aa_seq.id
-            print 'Key not found, continue with next sequence'
+            print(aa_seq.id)
+            print('Key not found, continue with next sequence')
             continue
 
         tmpseq = ''
@@ -143,8 +143,8 @@ def pad_nucleotide_sequences(aln_aa, seq_nuc):
 
 def polytomies_midpointRooting(infileName, outfileName, clusterID):
     # use ete2 to solve polytomies and midpoint rooting
-    from ete2 import Tree
-    newickString=open(infileName, 'rb').readline().rstrip()
+    from ete3 import Tree
+    newickString=open(infileName, 'r').readline().rstrip()
     tree = Tree(newickString,format=1);
     tree.resolve_polytomy(recursive=True)
     try:
@@ -159,7 +159,7 @@ def polytomies_midpointRooting(infileName, outfileName, clusterID):
     for ind, node in enumerate(tree.iter_descendants("postorder")):
         if node.name=='': node.name='%s%s'%('NODE_0',ind);
 
-    with open('./%s'%outfileName, 'wb') as outfile:
+    with open('./%s'%outfileName, 'w') as outfile:
         outfile.write(tree.write(format=1))
 
 class mpm_tree(object):
@@ -197,16 +197,16 @@ class mpm_tree(object):
 
         # translate
         aa_seqs = {}
-        for seq in self.seqs.values():
+        for seq in list(self.seqs.values()):
             tempseq = seq.seq.translate(table="Bacterial")
             # use only sequences that translate without trouble
             if not discard_premature_stops or '*' not in str(tempseq)[:-1] or prune==False:
                 aa_seqs[seq.id]=SeqRecord(tempseq,id=seq.id)
             else:
-                print(seq.id,"has premature stops, discarding")
+                print((seq.id,"has premature stops, discarding"))
 
         tmpfname = 'temp_in.fasta'
-        SeqIO.write(aa_seqs.values(), tmpfname,'fasta')
+        SeqIO.write(list(aa_seqs.values()), tmpfname,'fasta')
 
         if alignment_tool=='mafft':
             os.system('mafft --reorder --amino temp_in.fasta 1> temp_out.fasta')
@@ -217,7 +217,7 @@ class mpm_tree(object):
             cline()
             aln_aa = AlignIO.read(tmpfname[:-5]+'aligned.fasta', "fasta")
         else:
-            print 'Alignment tool not supported:'+alignment_tool
+            print('Alignment tool not supported:'+alignment_tool)
             #return
 
         #generate nucleotide alignment
@@ -233,7 +233,7 @@ class mpm_tree(object):
         make_dir(self.run_dir)
         os.chdir(self.run_dir)
 
-        SeqIO.write(self.seqs.values(), "temp_in.fasta", "fasta")
+        SeqIO.write(list(self.seqs.values()), "temp_in.fasta", "fasta")
         os.system('mafft --reorder --anysymbol temp_in.fasta 1> temp_out.fasta 2> mafft.log')
 
         self.aln = AlignIO.read('temp_out.fasta', 'fasta')
@@ -275,7 +275,7 @@ class mpm_tree(object):
                     resolve_polytomies(tmp_tree)
                 Phylo.write(tmp_tree,'initial_tree.newick', 'newick')
                 AlignIO.write(self.aln,"temp.phyx", "phylip-relaxed")
-                print( "RAxML tree optimization with time limit", raxml_time_limit,  "hours")
+                print(( "RAxML tree optimization with time limit", raxml_time_limit,  "hours"))
                 # using exec to be able to kill process
                 end_time = time.time() + int(raxml_time_limit*3600)
                 process = subprocess.Popen("exec raxml -f d -j -s temp.phyx -n topology -c 25 -m GTRCAT -p 344312987 -t initial_tree.newick", shell=True)
@@ -335,7 +335,8 @@ class mpm_tree(object):
         try:
             self.tt.reconstruct_anc(method='ml')
         except:
-            print "trouble at self.tt.reconstruct_anc(method='ml')"
+            print("trouble at self.tt.reconstruct_anc(method='ml')")
+            raise
 
         if translate_tree:
             for node in self.tree.find_clades():
@@ -359,7 +360,7 @@ class mpm_tree(object):
         '''
         custom translation sequence that handles gaps
         '''
-        if type(seq) not in [str, unicode]:
+        if type(seq) not in [str, str]:
             str_seq = str(seq.seq)
         else:
             str_seq = seq
@@ -382,7 +383,7 @@ class mpm_tree(object):
 
     def mean_std_seqLen(self):
         """ returen mean and standard deviation of sequence lengths """
-        seqLen_arr = np.array([ len(seq) for seq in self.seqs.values()])
+        seqLen_arr = np.array([ len(seq) for seq in list(self.seqs.values())])
         return np.mean(seqLen_arr, axis=0), np.std(seqLen_arr, axis=0)
 
     def paralogy_statistics(self):
@@ -500,7 +501,7 @@ class mpm_tree(object):
                         node.longName=node.name
                     elems[node.longName] = {}
                     nuc_dt= {pos:state for pos, (state, ancstate) in
-                                    enumerate(izip(node.sequence.tostring(), self.tree.root.sequence.tostring())) if state!=ancstate}
+                                    enumerate(zip(node.sequence.tostring(), self.tree.root.sequence.tostring())) if state!=ancstate}
                     nodeseq=node.sequence.tostring();nodeseq_len=len(nodeseq)
                     elems[node.longName]['nuc']=nuc_dt
 
@@ -520,15 +521,18 @@ def align_and_makeTree( fna_file_list, alignFile_path, simple_tree):
     for gene_cluster_nu_filename in fna_file_list:
         try:
             # extract GC_00002 from path/GC_00002.aln
-            clusterID = gene_cluster_nu_filename.split('/')[-1].split('.')[0]
-            start = time.time();
+            try:
+                clusterID = gene_cluster_nu_filename.split('/')[-1].split('.')[0]
+            except:
+                clusterID = gene_cluster_nu_filename.decode().split('/')[-1].split('.')[0]
+            start = time.time()
             geneDiversity_file = open(alignFile_path+'gene_diversity.txt', 'a')
             if len( read_fasta(gene_cluster_nu_filename) )==1: # nothing to do for singletons
                 ## na_aln.fa
                 gene_cluster_nu_aln_filename= gene_cluster_nu_filename.replace('.fna','_na_aln.fa')
                 ## geneSeqID separator '|' is replaced by '-' for msa viewer compatibility
-                with open(gene_cluster_nu_aln_filename,'wb') as write_file:
-                    for SeqID, Sequence in read_fasta(gene_cluster_nu_filename).iteritems():
+                with open(gene_cluster_nu_aln_filename,'w') as write_file:
+                    for SeqID, Sequence in read_fasta(gene_cluster_nu_filename).items():
                         write_in_fa(write_file, SeqID.replace('|','-'), Sequence)
                 os.system( ' '.join(['cp',gene_cluster_nu_aln_filename,gene_cluster_nu_aln_filename.replace('_aln','_aln_reduced')]) )
 
@@ -536,8 +540,8 @@ def align_and_makeTree( fna_file_list, alignFile_path, simple_tree):
                 gene_cluster_aa_filename= gene_cluster_nu_filename.replace('.fna','.faa')
                 gene_cluster_aa_aln_filename= gene_cluster_nu_filename.replace('.fna','_aa_aln.fa')
                 ## geneSeqID separator '|' is replaced by '-' for msa viewer compatibility
-                with open(gene_cluster_aa_aln_filename,'wb') as write_file:
-                    for SeqID, Sequence in read_fasta(gene_cluster_aa_filename).iteritems():
+                with open(gene_cluster_aa_aln_filename,'w') as write_file:
+                    for SeqID, Sequence in read_fasta(gene_cluster_aa_filename).items():
                         write_in_fa(write_file, SeqID.replace('|','-'), Sequence)
                 os.system( ' '.join(['cp',gene_cluster_aa_aln_filename,gene_cluster_aa_aln_filename.replace('_aln','_aln_reduced')]) )
 
@@ -549,8 +553,8 @@ def align_and_makeTree( fna_file_list, alignFile_path, simple_tree):
                 myTree.translate()
                 if simple_tree==False:
                     myTree.build(raxml=False,fasttree_program=fasttree_name,treetime_used=True)
-                    myTree.ancestral(translate_tree=True)
-                    myTree.refine()
+                    # myTree.ancestral(translate_tree=True)
+                    # myTree.refine()
                 else:
                     myTree.build(raxml=False,fasttree_program=fasttree_name,treetime_used=False)
                 myTree.diversity_statistics_nuc()
@@ -568,11 +572,11 @@ def align_and_makeTree( fna_file_list, alignFile_path, simple_tree):
                      str(i) for i in [clusterID, random_alnID, diversity_nuc, \
                         mean_seqLen, std_seqLen, bestSplit_paraNodes, bestSplit_branchLen ] ]))
         except:
-            print("Aligning and tree building of %s failed"%gene_cluster_nu_filename)
-
+            print(("Aligning and tree building of %s failed"%gene_cluster_nu_filename))
+            raise
 
 def mem_check(flag):
-    print(flag, ' memory usage: %.2f GB' % round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/(1024.0**2),1))
+    print((flag, ' memory usage: %.2f GB' % round(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss/(1024.0**2),1)))
 
 def create_geneCluster_fa(path,folders_dict):
     """ dict storing amino_acid Id/Seq from '.faa' files
@@ -596,12 +600,12 @@ def create_geneCluster_fa(path,folders_dict):
     os.system('mkdir '+cluster_seqs_path)
 
     ## write nuc/aa sequences for each cluster
-    for clusterID, gene in geneCluster_dt.iteritems():
+    for clusterID, gene in geneCluster_dt.items():
         ## geneCluster file name
         gene_cluster_nu_filename="%s%s"%(clusterID,'.fna')
         gene_cluster_aa_filename="%s%s"%(clusterID,'.faa')
-        with open( cluster_seqs_path+gene_cluster_nu_filename, 'wb') as gene_cluster_nu_write, \
-            open( cluster_seqs_path+gene_cluster_aa_filename, 'wb') as gene_cluster_aa_write:
+        with open( cluster_seqs_path+gene_cluster_nu_filename, 'w') as gene_cluster_nu_write, \
+            open( cluster_seqs_path+gene_cluster_aa_filename, 'w') as gene_cluster_aa_write:
             ## write nucleotide/amino_acid sequences into geneCluster files
             for gene_memb in gene[1]:
                 ## gene_name format: strain_1|locusTag
@@ -624,7 +628,7 @@ def cluster_align_makeTree( path, folders_dict, parallel, disable_cluster_postpr
         os.system('rm '+cluster_seqs_path+'gene_diversity.txt')
 
     if 0:
-        with open(cluster_seqs_path+'cluster_correl_stats.txt', 'wb') as cluster_correl_stats_file:
+        with open(cluster_seqs_path+'cluster_correl_stats.txt', 'w') as cluster_correl_stats_file:
             cluster_correl_stats_file.write('%s\n'%'\t'.join(
                         ['clusterID', 'random_alnID', 'diversity_nuc', \
                         'mean_seqLen', 'std_seqLen', 'bestSplit_paraNodes', 'bestSplit_branchLen'
@@ -674,7 +678,7 @@ def find_best_split(tree):
 def update_diversity_cpk(path):
     ## write gene_diversity_Dt cpk file
     output_path = path+'geneCluster/'
-    with open(output_path+'gene_diversity.txt', 'rb') as infile:
+    with open(output_path+'gene_diversity.txt', 'r') as infile:
         write_pickle(output_path+'gene_diversity.cpk',{ i.rstrip().split('\t')[0]:i.rstrip().split('\t')[1] for i in infile})
 
 def update_geneCluster_cpk(path, geneCluster_dt):
@@ -686,7 +690,7 @@ def update_geneCluster_cpk(path, geneCluster_dt):
 def write_final_cluster(path):
     geneCluster_dt=load_sorted_clusters(path)
     outfileName='allclusters_final.tsv'
-    with open(path+'protein_faa/diamond_matches/'+outfileName, 'wb') as outfile:
+    with open(path+'protein_faa/diamond_matches/'+outfileName, 'w') as outfile:
         for clusterID, cluster_stat in geneCluster_dt:
             outfile.write('\t'.join([gene for gene in cluster_stat[1]]))
             outfile.write('\n')
@@ -700,7 +704,7 @@ def load_sorted_clusters(path):
     from operator import itemgetter
     # sort by decreasing abundance (-v[0], minus to achieve decreasing)
     # followed by increasing strain count
-    return sorted(geneCluster_dt.iteritems(),
-                key=lambda (k,v): (-itemgetter(0)(v),itemgetter(2)(v)), reverse=False)
+    return sorted(iter(geneCluster_dt.items()),
+                key=lambda k_v: (-itemgetter(0)(k_v[1]),itemgetter(2)(k_v[1])), reverse=False)
     #return sorted(geneCluster_dt.iteritems(),
     #            key=lambda (k,v): (-itemgetter(0)(v),itemgetter(2)(v)), reverse=False)

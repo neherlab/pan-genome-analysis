@@ -52,7 +52,7 @@ def find_and_merge_unclustered_genes( path, nstrains, window_size=5, strain_prop
     ## calculate cluster length distribution, link clusterIDs with their clusterLength
     for gid, (clusterID, gene) in enumerate(gene_clusters):
         # average length of the cluster in amino acids
-        clusterLength= int(np.mean([len(igene) for igene in read_fasta(file_path+'%s%s'%(clusterID,'.fna')).values()])/3.0)
+        clusterLength= int(np.mean([len(igene) for igene in list(read_fasta(file_path+'%s%s'%(clusterID,'.fna')).values())])/3.0)
         length_to_cluster[clusterLength].append(clusterID)
         length_list.append(clusterLength)
     cluster_length_distribution = np.bincount(length_list)
@@ -103,7 +103,7 @@ def delete_old_merged_clusters(file_path, geneCluster_dt, merged_clusters_dict):
                         command_move_deleted_clusters=' '.join(['mv', tmp_files, './deleted_clusters_peaks_splits/'])
                         os.system(command_move_deleted_clusters)
         except:
-            print("can't delete"," mis-clusterd genes gathered in ",uncluster_filename)
+            print(("can't delete"," mis-clusterd genes gathered in ",uncluster_filename))
     os.chdir(cwd)
     return geneCluster_dt
 

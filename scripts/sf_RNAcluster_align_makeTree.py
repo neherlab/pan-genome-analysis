@@ -30,10 +30,10 @@ def create_RNACluster_fa(path,folders_dict):
     ## create cluster-RNAs fasta files (By default: put RNAs in geneCluster folder)
     fasta_path=path+'geneCluster/';
     ## diamond_RNACluster_dt: {clusterID:[ count_strains,[memb1,...],count_RNAs }
-    for clusterID, RNA in diamond_RNACluster_dt.iteritems():
+    for clusterID, RNA in diamond_RNACluster_dt.items():
         ## RNACluster file name
         RNA_cluster_nu_filename="%s%s"%(clusterID,'.fna')
-        RNA_cluster_nu_write=open( fasta_path+RNA_cluster_nu_filename, 'wb')
+        RNA_cluster_nu_write=open( fasta_path+RNA_cluster_nu_filename, 'w')
         ## write nucleotide/amino_acid sequences into RNACluster files
         for RNA_memb in RNA[1]:
             ## RNA_name format: strain_1|locusTag
@@ -55,12 +55,12 @@ def single_RNACluster_align_and_makeTree(fa_files_list, alignFile_path, simple_t
                 ## na.aln
                 RNA_cluster_nu_aln_filename= RNA_cluster_nu_filename.replace('.fna','_na.aln')
                 ## RNA SeqID separator '|' is replaced by '-' for msa viewer compatibility
-                with open(RNA_cluster_nu_aln_filename,'wb') as write_file:
-                    for SeqID, Sequence in read_fasta(RNA_cluster_nu_filename).iteritems():
+                with open(RNA_cluster_nu_aln_filename,'w') as write_file:
+                    for SeqID, Sequence in read_fasta(RNA_cluster_nu_filename).items():
                         write_in_fa(write_file, SeqID.replace('|','-'), Sequence)
                 geneDiversity_file.write('%s\t%s\n'%(clusterID,'0.0'))
             else: # align and build tree
-                print RNA_cluster_nu_filename
+                print(RNA_cluster_nu_filename)
                 myTree = mpm_tree(RNA_cluster_nu_filename)
                 myTree.align()
 
@@ -75,9 +75,9 @@ def single_RNACluster_align_and_makeTree(fa_files_list, alignFile_path, simple_t
 
                 RNA_diversity_values='{0:.3f}'.format(myTree.diversity_nuc)
                 geneDiversity_file.write('%s\t%s\n'%(clusterID,RNA_diversity_values))
-                print clusterID,RNA_diversity_values
+                print(clusterID,RNA_diversity_values)
         except:
-            print("Aligning and tree building of RNA %s failed"%RNA_cluster_nu_filename)
+            print(("Aligning and tree building of RNA %s failed"%RNA_cluster_nu_filename))
 
 def RNAclusters_align_makeTree( path, folders_dict, parallel, simple_tree ):
     """

@@ -529,6 +529,7 @@ def align_and_makeTree( fna_file_list, alignFile_path, simple_tree):
             geneDiversity_file = open(alignFile_path+'gene_diversity.txt', 'a')
             if len( read_fasta(gene_cluster_nu_filename) )==1: # nothing to do for singletons
                 ## na_aln.fa
+                print("singleton", gene_cluster_nu_filename)
                 gene_cluster_nu_aln_filename= gene_cluster_nu_filename.replace('.fna','_na_aln.fa')
                 ## geneSeqID separator '|' is replaced by '-' for msa viewer compatibility
                 with open(gene_cluster_nu_aln_filename,'w') as write_file:

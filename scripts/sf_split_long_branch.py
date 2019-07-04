@@ -82,9 +82,9 @@ def delete_original_clusters(file_path, geneCluster_dt):
     return:
         updated geneCluster_dt
     """
+    cwd = os.getcwd()
+    os.chdir(file_path)
     if os.path.isfile('old_clusters_longSplit.txt'):
-        cwd = os.getcwd()
-        os.chdir(file_path)
         with open('old_clusters_longSplit.txt', 'r') as delete_cluster_file:
             uncluster_filename_list= [ uncluster_filename.split('.fna')[0] for  uncluster_filename in delete_cluster_file]
             #geneCluster_dt.keys()[0]
@@ -95,7 +95,7 @@ def delete_original_clusters(file_path, geneCluster_dt):
                     tmp_files=' '.join([ uncluster_filename+suffix for suffix in suffix_list])
                     command_move_deleted_clusters=' '.join(['mv', tmp_files, './deleted_clusters_longSplit/'])
                     os.system(command_move_deleted_clusters)
-        os.chdir(cwd)
+    os.chdir(cwd)
     return geneCluster_dt
 
 
@@ -294,7 +294,7 @@ def postprocess_split_long_branch(parallel, path, simple_tree, cut_branch_thresh
     ## If new_clusters_longSplit.txt (over_split records) exists,
     ## then gather new clusters from new_clusters_longSplit.txt
     if os.path.exists(''.join([file_path,'new_clusters_longSplit.txt'])):
-        with open(file_path+'new_clusters_longSplit.txt', 'rb') as new_clusters_longSplit:
+        with open(file_path+'new_clusters_longSplit.txt', 'r') as new_clusters_longSplit:
             new_fa_files_list=[ clus.rstrip() for clus in new_clusters_longSplit ]
             print('#times of splitting long branches:',len(new_fa_files_list)-1)
         if os.path.isfile('old_clusters_longSplit.txt'):

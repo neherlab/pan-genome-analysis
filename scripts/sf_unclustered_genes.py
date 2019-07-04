@@ -87,7 +87,7 @@ def delete_old_merged_clusters(file_path, geneCluster_dt, merged_clusters_dict):
     """
     cwd = os.getcwd()
     os.chdir(file_path)
-    with open('old_clusters_longSplit.txt', 'rb') as delete_cluster_file:
+    with open('old_clusters_longSplit.txt', 'r') as delete_cluster_file:
         uncluster_filename_list= [ uncluster_filename.rstrip() for  uncluster_filename in delete_cluster_file]
         try:
             for uncluster_filename in uncluster_filename_list:
@@ -121,7 +121,7 @@ def cut_all_trees_from_merged_clusters(parallel, path, cut_branch_threshold, sim
 
     ## gather new clusters from new_clusters_longSplit.txt
     #if os.path.exists(''.join([geneCluster_fasta_path,'new_clusters_longSplit.txt'])):
-    with open(''.join([geneCluster_fasta_path,'new_clusters_longSplit.txt']),'rb') as new_clusters_longSplit:
+    with open(''.join([geneCluster_fasta_path,'new_clusters_longSplit.txt']),'r') as new_clusters_longSplit:
         new_fa_files_list=[ clus.rstrip() for clus in new_clusters_longSplit ]
 
     ## parallelization of "align and make tree on new cluster"

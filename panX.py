@@ -11,7 +11,7 @@ panX clusters genes from a set of microbial genomes into orthologous clusters
 and exports alignments, phylogenies, and meta data for interactive web visualization
 and powerful pan-genomic data exploration.
 
-USAGE EXAMPLE: ./panX -fn data/TestSet -sl TestSet-RefSeq.txt 1>TestSet.log 2>TestSet.err
+USAGE EXAMPLE: ./panX.py -fn data/TestSet -sl TestSet-RefSeq.txt 1>TestSet.log 2>TestSet.err
 For help, type:
     ./panX -h
 '''

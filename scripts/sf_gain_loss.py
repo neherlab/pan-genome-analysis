@@ -83,7 +83,7 @@ def export_gain_loss(tree, path, merged_gain_loss_output):
         sorted_genelist = load_sorted_clusters(path)
         strainID_keymap= {ind:k for ind, k in enumerate(preorder_strain_list)}
         #presence_arr= np.array([ np.fromstring(gene_gain_loss_dict[k], np.int8)-48 for k in preorder_strain_list])
-        presence_arr= np.array([ np.array(gene_gain_loss_dict[k],'c') for k in preorder_strain_list])
+        presence_arr= np.array([ np.array(list(gene_gain_loss_dict[k])) for k in preorder_strain_list])
         ## if true, write pattern dict instead of pattern string in a json file
         pattern_json_flag=False
         for ind, (clusterID, gene) in enumerate(sorted_genelist):

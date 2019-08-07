@@ -52,7 +52,7 @@ def build_representative_cluster(clustering_path, threads, input_prefix):
     subproblem_seqs_path= '%ssubproblem_cluster_seqs/'%clustering_path
     subproblem_merged_faa= ''.join([clustering_path,input_prefix,'.faa'])
     subproblem_faa_dict= read_fasta(subproblem_merged_faa)
-    with open(cluster_file, 'rb') as cluster_input:
+    with open(cluster_file, 'rt') as cluster_input:
         subproblem_geneCluster_dt= defaultdict(list)
         cluster_input_lines= [iline for iline in cluster_input]
         subproblem_geneCluster_dt= {}

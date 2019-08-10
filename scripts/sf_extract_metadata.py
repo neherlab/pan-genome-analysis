@@ -78,22 +78,23 @@ def extract_metadata(path, strain_list, folders_dict, gbk_present, metainfo_reco
                                 datacolct= ''.join(datacolct.split('-'))
                                 dates=re.findall('\d+', datacolct);
                                 # two versions of date: 15-Seq-2011/2014-03-14
-                                if sum([str.isalpha(ic) for ic in datacolct])!=0:
+                                if any([str.isalpha(ic) for ic in datacolct]):
                                     month_abbr=re.findall('[a-zA-Z]+', datacolct)[0]
-                                    month=str(list(calendar.month_abbr).index(month_abbr))
+                                    try:
+                                        month = "%02d"%(list(calendar.month_abbr).index(month_abbr))
+                                    except:
+                                        month = 'XX'
                                     if len(datacolct)==9:
-                                        if len(month)==1: month='0'+month
                                         datacolct=dates[1]+'-'+month+'-'+dates[0]
                                     else:
-                                        if len(month)==1: month='0'+month
-                                        datacolct=dates[0]+'-'+month+'-01'#artificial day 01
+                                        datacolct=dates[0]+'-'+month+'-XX'#artificial day 01
                                 elif datacolct!='':
                                     if  len(datacolct)==8:
                                         datacolct='%s-%s-%s'%(dates[0][:4], dates[0][4:6], dates[0][6:])
                                     elif len(datacolct)==6: #'2010-05'
-                                        datacolct='%s-%s-01'%(dates[0][:4], dates[0][4:6])
+                                        datacolct='%s-%s-XX'%(dates[0][:4], dates[0][4:6])
                                     else:
-                                        datacolct=dates[0]+'-01-01'
+                                        datacolct=dates[0]+'-XX-XX'
 
                             # just get the year
                             datacolct = datacolct.split('-')[0]

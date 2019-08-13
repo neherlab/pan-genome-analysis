@@ -1,11 +1,13 @@
+
 # panX: microbial pan-genome analysis and exploration
-Author: Wei Ding, Franz Baumdicker and Richard Neher
+Wei Ding, Franz Baumdicker, Richard A Neher; panX: pan-genome analysis and exploration, Nucleic Acids Research, Volume 46, Issue 1, 9 January 2018, Pages e5,
+https://doi.org/10.1093/nar/gkx977
 
 Overview:
-[**panX**](http://pangenome.de) is a software package for pan-genome analysis, interactive visualization and exploration. The analysis pipeline is based on [DIAMOND](https://github.com/bbuchfink/diamond) ([Buchfink et al. 2015 Nature Methods](http://www.nature.com/nmeth/journal/v12/n1/full/nmeth.3176.html)), MCL and phylogeny-aware post-processing, which takes a set of annotated bacterial strains as input (e.g. NCBI RefSeq records or user's own data in **GenBank** format).
-Alls genes from all strains are compared to each other via the fast protein alignment tool DIAMOND and then clustered into orthologous groups using MCL and adaptive phylogenetic post-processing, which split distantly related genes and paralogs if necessary. For each gene cluster, corresponding alignment and phylogeny are constructed. All core gene SNPs are then used to build strain/species phylogeny.
+[**panX**](http://pangenome.de) is a software package for microbial pan-genome analysis, visualization and exploration. The analysis pipeline is based on DIAMOND, MCL and phylogeny-aware post-processing. It takes a set of annotated bacterial strains as input (e.g. NCBI RefSeq records or user's own data in **GenBank** format).
+All genes from all strains are compared to each other via DIAMOND and then clustered into orthologous groups using MCL and adaptive phylogenetic post-processing, which split distantly related genes and paralogs if necessary. For each gene cluster, corresponding alignment and phylogeny are constructed. All core gene SNPs are then used to build strain/species phylogeny.
 
-The results can be interactively explored using a [**powerful web-based visualization application**](https://github.com/neherlab/pan-genome-visualization) (either hosted by web server or used locally on desktop). The web application integrates various interconnected viewers (pan-genome statistical charts, gene cluster table, alignment, comparative phylogenies, metadata table) and allows rapid search and filter of gene clusters by gene name, annotation, duplication, diversity, gene gain/loss events, etc. Strain-specific **metadata** are integrated into strain phylogeny such that genes related to adaptation, antibiotic resistance, virulence etc can be readily identified.
+The results can be interactively explored using a [**powerful web-based visualization application**](https://github.com/neherlab/pan-genome-visualization) (either hosted by web server or run locally on desktop). The web application integrates various interconnected components (pan-genome statistical charts, gene cluster table, alignment, comparative phylogenies, metadata table) and allows rapid search and filter of gene clusters by gene name, annotation, duplication, diversity, gene gain/loss events, etc. Strain-specific **metadata** are integrated into strain phylogeny such that genes related to adaptation, antibiotic resistance, virulence can be readily identified.
 
 ## Table of contents
   * [Pipeline overview](#pipeline-overview)

@@ -75,6 +75,15 @@ def extract_metadata(path, strain_list, folders_dict, gbk_present, metainfo_reco
                             # date processing
                             if datacolct!='unknown':
                                 import re, calendar
+                                # ignore time
+                                match_time = re.search(r'\dT\d\d:\d\d:\d\dZ', datacolct) # for date-time format
+                                if match_time:
+                                    start_index_time = datacolct.index(match_time.group()) + 1
+                                    datacolct = datacolct[:start_index_time]
+                                match_time = re.search(r'\dT\d\dZ', datacolct) # for date-time format but time deleted manually
+                                if match_time:
+                                    start_index_time = datacolct.index(match_time.group()) + 1
+                                    datacolct = datacolct[:start_index_time]
                                 datacolct= ''.join(datacolct.split('-'))
                                 dates=re.findall('\d+', datacolct);
                                 # two versions of date: 15-Seq-2011/2014-03-14

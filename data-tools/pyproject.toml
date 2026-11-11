@@ -1,0 +1,20 @@
+[project]
+name = "panx-data"
+version = "0.1.0"
+description = "Rebuild the published panX data of 2022 from the pipeline archives, and check it against S3 listings"
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+dev = ["pytest>=8"]
+
+[tool.uv]
+package = false
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

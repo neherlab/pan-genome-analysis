@@ -8,7 +8,18 @@ from pathlib import Path
 import pytest
 
 from panx_data.layout import Out
-from panx_data.rebuild import Job, Upload, build_dataset, choose_gz
+from panx_data.listings import S3Object
+from panx_data.pigz_gzip import pigz_bytes
+from panx_data.rebuild import (
+    Job,
+    OlderJob,
+    Origin,
+    Upload,
+    build_dataset,
+    build_older_dataset,
+    choose_gz,
+    older_dataset_files,
+)
 
 ORIGINAL = b"original-gz-bytes"
 SAME_SIZE_COPY = b"new-gz-copy-bytes"
@@ -80,6 +91,89 @@ def test_rebuild_dataset_gets_plain_files_gz_copies_zips_and_s3_objects(tmp_path
     assert manifest["dataset/Testus/metainfo.tsv"].endswith("\ts3")
     assert manifest["dataset/Testus/geneCluster.json"].endswith("\tscicore")
     assert (result.files, result.from_s3) == (8, 1)
+
+
+def test_rebuild_older_dataset_files_prefer_s3_objects_and_skip_working_folders(tmp_path: Path) -> None:
+    old, new = b">a|1\nMKV\n", b">a|1\nMKI\n"
+    tarball = _tarball(
+        tmp_path / "Tus.tar.gz",
+        {
+            "Tus/vis/geneCluster.json": b"[]",
+            "Tus/vis/geneCluster/a_aa_aln.fa.gz": gzip.compress(old, mtime=0),
+            "Tus/vis/geneCluster/npy_bk/a.npy": b"working file",
+            "Tus/input_GenBank/a.gbk": b"pipeline input",
+        },
+    )
+    overlay = tmp_path / "s3" / "dataset" / "Testus"
+    (overlay / "geneCluster").mkdir(parents=True)
+    (overlay / "geneCluster" / "a_aa_aln.fa.gz").write_bytes(gzip.compress(new, mtime=0))
+    (overlay / "newColumnConfig.js").write_bytes(b"var x = 1;")
+    modified = {
+        "dataset/Testus/geneCluster/a_aa_aln.fa.gz": "2022-08-25T15:44:03+00:00",
+        "dataset/Testus/newColumnConfig.js": "2022-08-23T08:37:49+00:00",
+    }
+
+    files = list(older_dataset_files(OlderJob("Testus", tarball, "Tus", overlay), modified))
+
+    by_name = {file.rel: file for file in files}
+    assert sorted(by_name) == ["geneCluster.json", "geneCluster/a_aa_aln.fa", "newColumnConfig.js"]
+    assert (by_name["geneCluster.json"].origin, by_name["geneCluster.json"].mtime) == (
+        Origin.SCICORE_2018,
+        1_657_000_000,
+    )
+    alignment = by_name["geneCluster/a_aa_aln.fa"]
+    assert (alignment.origin, alignment.gzip, gzip.decompress(alignment.data)) == (Origin.S3, True, new)
+    assert alignment.mtime == 1_661_442_243
+    assert by_name["newColumnConfig.js"].gzip is False
+
+
+def test_rebuild_older_dataset_object_without_listed_time_fails(tmp_path: Path) -> None:
+    overlay = tmp_path / "Testus"
+    overlay.mkdir()
+    (overlay / "metaConfiguration.js").write_bytes(b"var meta_details = {};")
+
+    with pytest.raises(ValueError, match="no LastModified"):
+        list(older_dataset_files(OlderJob("Testus", None, "Testus", overlay), {}))
+
+
+@pytest.mark.skipif(shutil.which("pigz") is None, reason="needs the pigz program")
+def test_rebuild_older_dataset_writes_the_forms_that_the_bucket_holds(tmp_path: Path) -> None:
+    table, alignment, extra = b'[{"msa": "a"}]', b">a|1\nMKV\n", b"(a:0.1);\n"
+    stored = gzip.compress(alignment, mtime=0)
+    tarball = _tarball(
+        tmp_path / "Testus.tar.gz",
+        {
+            "Testus/vis/geneCluster.json": table,
+            "Testus/vis/geneCluster/a_aa_aln.fa.gz": stored,
+            "Testus/vis/geneCluster/a.nwk": extra,
+        },
+    )
+    copy = pigz_bytes(table, Path("geneCluster.json"), 1_657_000_000)
+    objects = {
+        key: S3Object(key, hashlib.md5(data).hexdigest(), len(data))
+        for key, data in (
+            ("dataset/Testus/geneCluster.json", table),
+            ("dataset/Testus/geneCluster.json.gz", copy),
+            ("dataset/Testus/geneCluster/a_aa_aln.fa.gz", stored),
+        )
+    }
+    out = Out(tmp_path / "out")
+    for folder in (out.bucket / "dataset", out.staging, out.parts):
+        folder.mkdir(parents=True)
+
+    result = build_older_dataset(OlderJob("Testus", tarball, "Testus", tmp_path / "no-s3"), out, objects)
+
+    folder = out.bucket / "dataset" / "Testus"
+    files = {path.relative_to(folder).as_posix(): path.read_bytes() for path in folder.rglob("*") if path.is_file()}
+    assert files == {
+        "geneCluster.json": table,
+        "geneCluster.json.gz": copy,
+        "geneCluster/a_aa_aln.fa.gz": stored,
+        "geneCluster/a.nwk": extra,
+    }
+    manifest = dict(line.split("\t", 1) for line in (out.parts / "Testus.tsv").read_text().splitlines())
+    assert manifest["dataset/Testus/geneCluster/a.nwk"].endswith("\tscicore-2018")
+    assert (result.files, result.from_s3) == (4, 0)
 
 
 def _tarball(path: Path, files: dict[str, bytes]) -> Path:

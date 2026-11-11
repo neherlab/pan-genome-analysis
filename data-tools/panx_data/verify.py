@@ -15,10 +15,9 @@ from enum import Enum
 from pathlib import Path
 
 from panx_data.layout import Out, Source
-from panx_data.listings import Listings, S3Object
+from panx_data.listings import MULTIPART_SIZES, Listings, S3Object
 
 LOG = logging.getLogger(__name__)
-MULTIPART_SIZES = (8 << 20, 5 << 20, 16 << 20, 1 << 20)
 STALE_ARCHIVE_SUFFIX = "_gene_alignments.tar.gz"
 
 
@@ -55,6 +54,7 @@ class Deviation(Enum):
     S3_SHORTER = "s3-shorter"
     STALE_ARCHIVE = "only-in-s3:stale-archive"
     NOT_REBUILT = "only-in-s3:dataset-not-rebuilt"
+    GZIP_HEADER = "differs:gzip-header-of-older-dataset"
     DIFFERS = "differs"
     ONLY_IN_S3 = "only-in-s3"
     SOURCE_DIFFERS = "src-differs-from-s3"
@@ -71,8 +71,11 @@ EXPECTED = frozenset(
         Deviation.S3_SHORTER,
         Deviation.STALE_ARCHIVE,
         Deviation.NOT_REBUILT,
+        Deviation.GZIP_HEADER,
     }
 )
+# Origin of the files from the 2018 archive of an older dataset in the rebuild manifest
+OLDER_ARCHIVE_ORIGIN = "scicore-2018"
 
 
 @dataclass(frozen=True)
@@ -90,14 +93,17 @@ class Found:
 def _check_out(out: Out, listings: Listings) -> Iterator[Found]:
     seen: set[str] = set()
     datasets: set[str] = set()
-    for path, size, md5 in _manifest_rows(out.manifest):
+    for path, size, md5, origin in _manifest_rows(out.manifest):
         if path.startswith("dataset/"):
             datasets.add(path.split("/")[1])
         obj = listings.objects.get(path)
         if obj is not None:
             seen.add(path)
             if not matches(obj, md5, out.bucket / path):
-                yield Found(path, classify(size, obj.size), obj.size, obj.etag, size, md5)
+                kind = classify(size, obj.size)
+                if kind is Deviation.DIFFERS and _is_gzip_header_difference(path, size, obj, origin):
+                    kind = Deviation.GZIP_HEADER
+                yield Found(path, kind, obj.size, obj.etag, size, md5)
         elif listings.covers(path):
             yield Found(path, Deviation.MISSING_IN_S3, None, None, size, md5)
     for key, obj in listings.objects.items():
@@ -127,12 +133,19 @@ def _only_in_s3(key: str, rebuilt: set[str]) -> Deviation:
     return Deviation.ONLY_IN_S3
 
 
-def _manifest_rows(manifest: Path) -> Iterator[tuple[str, int, str]]:
+def _is_gzip_header_difference(path: str, size: int, obj: S3Object, origin: str) -> bool:
+    """Tell whether a `.gz` file of an older dataset differs from its object only where the 2022 upload set the gzip
+    header time: same size, and a copy of a 2018 archive file, whose decompression time on the upload host the
+    archive does not hold."""
+    return origin == OLDER_ARCHIVE_ORIGIN and path.endswith(".gz") and size == obj.size
+
+
+def _manifest_rows(manifest: Path) -> Iterator[tuple[str, int, str, str]]:
     with gzip.open(manifest, "rt") as lines:
         next(lines)
         for line in lines:
-            path, size, md5, _ = line.rstrip("\n").split("\t")
-            yield path, int(size), md5
+            path, size, md5, origin = line.rstrip("\n").split("\t")
+            yield path, int(size), md5, origin
 
 
 def _multipart_matches(path: Path, etag: str) -> bool:

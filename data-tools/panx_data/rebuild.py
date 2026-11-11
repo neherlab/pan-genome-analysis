@@ -14,6 +14,11 @@ The upload scripts of `neherlab/pan-genome-visualization` filled the bucket:
 - objects in `src/s3/` replace or add files: S3 changed them after the upload (the `metainfo.tsv` files of
   2022-09-09, a few `.gz` copies with another header time), or the archives lack them (the bucket root)
 
+The older datasets, which the 2022 run did not make, come from the `vis/` folder of their 2018 archive on sciCORE and
+from the objects of `src/s3/`, which replace a file of the archive: the copy chose S3 where its content is newer, or
+where the archive lacks the file (`older_dataset_files`). The bucket holds such a file plain, as `.gz`, or both, so the
+listing decides which forms the rebuild writes.
+
 Each dataset is built in `out/.staging/` and moved into place when it is complete, so an interrupted run resumes.
 """
 
@@ -27,10 +32,11 @@ import subprocess
 import tarfile
 import time
 import zipfile
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator, Mapping
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from contextlib import contextmanager
 from dataclasses import asdict, dataclass
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
 
@@ -39,12 +45,14 @@ from panx_data.layout import (
     JULY_RUN,
     JULY_ZIPS,
     NOVEMBER_RUN,
+    OLDER_FOLDER,
     UPDATE_ZIP_PREFIX,
     WEB_FILES,
     Out,
     Source,
+    older_tarball_name,
 )
-from panx_data.listings import Listings
+from panx_data.listings import Listings, S3Object
 from panx_data.pigz_gzip import check_compressors, pigz_bytes
 
 LOG = logging.getLogger(__name__)
@@ -64,7 +72,7 @@ def rebuild(
         folder.mkdir(parents=True, exist_ok=True)
     pending = [job for job in planned if not _is_built(out, job.dataset)]
     LOG.info("%d of %d datasets already built, %d to build", len(planned) - len(pending), len(planned), len(pending))
-    failures = _build_all(pending, out, listings.single_part_etags_by_dataset(), jobs)
+    failures = _build_all(pending, out, listings, jobs)
     if failures:
         raise RuntimeError(f"{len(failures)} datasets failed: {' '.join(sorted(failures))}")
     build_root(source, out)
@@ -77,8 +85,9 @@ def rebuild(
     return results
 
 
-def plan(source: Source, listings: Listings, only: frozenset[str] | None) -> list["Job"]:
-    """List the datasets to build: those in the bucket that have a tarball, the largest first."""
+def plan(source: Source, listings: Listings, only: frozenset[str] | None) -> list["Job | OlderJob"]:
+    """List the datasets to build, the largest first: those in the bucket that have a 2022 tarball, and the older
+    datasets that have a 2018 archive or objects in `src/s3/`."""
     july = _tarball_names(source.archives / JULY_RUN)
     november = _tarball_names(source.archives / NOVEMBER_RUN)
     unknown = (only or frozenset()) - listings.datasets
@@ -96,6 +105,11 @@ def plan(source: Source, listings: Listings, only: frozenset[str] | None) -> lis
         )
         for name in names
     ]
+    older = [
+        OlderJob(name, source.older_tarball(name), older_tarball_name(name), source.s3_objects / "dataset" / name)
+        for name in sorted((listings.datasets - july) & (only or listings.datasets))
+    ]
+    jobs += [job for job in older if job.tarball is not None or job.overlay.is_dir()]
     return sorted(jobs, key=_tarball_size, reverse=True)
 
 
@@ -135,6 +149,79 @@ def build_dataset(job: "Job", out: Out, etags: dict[str, str]) -> "Result":
         len(rows),
         sum(row.size for row in rows.values()),
         kept,
+        from_s3,
+        round(time.monotonic() - start, 1),
+    )
+    _write_part(out, job.dataset, rows, result)
+    return result
+
+
+def older_dataset_files(job: "OlderJob", modified: Mapping[str, str | None]) -> Iterator["DatasetFile"]:
+    """Yield each file of an older dataset once, by its path below the dataset folder without `.gz`.
+
+    A file comes from `src/s3/` when it has an object there, else from the `vis/` folder of the 2018 archive, with
+    the tar member mtime. Of the objects of one file, the `.gz` object wins; when its content differs from the plain
+    object, the file is reported. An object's mtime is the `LastModified` time of its key in `modified`.
+    """
+    overlay = _overlay_files(job.overlay)
+    if job.tarball is not None:
+        archived: dict[str, DatasetFile] = {}
+        with _tar_members(job.tarball, lambda name: _served_path(name, job.tar_folder) is not None) as members:
+            for member, data in members:
+                rel = _served_path(member.name, job.tar_folder)
+                assert rel is not None
+                name = rel.removesuffix(".gz")
+                if name in overlay:
+                    continue
+                file = DatasetFile(name, data, rel.endswith(".gz"), member.mtime, Origin.SCICORE_2018)
+                archived[name] = _prefer_gz(archived[name], file, job.tarball) if name in archived else file
+        yield from archived.values()
+    for name, path in sorted(overlay.items()):
+        key = f"dataset/{job.dataset}/{path.relative_to(job.overlay).as_posix()}"
+        if modified.get(key) is None:
+            raise ValueError(f"'{key}' of src/s3/ has no LastModified time in the saved listings")
+        mtime = int(datetime.fromisoformat(modified[key]).timestamp())
+        yield DatasetFile(name, path.read_bytes(), path.name.endswith(".gz"), mtime, Origin.S3)
+
+
+def build_older_dataset(job: "OlderJob", out: Out, objects: Mapping[str, S3Object]) -> "Result":
+    """Write one older dataset into `out/` in the forms that the bucket holds: plain, `.gz`, or both.
+
+    A file that the bucket lacks is written in its stored form. A `.gz` form takes the stored bytes when the listing
+    names them or lists no `.gz` object, else the copy of the 2022 upload (`pigz -k` with the file's mtime), which
+    differs from the bucket's copy only in the gzip header time when the upload host gave the file another mtime.
+    """
+    start = time.monotonic()
+    work = out.staging / job.dataset
+    shutil.rmtree(work, ignore_errors=True)
+    prefix = f"dataset/{job.dataset}/"
+    rows: dict[str, Row] = {}
+    writer = _Writer(work)
+    from_s3 = 0
+    for file in older_dataset_files(job, {key: obj.modified for key, obj in objects.items()}):
+        key = prefix + file.rel
+        plain_object, gz_object = objects.get(key), objects.get(f"{key}.gz")
+        write_plain = plain_object is not None or (gz_object is None and not file.gzip)
+        write_gz = gz_object is not None or (plain_object is None and file.gzip)
+        plain = gzip.decompress(file.data) if file.gzip else file.data
+        path = writer.write(file.rel, plain, file.mtime)
+        if write_plain:
+            rows[key] = Row.of(plain, file.origin)
+        if write_gz:
+            gz = _older_gz(file, plain, path, gz_object)
+            writer.write(f"{file.rel}.gz", gz, file.mtime)
+            rows[f"{key}.gz"] = Row.of(gz, file.origin)
+        if not write_plain:
+            path.unlink()
+        from_s3 += file.origin is Origin.S3
+    target = out.bucket / "dataset" / job.dataset
+    os.replace(work, target)
+    result = Result(
+        job.dataset,
+        OLDER_UPLOAD,
+        len(rows),
+        sum(row.size for row in rows.values()),
+        0,
         from_s3,
         round(time.monotonic() - start, 1),
     )
@@ -197,7 +284,11 @@ class Origin(Enum):
     """Where the bytes of an output file come from."""
 
     SCICORE = "scicore"
+    SCICORE_2018 = "scicore-2018"
     S3 = "s3"
+
+
+OLDER_UPLOAD = "older"
 
 
 @dataclass(frozen=True)
@@ -210,6 +301,29 @@ class Job:
     zip_folder: Path | None
     update_zip: Path | None
     overlay: Path
+
+
+@dataclass(frozen=True)
+class OlderJob:
+    """One older dataset to build: its 2018 archive (None when it has none), the archive's folder name, the objects
+    copied from S3."""
+
+    dataset: str
+    tarball: Path | None
+    tar_folder: str
+    overlay: Path
+
+
+@dataclass(frozen=True)
+class DatasetFile:
+    """One file of a dataset: its path below the dataset folder without `.gz`, its stored bytes, whether they are
+    gzip-compressed, its mtime, and its origin."""
+
+    rel: str
+    data: bytes
+    gzip: bool
+    mtime: int
+    origin: "Origin"
 
 
 @dataclass(frozen=True)
@@ -242,8 +356,8 @@ def _tarball_names(folder: Path) -> frozenset[str]:
     return frozenset(path.name.removesuffix(".tar.gz") for path in folder.glob("*.tar.gz"))
 
 
-def _tarball_size(job: Job) -> int:
-    return job.tarball.stat().st_size
+def _tarball_size(job: "Job | OlderJob") -> int:
+    return 0 if job.tarball is None else job.tarball.stat().st_size
 
 
 def _is_built(out: Out, dataset: str) -> bool:
@@ -255,10 +369,19 @@ def _is_built(out: Out, dataset: str) -> bool:
     return False
 
 
-def _build_all(jobs: list[Job], out: Out, etags: dict[str, dict[str, str]], workers: int) -> list[str]:
+def _build_all(jobs: list["Job | OlderJob"], out: Out, listings: Listings, workers: int) -> list[str]:
     failures: list[str] = []
+    etags = listings.single_part_etags_by_dataset()
+    objects = listings.objects_by_dataset(frozenset(job.dataset for job in jobs if isinstance(job, OlderJob)))
     with ProcessPoolExecutor(max_workers=workers) as pool:
-        futures = {pool.submit(build_dataset, job, out, etags.get(job.dataset, {})): job for job in jobs}
+        futures = {
+            (
+                pool.submit(build_older_dataset, job, out, objects.get(job.dataset, {}))
+                if isinstance(job, OlderJob)
+                else pool.submit(build_dataset, job, out, etags.get(job.dataset, {}))
+            ): job
+            for job in jobs
+        }
         for done, future in enumerate(as_completed(futures), start=1):
             job = futures[future]
             try:
@@ -283,20 +406,25 @@ def _build_all(jobs: list[Job], out: Out, etags: dict[str, dict[str, str]], work
 
 
 @contextmanager
-def _tar_members(tarball: Path) -> Iterator[Iterator[tuple[tarfile.TarInfo, bytes]]]:
-    """Stream the regular files of a gzipped tarball, decompressed by `pigz` in a second process."""
+def _tar_members(
+    tarball: Path, wanted: Callable[[str], bool] = lambda _: True
+) -> Iterator[Iterator[tuple[tarfile.TarInfo, bytes]]]:
+    """Stream the regular files of a gzipped tarball whose names are `wanted`, decompressed by `pigz` in a second
+    process."""
     with subprocess.Popen(["pigz", "-dc", "--", str(tarball)], stdout=subprocess.PIPE) as reader:
         assert reader.stdout is not None
         with tarfile.open(fileobj=reader.stdout, mode="r|") as tar:
-            yield _regular_files(tar, tarball)
+            yield _regular_files(tar, tarball, wanted)
         reader.stdout.read()  # the padding after the end marker, so that pigz can finish writing
     if reader.returncode != 0:
         raise RuntimeError(f"'pigz -dc {tarball}' failed with exit code {reader.returncode}")
 
 
-def _regular_files(tar: tarfile.TarFile, tarball: Path) -> Iterator[tuple[tarfile.TarInfo, bytes]]:
+def _regular_files(
+    tar: tarfile.TarFile, tarball: Path, wanted: Callable[[str], bool]
+) -> Iterator[tuple[tarfile.TarInfo, bytes]]:
     for member in tar:
-        if member.isdir():
+        if member.isdir() or not wanted(member.name):
             continue
         if not member.isfile():
             raise ValueError(f"'{tarball}': member '{member.name}' is not a regular file")
@@ -312,6 +440,53 @@ def _alignment_zips(job: Job) -> Iterator[tuple[str, bytes]]:
     else:
         assert job.zip_folder is not None
         yield from ((name, (job.zip_folder / name).read_bytes()) for name in ALIGNMENT_ZIPS)
+
+
+def _served_path(name: str, tar_folder: str) -> str | None:
+    """Return the path below the dataset folder of a 2018 archive member that the old layout serves, else None.
+
+    The old layout has files at the top of `vis/` and in `vis/geneCluster/`; deeper folders hold working files.
+    """
+    prefix = f"{tar_folder}/{OLDER_FOLDER}/"
+    if not name.startswith(prefix):
+        return None
+    rel = name.removeprefix(prefix)
+    folder, _, rest = rel.rpartition("/")
+    return rel if rest and folder in ("", "geneCluster") else None
+
+
+def _overlay_files(overlay: Path) -> dict[str, Path]:
+    """Map each file of an older dataset in `src/s3/` to the object to read: its `.gz` object when one exists."""
+    files: dict[str, Path] = {}
+    paths = sorted(path for path in overlay.rglob("*") if path.is_file()) if overlay.is_dir() else []
+    for path in paths:
+        name = path.relative_to(overlay).as_posix().removesuffix(".gz")
+        if path.name.endswith(".gz"):
+            plain = files.get(name)
+            if plain is not None and gzip.decompress(path.read_bytes()) != plain.read_bytes():
+                LOG.warning("'%s' and its .gz object differ in content; the .gz object is used", plain)
+            files[name] = path
+        else:
+            files.setdefault(name, path)
+    return files
+
+
+def _prefer_gz(first: DatasetFile, second: DatasetFile, tarball: Path) -> DatasetFile:
+    """Of a plain and a `.gz` member of one file, take the `.gz` member, and report a difference in content."""
+    if first.gzip == second.gzip:
+        raise ValueError(f"'{tarball}': two members give '{first.rel}'")
+    plain, gz = (second, first) if first.gzip else (first, second)
+    if gzip.decompress(gz.data) != plain.data:
+        LOG.warning(
+            "'%s': the plain and .gz members of '%s' differ in content; the .gz member is used", tarball, gz.rel
+        )
+    return gz
+
+
+def _older_gz(file: DatasetFile, plain: bytes, path: Path, listed: S3Object | None) -> bytes:
+    if file.gzip and (listed is None or listed.matches(file.data)):
+        return file.data
+    return pigz_bytes(plain, path, file.mtime)
 
 
 def _apply_overlay(overlay: Path, writer: "_Writer", prefix: str, rows: dict[str, Row]) -> int:

@@ -11,6 +11,11 @@ UPDATE_ZIP = "zip_archives_update.zip"
 UPDATE_ZIP_PREFIX = "zip_archives_update/"
 ALIGNMENT_ZIPS = ("all_gene_alignments.zip", "core_gene_alignments.zip")
 WEB_FILES = ("all_downloads_table.json", "species-list-info.js")
+# The 2018 archive of the earlier panX server data: one `<name>.tar.gz` per older dataset, whose folder `<name>/vis/`
+# holds the files in the old layout
+OLDER_ARCHIVES = ("panX_archive", "leftover_data")
+OLDER_FOLDER = "vis"
+OLDER_TARBALL_NAMES = {"P_marinus_meta": "Pmnawg"}
 
 
 def find_source(src: Path) -> "Source":
@@ -18,7 +23,16 @@ def find_source(src: Path) -> "Source":
     runs = [path.parent for path in (src / "scicore").rglob(JULY_RUN) if path.is_dir()]
     if len(runs) != 1:
         raise FileNotFoundError(f"expected one folder '{JULY_RUN}/' below '{src / 'scicore'}', found {len(runs)}")
-    return Source(archives=runs[0], s3_objects=src / "s3" / BUCKET, listings=src / "s3-listings")
+    parent, name = OLDER_ARCHIVES
+    older = [path for path in (src / "scicore").rglob(name) if path.is_dir() and path.parent.name == parent]
+    if len(older) > 1:
+        raise FileNotFoundError(f"expected at most one folder '{parent}/{name}/' below '{src / 'scicore'}'")
+    return Source(
+        archives=runs[0],
+        s3_objects=src / "s3" / BUCKET,
+        listings=src / "s3-listings",
+        older_archives=older[0] if older else None,
+    )
 
 
 @dataclass(frozen=True)
@@ -28,6 +42,7 @@ class Source:
     archives: Path
     s3_objects: Path
     listings: Path
+    older_archives: Path | None = None
 
     @property
     def update_zip(self) -> Path:
@@ -35,6 +50,18 @@ class Source:
 
     def tarball(self, run: str, dataset: str) -> Path:
         return self.archives / run / f"{dataset}.tar.gz"
+
+    def older_tarball(self, dataset: str) -> Path | None:
+        """Return the 2018 archive of an older dataset, or None when it has none."""
+        if self.older_archives is None:
+            return None
+        path = self.older_archives / f"{older_tarball_name(dataset)}.tar.gz"
+        return path if path.is_file() else None
+
+
+def older_tarball_name(dataset: str) -> str:
+    """Name of the 2018 archive of an older dataset, which can differ from the dataset id."""
+    return OLDER_TARBALL_NAMES.get(dataset, dataset)
 
 
 @dataclass(frozen=True)

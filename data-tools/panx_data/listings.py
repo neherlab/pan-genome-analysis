@@ -7,6 +7,7 @@ Files below `src/s3-listings/<date>/<bucket>/`. The place of a file names the sc
 - `dataset.json`: `--prefix dataset/ --delimiter /`, the names of the datasets
 - `top-level/<dataset>.json`: `--prefix dataset/<dataset>/ --delimiter /`, complete for the top level of the dataset
 - `full/<dataset>.json`, `full/<dataset>.<columns>.tsv[.gz]`: every key of the dataset
+- `gene-cluster/<dataset>.<columns>.tsv[.gz]`: `--prefix dataset/<dataset>/geneCluster/`, complete for that folder
 - `samples/<dataset>.json`: one page of keys, complete for nothing
 - `head-object.key-size-etag-encoding-modified.tsv`: sizes from `head-object`; failed requests are skipped
 
@@ -16,6 +17,7 @@ an earlier date.
 """
 
 import gzip
+import hashlib
 import json
 from collections import defaultdict
 from collections.abc import Iterator
@@ -23,6 +25,9 @@ from dataclasses import dataclass, replace
 from pathlib import Path
 
 HEAD_OBJECT = "head-object.key-size-etag-encoding-modified.tsv"
+GENE_CLUSTER = "geneCluster"
+# Part sizes of the multipart uploads in the bucket, the most common first
+MULTIPART_SIZES = (8 << 20, 5 << 20, 16 << 20, 1 << 20)
 
 
 def load_listings(root: Path, bucket: str) -> "Listings":
@@ -34,12 +39,14 @@ def load_listings(root: Path, bucket: str) -> "Listings":
     datasets: set[str] = set()
     top_level: set[str] = set()
     full: set[str] = set()
+    gene_cluster: set[str] = set()
     for folder in folders:
         listed = [
             *_json_objects(folder / "root.json"),
             *_json_objects(folder / "web.json"),
             *(obj for path in sorted((folder / "top-level").glob("*.json")) for obj in _json_objects(path)),
             *(obj for path in sorted((folder / "full").glob("*")) for obj in _listing_objects(path)),
+            *(obj for path in sorted((folder / "gene-cluster").glob("*")) for obj in _listing_objects(path)),
             *(obj for path in sorted((folder / "samples").glob("*.json")) for obj in _json_objects(path)),
         ]
         objects |= {obj.key: obj for obj in listed}
@@ -47,11 +54,13 @@ def load_listings(root: Path, bucket: str) -> "Listings":
         datasets |= {prefix.split("/")[1] for prefix in _json_prefixes(folder / "dataset.json")}
         top_level |= {path.stem for path in (folder / "top-level").glob("*.json")}
         full |= {path.name.split(".")[0] for path in (folder / "full").glob("*")}
+        gene_cluster |= {path.name.split(".")[0] for path in (folder / "gene-cluster").glob("*")}
     return Listings(
         objects=objects,
         datasets=frozenset(datasets),
         top_level_complete=frozenset(top_level),
         full_complete=frozenset(full),
+        gene_cluster_complete=frozenset(gene_cluster),
         root_complete=any((folder / "root.json").exists() for folder in folders),
         web_complete=any((folder / "web.json").exists() for folder in folders),
     )
@@ -65,6 +74,7 @@ class Listings:
     datasets: frozenset[str]
     top_level_complete: frozenset[str]
     full_complete: frozenset[str]
+    gene_cluster_complete: frozenset[str]
     root_complete: bool
     web_complete: bool
 
@@ -78,7 +88,19 @@ class Listings:
         if head != "dataset":
             return False
         dataset, _, inner = rest.partition("/")
+        folder, _, name = inner.partition("/")
+        if folder == GENE_CLUSTER and name and "/" not in name and dataset in self.gene_cluster_complete:
+            return True
         return dataset in self.full_complete or ("/" not in inner and dataset in self.top_level_complete)
+
+    def objects_by_dataset(self, datasets: frozenset[str]) -> dict[str, dict[str, "S3Object"]]:
+        """Group the objects of `datasets` by dataset."""
+        grouped: defaultdict[str, dict[str, S3Object]] = defaultdict(dict)
+        for key, obj in self.objects.items():
+            parts = key.split("/", 2)
+            if parts[0] == "dataset" and len(parts) == 3 and parts[1] in datasets:
+                grouped[parts[1]][key] = obj
+        return dict(grouped)
 
     def single_part_etags_by_dataset(self) -> dict[str, dict[str, str]]:
         """Group the ETags that are plain MD5 sums (single-part uploads) by dataset."""
@@ -91,22 +113,39 @@ class Listings:
 
 @dataclass(frozen=True)
 class S3Object:
-    """One object of a listing; `size` is None when the listing has no sizes."""
+    """One object of a listing; `size` and `modified` (ISO 8601) are None when the listing lacks them."""
 
     key: str
     etag: str
     size: int | None
+    modified: str | None = None
 
     @property
     def is_multipart(self) -> bool:
         return "-" in self.etag
+
+    def matches(self, data: bytes) -> bool:
+        """Tell whether `data` has the bytes of this object, by MD5 or by the ETag of a multipart upload."""
+        if not self.is_multipart:
+            return hashlib.md5(data).hexdigest() == self.etag
+        digest, _, count = self.etag.partition("-")
+        return any(
+            multipart_digest(data, part) == digest for part in MULTIPART_SIZES if -(-len(data) // part) == int(count)
+        )
+
+
+def multipart_digest(data: bytes, part: int) -> str:
+    """Return the digest part of the ETag that a multipart upload of `data` in parts of `part` bytes gets."""
+    return hashlib.md5(
+        b"".join(hashlib.md5(data[i : i + part]).digest() for i in range(0, len(data), part))
+    ).hexdigest()
 
 
 def _json_objects(path: Path) -> list[S3Object]:
     if not path.exists():
         return []
     contents = json.loads(path.read_text()).get("Contents") or []
-    return [S3Object(item["Key"], item["ETag"].strip('"'), item["Size"]) for item in contents]
+    return [S3Object(item["Key"], item["ETag"].strip('"'), item["Size"], item.get("LastModified")) for item in contents]
 
 
 def _json_prefixes(path: Path) -> list[str]:
@@ -130,8 +169,9 @@ def _tsv_objects(path: Path) -> Iterator[S3Object]:
             if len(fields) != len(columns):
                 continue  # a failed head-object request is logged as one error column
             row = dict(zip(columns, fields))
-            yield S3Object(row["key"], row["etag"].strip('"'), int(row["size"]) if "size" in row else None)
+            size = int(row["size"]) if "size" in row else None
+            yield S3Object(row["key"], row["etag"].strip('"'), size, row.get("modified"))
 
 
 def _with_size(known: S3Object | None, sized: S3Object) -> S3Object:
-    return sized if known is None else replace(known, size=sized.size)
+    return sized if known is None else replace(known, size=sized.size, modified=known.modified or sized.modified)

@@ -33,6 +33,19 @@ def test_verify_complete_scopes_decide_where_a_missing_object_counts(tmp_path: P
     assert not listings.covers("web/species-list-info.js")
 
 
+def test_verify_gene_cluster_listing_completes_its_folder_and_keeps_modified_times(tmp_path: Path) -> None:
+    listing = _listing_folder(tmp_path)
+    (listing / "gene-cluster").mkdir()
+    rows = 'dataset/Cus/geneCluster/x.nwk\t12\t"0123"\t2022-08-23T08:42:54+00:00\n'
+    (listing / "gene-cluster" / "Cus.key-size-etag-modified.tsv").write_text(rows)
+
+    listings = load_listings(tmp_path / "s3-listings", BUCKET)
+
+    assert listings.covers("dataset/Cus/geneCluster/y_tree.json")
+    assert not listings.covers("dataset/Cus/geneCluster.json")
+    assert listings.objects["dataset/Cus/geneCluster/x.nwk"].modified == "2022-08-23T08:42:54+00:00"
+
+
 def test_verify_sorts_each_difference_into_its_class(tmp_path: Path) -> None:
     good, broken = b"good bytes", b"correct bytes from the archive"
     listing = _listing_folder(tmp_path)
@@ -46,12 +59,22 @@ def test_verify_sorts_each_difference_into_its_class(tmp_path: Path) -> None:
         ],
     )
     _json(listing / "top-level" / "Old.json", [_object("dataset/Old/geneCluster.json", b"older dataset")])
+    _json(
+        listing / "full" / "Ous.json",
+        [_object("dataset/Ous/a.fa.gz", b"gzip header 2022"), _object("dataset/Ous/b.fa.gz", b"gzip header 2022")],
+    )
     out = Out(tmp_path / "out")
     out.root.mkdir()
-    rows = [("dataset/Aus/good.json", good), ("dataset/Aus/broken.json", broken), ("dataset/Aus/missing.json", good)]
+    rows = [
+        ("dataset/Aus/good.json", good, "scicore"),
+        ("dataset/Aus/broken.json", broken, "scicore"),
+        ("dataset/Aus/missing.json", good, "scicore"),
+        ("dataset/Ous/a.fa.gz", b"gzip header 2017", "scicore-2018"),
+        ("dataset/Ous/b.fa.gz", b"gzip header 2017", "s3"),
+    ]
     with gzip.open(out.manifest, "wt") as manifest:
         manifest.write("path\tsize\tmd5\tsource\n")
-        manifest.writelines(f"{p}\t{len(d)}\t{hashlib.md5(d).hexdigest()}\tscicore\n" for p, d in rows)
+        manifest.writelines(f"{p}\t{len(d)}\t{hashlib.md5(d).hexdigest()}\t{o}\n" for p, d, o in rows)
     source = Source(archives=tmp_path, s3_objects=tmp_path / "src-s3", listings=tmp_path / "s3-listings")
     (tmp_path / "src-s3").mkdir()
 
@@ -62,6 +85,8 @@ def test_verify_sorts_each_difference_into_its_class(tmp_path: Path) -> None:
         Deviation.MISSING_IN_S3: 1,
         Deviation.STALE_ARCHIVE: 1,
         Deviation.NOT_REBUILT: 1,
+        Deviation.GZIP_HEADER: 1,
+        Deviation.DIFFERS: 1,
     }
 
 

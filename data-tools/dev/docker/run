@@ -13,6 +13,9 @@
 # Environment:
 #   PANX_SNAPSHOT       Snapshot folder (with src/ and out/), mounted at its
 #                       host path with src/ read-only and out/ read-write
+#   PANX_OUT            Output folder, such as a scratch data root of a
+#                       release build, mounted read-write at its host path;
+#                       created when missing
 #   AWS_*               AWS settings and credentials, forwarded when set
 #   MISE_GITHUB_TOKEN   GitHub token for mise, forwarded when set, to lift the
 #                       anonymous API rate limit of `just tools-lock`
@@ -23,6 +26,8 @@
 # Examples:
 #   $0 just check
 #   PANX_SNAPSHOT=/data/2022-11-18_old $0 just rebuild /data/2022-11-18_old --dataset Candidatus_Portiera
+#   PANX_OUT=/tmp/scratch PANX_SNAPSHOT=/data/2022-11-18_old $0 just release-build \
+#     releases/<release id>.toml /data/2022-11-18_old --dataset Candidatus_Portiera --out /tmp/scratch
 #
 set -euo pipefail
 shopt -s inherit_errexit
@@ -81,7 +86,7 @@ main() {
     exit 0
   }
 
-  local tools root image_hash image cwd git_common_dir snapshot name
+  local tools root image_hash image cwd git_common_dir snapshot out name
   tools="$(realpath "${THIS_DIR}/../..")"
   root="$(git -C "${tools}" rev-parse --show-toplevel)"
   image_hash="$(
@@ -149,6 +154,12 @@ main() {
       --volume="${snapshot}/out:${snapshot}/out"
       --env="PANX_SNAPSHOT=${snapshot}"
     )
+  fi
+
+  if [[ -n "${PANX_OUT:-}" ]]; then
+    mkdir -p "${PANX_OUT}"
+    out="$(realpath "${PANX_OUT}")"
+    run_flags+=(--volume="${out}:${out}")
   fi
 
   for name in $(compgen -e); do

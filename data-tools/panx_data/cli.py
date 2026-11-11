@@ -1,4 +1,5 @@
-"""Command line: `rebuild` and `verify` work on a snapshot folder with `src/`; `fetch-s3` copies S3 objects into it."""
+"""Command line: `rebuild` and `verify` work on a snapshot folder with `src/`; `fetch-s3` copies S3 objects into it;
+`release-build` and `release-check` write and check a release of data format 1."""
 
 import argparse
 import json
@@ -17,6 +18,8 @@ from panx_data.layout import BUCKET, Out, find_source
 from panx_data.listings import load_listings
 from panx_data.pigz_gzip import pigz_version
 from panx_data.rebuild import rebuild
+from panx_data.release import DATA_ROOT, ToolVersion, default_jobs, release_build
+from panx_data.release_check import release_check
 from panx_data.verify import verify
 
 LOG = logging.getLogger("panx_data")
@@ -51,6 +54,25 @@ def _parser() -> argparse.ArgumentParser:
     fetch.add_argument("--keys", type=Path, required=True, help="file with one key per line")
     fetch.add_argument("--dest", type=Path, required=True, help="for example <snapshot>/src/s3/<bucket>")
     fetch.set_defaults(run=_fetch)
+
+    release = commands.add_parser(
+        "release-build", help="build the release of a recipe into a data root and list it in releases.json"
+    )
+    release.add_argument("recipe", type=Path, help="releases/<release id>.toml")
+    release.add_argument("snapshot", type=Path, help="folder that holds src/")
+    release.add_argument("--out", type=Path, help=f"data root (default <snapshot>/{DATA_ROOT})")
+    release.add_argument("--jobs", type=int, default=default_jobs(), help="datasets built in parallel")
+    release.add_argument("--dataset", action="append", dest="datasets", help="build only this dataset (repeatable)")
+    release.set_defaults(run=_release_build)
+
+    release_test = commands.add_parser(
+        "release-check",
+        help="compare the releases of a data root with the snapshot; print findings, exit 1 on a failing finding",
+    )
+    release_test.add_argument("data_root", type=Path, help="folder that holds releases.json")
+    release_test.add_argument("snapshot", type=Path, help="folder that holds src/")
+    release_test.add_argument("--jobs", type=int, default=default_jobs(), help="datasets checked in parallel")
+    release_test.set_defaults(run=_release_check)
     return parser
 
 
@@ -94,6 +116,32 @@ def _verify(args: argparse.Namespace) -> int:
     unknown = sum(count for kind, count in counts.items() if not kind.expected)
     LOG.info("%s: %d differences, %d of them unknown", out.deviations, sum(counts.values()), unknown)
     return 1 if unknown else 0
+
+
+def _release_build(args: argparse.Namespace) -> int:
+    start = time.monotonic()
+    version = _tool_version()
+    target = release_build(
+        args.recipe,
+        args.snapshot,
+        args.out or args.snapshot / DATA_ROOT,
+        args.jobs,
+        ToolVersion(str(version["commit"]), bool(version["uncommitted_changes"])),
+        platform.python_version(),
+        zlib.ZLIB_RUNTIME_VERSION,
+        frozenset(args.datasets) if args.datasets else None,
+    )
+    LOG.info("wrote %s in %d s", target, round(time.monotonic() - start))
+    return 0
+
+
+def _release_check(args: argparse.Namespace) -> int:
+    findings = release_check(args.data_root, args.snapshot, args.jobs)
+    for finding in findings:
+        print(f"{finding.release}/{finding.dataset}\t{finding.kind.label}\t{finding.detail}")
+    failing = sum(finding.kind.fails for finding in findings)
+    LOG.info("%d findings, %d of them failing", len(findings), failing)
+    return 1 if failing else 0
 
 
 def _fetch(args: argparse.Namespace) -> int:

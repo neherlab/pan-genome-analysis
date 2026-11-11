@@ -21,6 +21,14 @@ rebuild snapshot *args:
 verify snapshot *args:
     python3 -m panx_data verify "$@"
 
+# Build the release of a recipe into <snapshot>/out/data.pangenome.org/; options as `panx-data release-build`, such as --dataset ID or --out DIR
+release-build recipe snapshot *args:
+    python3 -m panx_data release-build "$@"
+
+# Check the releases of a data root against the snapshot; options as `panx-data release-check`
+release-check data_root snapshot *args:
+    python3 -m panx_data release-check "$@"
+
 # Run the tests; arguments go to pytest
 test *args:
     uv run --locked pytest "$@"

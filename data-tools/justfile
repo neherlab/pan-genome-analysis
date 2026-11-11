@@ -29,6 +29,10 @@ release-build recipe snapshot *args:
 release-check data_root snapshot *args:
     python3 -m panx_data release-check "$@"
 
+# Publish a release of a data root to the data host with the AWS CLI; step upload, list, promote, or unlist; options as `panx-data release-publish`, such as --bucket, --prefix, and --dry-run
+release-publish step data_root release *args:
+    python3 -m panx_data release-publish "$@"
+
 # Run the tests; arguments go to pytest
 test *args:
     uv run --locked pytest "$@"

@@ -1,5 +1,5 @@
 """Command line: `rebuild` and `verify` work on a snapshot folder with `src/`; `fetch-s3` copies S3 objects into it;
-`release-build` and `release-check` write and check a release of data format 1."""
+`release-build` and `release-check` write and check a release of data format 1; `release-publish` publishes it."""
 
 import argparse
 import json
@@ -17,6 +17,7 @@ from panx_data.fetch_s3 import fetch_s3
 from panx_data.layout import BUCKET, Out, find_source
 from panx_data.listings import load_listings
 from panx_data.pigz_gzip import pigz_version
+from panx_data.publication import STEPS, release_publish
 from panx_data.rebuild import rebuild
 from panx_data.release import DATA_ROOT, ToolVersion, default_jobs, release_build
 from panx_data.release_check import release_check
@@ -73,6 +74,22 @@ def _parser() -> argparse.ArgumentParser:
     release_test.add_argument("snapshot", type=Path, help="folder that holds src/")
     release_test.add_argument("--jobs", type=int, default=default_jobs(), help="datasets checked in parallel")
     release_test.set_defaults(run=_release_check)
+
+    publish = commands.add_parser(
+        "release-publish",
+        help="publish a release of a local data root to the data host with the AWS CLI, one step at a time",
+        description="Steps in order: upload, list, promote. A rollback is a promote of an earlier release; unlist "
+        "takes a release that is not the default out of releases.json. --dry-run prints the requests, their count, "
+        "and their cost, and sends nothing.",
+    )
+    publish.add_argument("step", choices=STEPS)
+    publish.add_argument("data_root", type=Path, help="folder that holds releases.json and the release folder")
+    publish.add_argument("release", help="release id, such as 20261112T080000Z")
+    publish.add_argument("--bucket", required=True, help="data bucket")
+    publish.add_argument("--prefix", required=True, help="folder of the data host in the bucket")
+    publish.add_argument("--dry-run", action="store_true", help="print the requests and their cost, send nothing")
+    publish.add_argument("--jobs", type=int, default=8, help="uploads at the same time")
+    publish.set_defaults(run=_release_publish)
     return parser
 
 
@@ -142,6 +159,13 @@ def _release_check(args: argparse.Namespace) -> int:
     failing = sum(finding.kind.fails for finding in findings)
     LOG.info("%d findings, %d of them failing", len(findings), failing)
     return 1 if failing else 0
+
+
+def _release_publish(args: argparse.Namespace) -> int:
+    release_publish(
+        args.step, args.data_root, args.release, args.bucket, args.prefix, dry_run=args.dry_run, jobs=args.jobs
+    )
+    return 0
 
 
 def _fetch(args: argparse.Namespace) -> int:

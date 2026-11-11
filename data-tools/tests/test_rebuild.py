@@ -10,16 +10,8 @@ import pytest
 from panx_data.layout import Out
 from panx_data.listings import S3Object
 from panx_data.pigz_gzip import pigz_bytes
-from panx_data.rebuild import (
-    Job,
-    OlderJob,
-    Origin,
-    Upload,
-    build_dataset,
-    build_older_dataset,
-    choose_gz,
-    older_dataset_files,
-)
+from panx_data.reader import Job, OlderJob, Origin, Upload, older_dataset_files
+from panx_data.rebuild import build_dataset, build_older_dataset, choose_gz
 
 ORIGINAL = b"original-gz-bytes"
 SAME_SIZE_COPY = b"new-gz-copy-bytes"
@@ -70,7 +62,9 @@ def test_rebuild_dataset_gets_plain_files_gz_copies_zips_and_s3_objects(tmp_path
     for folder in (out.bucket / "dataset", out.staging, out.parts):
         folder.mkdir(parents=True)
 
-    result = build_dataset(Job("Testus", Upload.AUGUST_2022, tarball, zips, None, overlay), out, {})
+    modified = {"dataset/Testus/metainfo.tsv": "2022-09-09T10:00:00+00:00"}
+
+    result = build_dataset(Job("Testus", Upload.AUGUST_2022, tarball, zips, None, overlay), out, {}, modified)
 
     folder = out.bucket / "dataset" / "Testus"
     files = sorted(path.relative_to(folder).as_posix() for path in folder.rglob("*") if path.is_file())
@@ -87,6 +81,7 @@ def test_rebuild_dataset_gets_plain_files_gz_copies_zips_and_s3_objects(tmp_path
     assert (folder / "geneCluster/abc_refined_aa_aln.fa").read_bytes() == alignment
     assert gzip.decompress((folder / "geneCluster/abc_refined_aa_aln.fa.gz").read_bytes()) == alignment
     assert (folder / "metainfo.tsv").read_bytes() == b"new layout\n"
+    assert gzip.decompress((folder / "metainfo.tsv.gz").read_bytes()) == b"new layout\n"
     manifest = dict(line.split("\t", 1) for line in (out.parts / "Testus.tsv").read_text().splitlines())
     assert manifest["dataset/Testus/metainfo.tsv"].endswith("\ts3")
     assert manifest["dataset/Testus/geneCluster.json"].endswith("\tscicore")

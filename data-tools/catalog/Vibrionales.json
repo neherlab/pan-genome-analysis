@@ -1,0 +1,115 @@
+{
+  "meta_details": {
+    "collection_date": [
+      "unknown",
+      "1962",
+      "2015",
+      "2014",
+      "2016",
+      "2011",
+      "2010",
+      "2013",
+      "2012",
+      "2005",
+      "1954",
+      "1957",
+      "1951",
+      "1995",
+      "1997",
+      "1996",
+      "1971",
+      "2000",
+      "2006",
+      "2007",
+      "2004",
+      "1965",
+      "2008",
+      "2009"
+    ],
+    "country": [
+      "Brazil",
+      "Bangladesh",
+      "USA",
+      "Egypt",
+      "unknown",
+      "Indonesia",
+      "India",
+      "Bahamas",
+      "China",
+      "South Korea",
+      "Denmark",
+      "Japan",
+      "Haiti",
+      "Taiwan"
+    ],
+    "host": [
+      "Homo sapiens",
+      "Crassostrea gigas (Pacific oyster)",
+      "Finespotted flounder",
+      "Epinephelus coioides",
+      "Crassostrea gigas",
+      "Trachinotus ovatus",
+      "unknown",
+      "Homo sapiens; sex: male",
+      "Shrimps",
+      "Paralichthys olivaceus",
+      "Cage-cultured red drum",
+      "Yellow catfish",
+      "Oncorhynchus kisutch (Coho salmon)",
+      "Mercenaria mercenaria",
+      "Human (Homo sapiens)",
+      "Paralichthys olivaceus (flounder)",
+      "Oreochromis"
+    ],
+    "organism": [
+      "V.vulnificus",
+      "V.mimicus",
+      "V.fischeri",
+      "V.sp.",
+      "V.scophthalmi",
+      "V.harveyi",
+      "V.natriegens",
+      "V.parahaemolyticus",
+      "V.breoganii",
+      "V.cholerae",
+      "V.alginolyticus",
+      "V.coralliilyticus",
+      "V.tritonius",
+      "V.tasmaniensis",
+      "V.campbellii",
+      "V.furnissii",
+      "V.owensii",
+      "V.anguillarum",
+      "V.nigripulchritudo",
+      "V.fluvialis",
+      "V.tubiashii",
+      "V.antiquarius"
+    ]
+  },
+  "meta_display": {
+    "meta_display_order": [
+      "collection_date",
+      "country",
+      "host",
+      "organism"
+    ],
+    "color_options": {
+      "collection_date": {
+        "menuItem": "collection_date",
+        "type": "continuous"
+      },
+      "country": {
+        "menuItem": "country",
+        "type": "discrete"
+      },
+      "host": {
+        "menuItem": "host",
+        "type": "discrete"
+      },
+      "organism": {
+        "menuItem": "organism",
+        "type": "discrete"
+      }
+    }
+  }
+}

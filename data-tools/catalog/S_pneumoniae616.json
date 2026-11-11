@@ -1,0 +1,1035 @@
+{
+  "meta_details": {
+    "Ceftriaxone MIC (ug/mL)": [
+      [
+        "1.5",
+        0.58
+      ],
+      [
+        ">2.00",
+        1
+      ],
+      [
+        "0.094",
+        -3.41
+      ],
+      [
+        "0.125",
+        -3
+      ],
+      [
+        ">2",
+        1
+      ],
+      [
+        "0.075",
+        -3.74
+      ],
+      [
+        "0.5",
+        -1
+      ],
+      [
+        "<=0.25",
+        -2
+      ],
+      [
+        "<.016",
+        -5.97
+      ],
+      [
+        "0.25",
+        -2
+      ],
+      [
+        "0.06",
+        -4.06
+      ],
+      [
+        "1",
+        0
+      ],
+      [
+        "0.023",
+        -5.44
+      ],
+      [
+        "2",
+        1
+      ],
+      [
+        "<0.03",
+        -5.06
+      ],
+      [
+        "6",
+        2.58
+      ],
+      [
+        "8",
+        3
+      ],
+      [
+        "0.064",
+        -3.97
+      ],
+      [
+        "0.047",
+        -4.41
+      ],
+      [
+        "0.75",
+        -0.42
+      ],
+      [
+        "0.12",
+        -3.06
+      ],
+      [
+        "0.50",
+        -1
+      ],
+      [
+        "0.19",
+        -2.4
+      ],
+      [
+        "1.00",
+        0
+      ],
+      [
+        "0.38",
+        -1.4
+      ],
+      [
+        "<0.016",
+        -5.97
+      ],
+      [
+        "0.032",
+        -4.97
+      ],
+      [
+        "unknown",
+        "unknown"
+      ],
+      [
+        "2.00",
+        1
+      ],
+      [
+        "0.016",
+        -5.97
+      ]
+    ],
+    "Year of Isolation": [
+      "2001",
+      "2007",
+      "2004"
+    ],
+    "Tetracycline MIC (ug/mL)": [
+      [
+        ">8",
+        3
+      ],
+      [
+        ">4.00",
+        2
+      ],
+      [
+        "0.25",
+        -2
+      ],
+      [
+        "0.5",
+        -1
+      ],
+      [
+        "unknown",
+        "unknown"
+      ],
+      [
+        "1",
+        0
+      ],
+      [
+        "<0.06",
+        -4.06
+      ],
+      [
+        "2",
+        1
+      ],
+      [
+        "0.12",
+        -3.06
+      ],
+      [
+        "<=0.50",
+        -1
+      ]
+    ],
+    "Sequence Cluster__colour": [
+      "#B89C7D",
+      "#B0EDA8",
+      "#E329CD",
+      "#F59AC3",
+      "#505050",
+      "#FA8500",
+      "#9DA674",
+      "#9E2E9A",
+      "#3B17EB",
+      "#DEAFDC",
+      "#327A33",
+      "#F5F522",
+      "#8F4A4A",
+      "#13E8DD",
+      "#FF0000",
+      "#A5C4D9"
+    ],
+    "Trimethoprim MIC (ug/mL)": [
+      [
+        "1.5",
+        0.58
+      ],
+      [
+        ">2.00",
+        1
+      ],
+      [
+        "0.094",
+        -3.41
+      ],
+      [
+        "0.125",
+        -3
+      ],
+      [
+        "0.25/4",
+        -3.99
+      ],
+      [
+        "0.5",
+        -1
+      ],
+      [
+        "<=0.25",
+        -2
+      ],
+      [
+        "0.5/9.",
+        -4.16
+      ],
+      [
+        "unknown",
+        "unknown"
+      ],
+      [
+        "1/19",
+        -4.24
+      ],
+      [
+        "1",
+        0
+      ],
+      [
+        "3",
+        1.58
+      ],
+      [
+        "2/38",
+        -4.24
+      ],
+      [
+        "<0.06/",
+        -4.06
+      ],
+      [
+        "6",
+        2.58
+      ],
+      [
+        "8",
+        3
+      ],
+      [
+        "4",
+        2
+      ],
+      [
+        "0.064",
+        -3.97
+      ],
+      [
+        "0.75",
+        -0.42
+      ],
+      [
+        "0.50",
+        -1
+      ],
+      [
+        ">4/76",
+        -4.24
+      ],
+      [
+        "0.19",
+        -2.4
+      ],
+      [
+        "1.00",
+        0
+      ],
+      [
+        "12",
+        3.58
+      ],
+      [
+        "0.38",
+        -1.4
+      ],
+      [
+        ">32",
+        5
+      ],
+      [
+        "16",
+        4
+      ],
+      [
+        "0.12/2",
+        -4.06
+      ],
+      [
+        "0.25",
+        -2
+      ],
+      [
+        "4/76",
+        -4.24
+      ],
+      [
+        "2.00",
+        1
+      ]
+    ],
+    "Serotype": [
+      "35F",
+      "35B",
+      "7F",
+      "7C",
+      "21",
+      "9N",
+      "22F",
+      "16F",
+      "10A",
+      "3",
+      "33F",
+      "NT",
+      "15B/C",
+      "18C",
+      "38",
+      "6A",
+      "6B",
+      "6C",
+      "11A",
+      "14",
+      "17F",
+      "23F",
+      "37",
+      "23A",
+      "23B",
+      "34",
+      "15A",
+      "9V",
+      "19F",
+      "19A",
+      "31"
+    ],
+    "longitude": [
+      "-71.3824374"
+    ],
+    "Benzylpenicillin MIC (ug/mL)": [
+      [
+        "1.5",
+        0.58
+      ],
+      [
+        "<=0.03",
+        -5.06
+      ],
+      [
+        "0.094",
+        -3.41
+      ],
+      [
+        ">4.00",
+        2
+      ],
+      [
+        "0.125",
+        -3
+      ],
+      [
+        ">4",
+        2
+      ],
+      [
+        "<.016",
+        -5.97
+      ],
+      [
+        "0.25",
+        -2
+      ],
+      [
+        "0.06",
+        -4.06
+      ],
+      [
+        "3",
+        1.58
+      ],
+      [
+        "1",
+        0
+      ],
+      [
+        "0.023",
+        -5.44
+      ],
+      [
+        "2",
+        1
+      ],
+      [
+        "<0.03",
+        -5.06
+      ],
+      [
+        "4",
+        2
+      ],
+      [
+        "6",
+        2.58
+      ],
+      [
+        "0.5",
+        -1
+      ],
+      [
+        "< 0.01",
+        -6.64
+      ],
+      [
+        "4.00",
+        2
+      ],
+      [
+        "0.064",
+        -3.97
+      ],
+      [
+        "0.047",
+        -4.41
+      ],
+      [
+        "0.75",
+        -0.42
+      ],
+      [
+        "0.12",
+        -3.06
+      ],
+      [
+        "0.50",
+        -1
+      ],
+      [
+        "0.19",
+        -2.4
+      ],
+      [
+        "1.00",
+        0
+      ],
+      [
+        "0.38",
+        -1.4
+      ],
+      [
+        "<0.016",
+        -5.97
+      ],
+      [
+        "0.032",
+        -4.97
+      ],
+      [
+        "unknown",
+        "unknown"
+      ],
+      [
+        "2.00",
+        1
+      ],
+      [
+        "0.016",
+        -5.97
+      ]
+    ],
+    "Community of Isolation": [
+      "A",
+      "C",
+      "B",
+      "E",
+      "D",
+      "G",
+      "F",
+      "I",
+      "H",
+      "K",
+      "J",
+      "M",
+      "L",
+      "O",
+      "N",
+      "P"
+    ],
+    "Sequence Type": [
+      "667",
+      "SLV3289",
+      "498",
+      "496",
+      "138",
+      "690",
+      "1943",
+      "1940",
+      "1839",
+      "1947",
+      "1944",
+      "1945",
+      "344",
+      "1373",
+      "162",
+      "342",
+      "1379",
+      "2011",
+      "452",
+      "816",
+      "408",
+      "995",
+      "SLV1934",
+      "2705",
+      "1939",
+      "1941",
+      "124",
+      "1953",
+      "3277",
+      "1827",
+      "415",
+      "426",
+      "376",
+      "199",
+      "66",
+      "191",
+      "190",
+      "315",
+      "3276",
+      "271",
+      "1922",
+      "3275",
+      "1924",
+      "1925",
+      "113",
+      "1927",
+      "1928",
+      "81",
+      "1902",
+      "1903",
+      "425",
+      "1390",
+      "449",
+      "448",
+      "SLV695",
+      "1337",
+      "447",
+      "1932",
+      "1930",
+      "1936",
+      "1935",
+      "242",
+      "100",
+      "1938",
+      "33",
+      "1840",
+      "1847",
+      "36",
+      "1536",
+      "405",
+      "438",
+      "439",
+      "436",
+      "SLV42",
+      "432",
+      "433",
+      "1538",
+      "SLV176",
+      "627",
+      "338",
+      "1340",
+      "629",
+      "570",
+      "1073",
+      "1876",
+      "62",
+      "63",
+      "1908",
+      "1909",
+      "392",
+      "3290",
+      "SLV1949",
+      "3292",
+      "1901",
+      "346",
+      "180",
+      "547",
+      "568",
+      "659",
+      "639",
+      "461",
+      "460",
+      "3288",
+      "1913",
+      "3284",
+      "1915",
+      "1914",
+      "97",
+      "3280",
+      "393",
+      "1921",
+      "1923",
+      "1451",
+      "1673",
+      "2355",
+      "558",
+      "156",
+      "3632",
+      "236",
+      "276",
+      "2344",
+      "1054",
+      "1518",
+      "876",
+      "817",
+      "42",
+      "43",
+      "320",
+      "1692",
+      "585",
+      "1756",
+      "654",
+      "1448",
+      "146",
+      "1176",
+      "1797",
+      "SLV1911",
+      "1954",
+      "473",
+      "1360"
+    ],
+    "Year of Isolation__shape": [
+      "circle",
+      "square",
+      "triangle"
+    ],
+    "Host Age (months)": [
+      "<6",
+      "6-24",
+      "24-36",
+      "36-84"
+    ],
+    "latitude": [
+      "42.4072107"
+    ],
+    "Erythromycin MIC (ug/mL)": [
+      [
+        "1.5",
+        0.58
+      ],
+      [
+        "0.094",
+        -3.41
+      ],
+      [
+        "<=0.06",
+        -4.06
+      ],
+      [
+        "0.125",
+        -3
+      ],
+      [
+        "0.5",
+        -1
+      ],
+      [
+        "0.64",
+        -0.64
+      ],
+      [
+        ">0.50",
+        -1
+      ],
+      [
+        "0.25",
+        -2
+      ],
+      [
+        ">1",
+        0
+      ],
+      [
+        "0.023",
+        -5.44
+      ],
+      [
+        "1",
+        0
+      ],
+      [
+        "3",
+        1.58
+      ],
+      [
+        "2",
+        1
+      ],
+      [
+        "<0.03",
+        -5.06
+      ],
+      [
+        "4",
+        2
+      ],
+      [
+        "6",
+        2.58
+      ],
+      [
+        "8",
+        3
+      ],
+      [
+        "0.06",
+        -4.06
+      ],
+      [
+        "0.064",
+        -3.97
+      ],
+      [
+        "0.047",
+        -4.41
+      ],
+      [
+        "0.12",
+        -3.06
+      ],
+      [
+        "12",
+        3.58
+      ],
+      [
+        "0.38",
+        -1.4
+      ],
+      [
+        "32",
+        5
+      ],
+      [
+        "16",
+        4
+      ],
+      [
+        "0.032",
+        -4.97
+      ],
+      [
+        ">256",
+        8
+      ],
+      [
+        "unknown",
+        "unknown"
+      ],
+      [
+        "0.016",
+        -5.97
+      ]
+    ],
+    "Sequence Cluster": [
+      "1",
+      "10",
+      "11",
+      "12",
+      "13",
+      "14",
+      "15",
+      "16",
+      "2",
+      "3",
+      "4",
+      "5",
+      "6",
+      "7",
+      "8",
+      "9"
+    ],
+    "Chloramphenicol MIC (ug/mL)": [
+      [
+        "unknown",
+        "unknown"
+      ],
+      [
+        "2.00",
+        1
+      ],
+      [
+        "4.00",
+        2
+      ],
+      [
+        "<=1.00",
+        0
+      ]
+    ]
+  },
+  "meta_display": {
+    "meta_display_order": [
+      "Serotype",
+      "Sequence Cluster",
+      "Sequence Type",
+      "Year of Isolation",
+      "Community of Isolation",
+      "Host Age (months)",
+      "Ceftriaxone MIC (ug/mL)",
+      "Tetracycline MIC (ug/mL)",
+      "Erythromycin MIC (ug/mL)",
+      "Trimethoprim MIC (ug/mL)",
+      "Chloramphenicol MIC (ug/mL)",
+      "Benzylpenicillin MIC (ug/mL)"
+    ],
+    "color_options": {
+      "Ceftriaxone MIC (ug/mL)": {
+        "menuItem": "Ceftriaxone MIC (ug/mL)",
+        "type": "mixed_continuous"
+      },
+      "Year of Isolation": {
+        "menuItem": "Year of Isolation",
+        "type": "continuous"
+      },
+      "Tetracycline MIC (ug/mL)": {
+        "menuItem": "Tetracycline MIC (ug/mL)",
+        "type": "mixed_continuous"
+      },
+      "Sequence Cluster__colour": {
+        "menuItem": "Sequence Cluster__colour",
+        "display": "no"
+      },
+      "Erythromycin MIC (ug/mL)": {
+        "menuItem": "Erythromycin MIC (ug/mL)",
+        "type": "mixed_continuous"
+      },
+      "Serotype": {
+        "menuItem": "Serotype",
+        "type": "discrete"
+      },
+      "longitude": {
+        "menuItem": "longitude",
+        "display": "no"
+      },
+      "Benzylpenicillin MIC (ug/mL)": {
+        "menuItem": "Benzylpenicillin MIC (ug/mL)",
+        "type": "mixed_continuous"
+      },
+      "Community of Isolation": {
+        "menuItem": "Community of Isolation",
+        "type": "discrete"
+      },
+      "Sequence Type": {
+        "menuItem": "Sequence Type",
+        "type": "discrete",
+        "display": "no"
+      },
+      "Year of Isolation__shape": {
+        "menuItem": "Year of Isolation__shape",
+        "display": "no"
+      },
+      "Host Age (months)": {
+        "menuItem": "Host Age (months)",
+        "type": "discrete"
+      },
+      "Trimethoprim MIC (ug/mL)": {
+        "menuItem": "Trimethoprim MIC (ug/mL)",
+        "type": "mixed_continuous"
+      },
+      "latitude": {
+        "menuItem": "latitude",
+        "display": "no"
+      },
+      "Sequence Cluster": {
+        "menuItem": "Sequence Cluster",
+        "type": "discrete"
+      },
+      "Chloramphenicol MIC (ug/mL)": {
+        "menuItem": "Chloramphenicol MIC (ug/mL)",
+        "type": "mixed_continuous"
+      }
+    }
+  },
+  "apply_association_cols": true,
+  "new_columns_config": [
+    {
+      "insertion_pos": "Length",
+      "new_col": {
+        "data": "",
+        "group name": "Branch association",
+        "visible": true,
+        "tooltip": "branch association"
+      }
+    },
+    {
+      "insertion_pos": "Length",
+      "new_col": {
+        "data": "Ceftriaxone BA",
+        "group": "Branch association",
+        "visible": true,
+        "name": "Ceftriaxone BA",
+        "tooltip": "Ceftriaxone branch association"
+      }
+    },
+    {
+      "insertion_pos": "Length",
+      "new_col": {
+        "data": "Tetracycline BA",
+        "group": "Branch association",
+        "visible": true,
+        "name": "Tetracycline BA",
+        "tooltip": "Tetracycline branch association"
+      }
+    },
+    {
+      "insertion_pos": "Length",
+      "new_col": {
+        "data": "Erythromycin BA",
+        "group": "Branch association",
+        "visible": true,
+        "name": "Erythromycin BA",
+        "tooltip": "Erythromycin branch association"
+      }
+    },
+    {
+      "insertion_pos": "Length",
+      "new_col": {
+        "data": "Trimethoprim BA",
+        "group": "Branch association",
+        "visible": true,
+        "name": "Trimethoprim BA",
+        "tooltip": "Trimethoprim branch association"
+      }
+    },
+    {
+      "insertion_pos": "Length",
+      "new_col": {
+        "data": "Chloramphenicol BA",
+        "group": "Branch association",
+        "visible": true,
+        "name": "Chloramphenicol BA",
+        "tooltip": "Chloramphenicol branch association"
+      }
+    },
+    {
+      "insertion_pos": "Length",
+      "new_col": {
+        "data": "Benzylpenicillin BA",
+        "group": "Branch association",
+        "visible": true,
+        "name": "Benzylpenicillin BA",
+        "tooltip": "Benzylpenicillin branch association"
+      }
+    },
+    {
+      "insertion_pos": "Length",
+      "new_col": {
+        "data": "",
+        "group name": "presence/absence association",
+        "visible": true,
+        "tooltip": "presence/absence association"
+      }
+    },
+    {
+      "insertion_pos": "Length",
+      "new_col": {
+        "data": "Ceftriaxone PA",
+        "group": "presence/absence association",
+        "visible": true,
+        "name": "Ceftriaxone PA",
+        "tooltip": "Ceftriaxone presence/absence association"
+      }
+    },
+    {
+      "insertion_pos": "Length",
+      "new_col": {
+        "data": "Tetracycline PA",
+        "group": "presence/absence association",
+        "visible": true,
+        "name": "Tetracycline PA",
+        "tooltip": "Tetracycline presence/absence association"
+      }
+    },
+    {
+      "insertion_pos": "Length",
+      "new_col": {
+        "data": "Erythromycin PA",
+        "group": "presence/absence association",
+        "visible": true,
+        "name": "Erythromycin PA",
+        "tooltip": "Erythromycin presence/absence association"
+      }
+    },
+    {
+      "insertion_pos": "Length",
+      "new_col": {
+        "data": "Trimethoprim PA",
+        "group": "presence/absence association",
+        "visible": true,
+        "name": "Trimethoprim PA",
+        "tooltip": "Trimethoprim presence/absence association"
+      }
+    },
+    {
+      "insertion_pos": "Length",
+      "new_col": {
+        "data": "Chloramphenicol PA",
+        "group": "presence/absence association",
+        "visible": true,
+        "name": "Chloramphenicol PA",
+        "tooltip": "Chloramphenicol presence/absence association"
+      }
+    },
+    {
+      "insertion_pos": "Length",
+      "new_col": {
+        "data": "Benzylpenicillin PA",
+        "group": "presence/absence association",
+        "visible": true,
+        "name": "Benzylpenicillin PA",
+        "tooltip": "Benzylpenicillin presence/absence association"
+      }
+    }
+  ]
+}

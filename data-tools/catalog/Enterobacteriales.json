@@ -1,0 +1,70 @@
+{
+  "meta_details": {
+    "collection_date": [
+      "2016",
+      "unknown",
+      "2015",
+      "2014",
+      "2008",
+      "2009",
+      "2011",
+      "2010",
+      "2013",
+      "2012"
+    ],
+    "country": [
+      "USA",
+      "unknown",
+      "Panama",
+      "Malaysia",
+      "China",
+      "Japan",
+      "Belgium",
+      "Germany",
+      "South Korea"
+    ],
+    "host": [
+      "Homo sapiens",
+      "unknown",
+      "Oryza sativa"
+    ],
+    "organism": [
+      "E.ludwigii",
+      "E.xiangfangensis",
+      "E.sp.",
+      "E.hormaechei",
+      "E.bacterium",
+      "E.cloacae",
+      "E.asburiae",
+      "E.lignolyticus",
+      "E.kobei",
+      "K.sp."
+    ]
+  },
+  "meta_display": {
+    "meta_display_order": [
+      "collection_date",
+      "country",
+      "host",
+      "organism"
+    ],
+    "color_options": {
+      "collection_date": {
+        "menuItem": "collection_date",
+        "type": "continuous"
+      },
+      "country": {
+        "menuItem": "country",
+        "type": "discrete"
+      },
+      "host": {
+        "menuItem": "host",
+        "type": "discrete"
+      },
+      "organism": {
+        "menuItem": "organism",
+        "type": "discrete"
+      }
+    }
+  }
+}

@@ -3,3 +3,7 @@ __pycache__/
 .pytest_cache/
 .ruff_cache/
 .cache/
+
+# The root .gitignore ignores *log and *json, which match the committed catalog
+!/catalog/
+!/catalog/*.json

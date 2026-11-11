@@ -1,0 +1,51 @@
+# Commands of data-tools, on the host after `mise install` and in the
+# development container as `dev/docker/run just <recipe>`. Every recipe runs
+# with the tools of .config/mise.toml, so the host and the container run the
+# same Python, with the same zlib.
+
+set positional-arguments
+set shell := ["mise", "exec", "--", "bash", "-euo", "pipefail", "-c"]
+
+dockerfiles := "dev/docker/dev.dockerfile"
+shfmt_flags := "--indent=2"
+
+# List the recipes
+default:
+    @just --list
+
+# Build the old layout of a snapshot in its out/ folder; options as `panx-data rebuild`, such as --dataset NAME or --out DIR
+rebuild snapshot *args:
+    python3 -m panx_data rebuild "$@"
+
+# Compare out/ of a snapshot with its saved S3 listings; options as `panx-data verify`
+verify snapshot *args:
+    python3 -m panx_data verify "$@"
+
+# Run the tests; arguments go to pytest
+test *args:
+    uv run --locked pytest "$@"
+
+# Run the lints, the format checks, and the tests
+check: lint fmt-check test
+
+# Lint the Python code, the shell scripts, and the Dockerfile
+lint:
+    ruff check
+    shfmt --find dev | xargs -r shellcheck --source-path=SCRIPTDIR
+    hadolint --config .config/hadolint.yaml {{ dockerfiles }}
+
+# Format the Python code, the shell scripts, and the justfile
+fmt:
+    ruff format
+    shfmt {{ shfmt_flags }} --write dev
+    just --fmt
+
+# Check the format of the Python code, the shell scripts, and the justfile
+fmt-check:
+    ruff format --check
+    shfmt {{ shfmt_flags }} --diff dev
+    just --fmt --check
+
+# Write .config/mise.lock after a change of .config/mise.toml; name tools to lock only those
+tools-lock *tools:
+    mise lock --platform linux-x64,linux-arm64,macos-x64,macos-arm64 "$@"

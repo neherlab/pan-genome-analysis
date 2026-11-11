@@ -1,0 +1,165 @@
+#!/usr/bin/env bash
+#
+# Usage: $0 [command [args...]]
+#
+# Run a command inside the development container of data-tools. With no
+# command, start an interactive shell. The image is built on first use and
+# rebuilt whenever one of its build inputs changes.
+#
+# The repository is mounted read-write at its host path, so paths in output and
+# in git match the host. The git metadata is mounted read-only: nothing inside
+# the container can plant a hook or a config entry that later runs on the host.
+#
+# Environment:
+#   PANX_SNAPSHOT       Snapshot folder (with src/ and out/), mounted at its
+#                       host path with src/ read-only and out/ read-write
+#   AWS_*               AWS settings and credentials, forwarded when set
+#   MISE_GITHUB_TOKEN   GitHub token for mise, forwarded when set, to lift the
+#                       anonymous API rate limit of `just tools-lock`
+#   BUILDKIT_PROGRESS   Progress mode in which an image build streams its log
+#                       to stderr, such as `plain`; when unset, a build prints
+#                       nothing, and a failed build prints its whole log
+#
+# Examples:
+#   $0 just check
+#   PANX_SNAPSHOT=/data/2022-11-18_old $0 just rebuild /data/2022-11-18_old --dataset Candidatus_Portiera
+#
+set -euo pipefail
+shopt -s inherit_errexit
+trap "exit" INT
+
+THIS_DIR="$(dirname "$(realpath "${BASH_SOURCE[0]}")")"
+
+DOCKERFILE="dev/docker/dev.dockerfile"
+PLATFORM="linux/amd64"
+
+# Print a short content hash of files and directories (recursively), their
+# relative paths included, plus any extra literal strings given after them.
+hash_inputs() {
+  local arg
+  for arg in "$@"; do
+    if [[ -d "${arg}" ]]; then
+      find "${arg}" -type f | LC_ALL=C sort | while IFS= read -r file; do
+        sha256sum "${file}"
+      done
+    elif [[ -f "${arg}" ]]; then
+      sha256sum "${arg}"
+    else
+      printf '%s\n' "${arg}"
+    fi
+  done | sha256sum | cut -c1-16
+}
+
+# Build the image unless it exists. The tag is a hash of the build inputs, so
+# any change to them builds a new image and an unchanged set reuses the tag.
+ensure_image() {
+  local tools="${1}" image="${2}" build_log
+  docker image inspect "${image}" >/dev/null 2>&1 && return
+  local build=(
+    docker buildx build
+    --load
+    --platform="${PLATFORM}"
+    --file="${tools}/${DOCKERFILE}"
+    --tag="${image}"
+    "${tools}"
+  )
+  if [[ -n "${BUILDKIT_PROGRESS:-}" ]]; then
+    "${build[@]}" </dev/null >&2
+  elif ! build_log="$("${build[@]}" --progress=plain </dev/null 2>&1)"; then
+    printf 'Building image %s from %s failed:\n%s\n' "${image}" "${DOCKERFILE}" "${build_log}" >&2
+    exit 1
+  fi
+}
+
+main() {
+  show_help() {
+    sed -n '2,${/^#/!q; s/^# \?//p}' "${BASH_SOURCE[0]}" | sed "s|\$0|${0##*/}|g"
+  }
+
+  [[ "${1:-}" =~ ^(-h|--help)$ ]] && {
+    show_help
+    exit 0
+  }
+
+  local tools root image_hash image cwd git_common_dir snapshot name
+  tools="$(realpath "${THIS_DIR}/../..")"
+  root="$(git -C "${tools}" rev-parse --show-toplevel)"
+  image_hash="$(
+    pushd "${tools}" >/dev/null
+    hash_inputs "${DOCKERFILE}" "${DOCKERFILE}.dockerignore" dev/docker/files .config/mise.toml .config/mise.lock "${PLATFORM}"
+  )"
+  image="panx-data-dev:${image_hash}"
+  ensure_image "${tools}" "${image}"
+
+  local run_flags=(
+    --rm
+    --init
+    # The name shows the project and the start time in `docker ps`; the
+    # process id keeps containers that start in the same second apart.
+    --name="panx-data-dev-$(date +%Y%m%d-%H%M%S)-$$"
+    --platform="${PLATFORM}"
+    --cap-drop=ALL
+    --security-opt=no-new-privileges
+    --user="$(id -u):$(id -g)"
+    --volume="${root}:${root}"
+    # The init process delivers signals to the whole process group, as a
+    # terminal does: just ignores SIGHUP and SIGINT because it expects its
+    # children to receive them directly.
+    --env="TINI_KILL_PROCESS_GROUP=1"
+    --env="HOME=/tmp/home"
+    --env="TERM=${TERM:-xterm-256color}"
+    --env="TZ=Etc/UTC"
+    --env="LANG=C.UTF-8"
+    --env="DO_NOT_TRACK=1"
+    --env="MISE_TRUSTED_CONFIG_PATHS=${tools}"
+    --env="MISE_DISABLE_UPDATE_WARNING=1"
+    # The virtual environment of the container lives apart from that of the
+    # host, because each links to the Python at its own path; the uv cache
+    # stays in the checkout, so later runs reuse the downloaded packages.
+    --env="UV_PROJECT_ENVIRONMENT=${tools}/.cache/container/venv"
+    --env="UV_CACHE_DIR=${tools}/.cache/container/uv"
+  )
+  if [[ -t 0 ]]; then
+    run_flags+=(--interactive --tty)
+  fi
+
+  # The working directory follows the caller when it is inside the repository.
+  cwd="$(pwd -P)"
+  case "${cwd}/" in
+  "${root}/"*) run_flags+=(--workdir="${cwd}") ;;
+  *) run_flags+=(--workdir="${tools}") ;;
+  esac
+
+  # The git directory of a linked worktree lies under the main checkout,
+  # outside the mounted repository. The common directory is mounted
+  # read-only, also for the main checkout, where it lies inside the
+  # read-write mount.
+  git_common_dir="$(git -C "${root}" rev-parse --path-format=absolute --git-common-dir)"
+  run_flags+=(--volume="${git_common_dir}:${git_common_dir}:ro")
+
+  if [[ -n "${PANX_SNAPSHOT:-}" ]]; then
+    if [[ ! -d "${PANX_SNAPSHOT}/src" ]]; then
+      printf 'PANX_SNAPSHOT=%s is not a snapshot folder: it has no src/\n' "${PANX_SNAPSHOT}" >&2
+      exit 1
+    fi
+    snapshot="$(realpath "${PANX_SNAPSHOT}")"
+    mkdir -p "${snapshot}/out"
+    run_flags+=(
+      --volume="${snapshot}/src:${snapshot}/src:ro"
+      --volume="${snapshot}/out:${snapshot}/out"
+      --env="PANX_SNAPSHOT=${snapshot}"
+    )
+  fi
+
+  for name in $(compgen -e); do
+    case "${name}" in
+    AWS_* | MISE_GITHUB_TOKEN | CI | COLORTERM | NO_COLOR | FORCE_COLOR) run_flags+=(--env="${name}") ;;
+    esac
+  done
+
+  exec docker run "${run_flags[@]}" "${image}" "${@:-bash}"
+}
+
+if [[ "${BASH_SOURCE[0]}" == "${0}" ]]; then
+  main "$@"
+fi

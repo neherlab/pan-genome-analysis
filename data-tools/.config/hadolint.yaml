@@ -1,0 +1,9 @@
+# The Dockerfile sets `SHELL ["bash", "-euxo", "pipefail", "-c"]`, so every RUN is bash
+# with pipefail. Hadolint 2.15 forgets the bash SHELL after ARG and ENV, so it reports
+# bash syntax (SC3010, SC3040) as POSIX sh (https://github.com/hadolint/hadolint/issues/1241).
+# The Debian packages come from the snapshot archive of one date, which fixes every
+# version; the Dockerfile names and checks the versions that `rebuild` depends on.
+ignored:
+  - DL3008
+  - SC3010
+  - SC3040

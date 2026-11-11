@@ -1,0 +1,44 @@
+# What the dataset catalog needs beyond the update zip of the November 2022 run. The zip's
+# `species-list-info.js` gives the dropdown groups, their order, and each dataset's dropdown text;
+# its `all_downloads_table.json` gives the species name and the source of each 2022 dataset.
+
+# Category id of each dropdown group of `species_dt`
+[categories]
+optgroup1 = "case_study"
+optgroup2 = "refseq"
+optgroup3 = "order"
+
+# The six older datasets have no row in `all_downloads_table.json`. Their name in the species search
+# and the downloads table is their dropdown text; the source is the study of a case study, and
+# RefSeq for an order, whose accessions are all RefSeq accessions. `accession_url` links the
+# accessions of the metadata table; a dataset without it has accessions with no public page.
+
+[datasets.S_pneumoniae616]
+name = "Epidemiology of S. pneumoniae (Croucher et al)"
+source = "Croucher et al"
+accession_url = "https://www.ncbi.nlm.nih.gov/nuccore/{accession}"
+
+# Strain names such as AS9601
+[datasets.P_marinus_meta]
+name = "Prochlorococcus marinus (Biller et al)"
+source = "Biller et al"
+
+# ECDC sample ids such as ECDC_GE13_094
+[datasets.Neisseria_gonorrhoeae_ECDC]
+name = "MDR Neisseria gonorrhoeae in Europe (Harris et al)"
+source = "Harris et al"
+
+[datasets.Pseudomonadales]
+name = "Pseudomonadales"
+source = "RefSeq"
+accession_url = "https://www.ncbi.nlm.nih.gov/nuccore/{accession}"
+
+[datasets.Enterobacteriales]
+name = "Enterobacteriales"
+source = "RefSeq"
+accession_url = "https://www.ncbi.nlm.nih.gov/nuccore/{accession}"
+
+[datasets.Vibrionales]
+name = "Vibrionales"
+source = "RefSeq"
+accession_url = "https://www.ncbi.nlm.nih.gov/nuccore/{accession}"

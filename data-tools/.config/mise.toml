@@ -1,0 +1,37 @@
+min_version = "2026.10.17"
+
+[settings]
+lockfile = true
+locked = true
+minimum_release_age = "7d"
+
+[tools]
+aws-cli = "2.39.3"
+hadolint = "2.15.1"
+just = "1.59.0"
+ruff = "0.17.3"
+shellcheck = "0.11.0"
+shfmt = "3.14.1"
+uv = "0.13.7"
+
+# Python of python-build-standalone, with its own zlib, whose deflate bytes the
+# data build depends on. The release date is part of the URL, because the core
+# python backend of mise takes the newest build of a Python version and ignores
+# minimum_release_age for it. The checksums come from the SHA256SUMS file of the
+# release. To update, pick a release at least seven days old, set the version
+# and the release date, and copy its checksums.
+[tools."http:python"]
+version = "3.15.2+20261026"
+bin_path = "python/bin"
+
+[tools."http:python".platforms]
+linux-arm64 = { url = "https://github.com/astral-sh/python-build-standalone/releases/download/20261026/cpython-{{ version }}-aarch64-unknown-linux-gnu-install_only_stripped.tar.gz", checksum = "sha256:0f23351c03b39beb880de668976074fcc3c082d9c3b03d0b43185632b2b270a0" }
+linux-x64 = { url = "https://github.com/astral-sh/python-build-standalone/releases/download/20261026/cpython-{{ version }}-x86_64-unknown-linux-gnu-install_only_stripped.tar.gz", checksum = "sha256:7b03163a980c607ba8194709d4a4086735a7a9c488cc475b098157306927b36b" }
+macos-arm64 = { url = "https://github.com/astral-sh/python-build-standalone/releases/download/20261026/cpython-{{ version }}-aarch64-apple-darwin-install_only_stripped.tar.gz", checksum = "sha256:1b1b03fca8aa351698403f3d100ee83db7a5d99748fc7707681ac31a6a846ad9" }
+macos-x64 = { url = "https://github.com/astral-sh/python-build-standalone/releases/download/20261026/cpython-{{ version }}-x86_64-apple-darwin-install_only_stripped.tar.gz", checksum = "sha256:6ec04346b578656b5d5597144cbe0f4773acea6af6048cb8fe0cac3e92c702ac" }
+
+# uv runs every command with the Python of mise, which comes first on PATH, and
+# never downloads a Python of its own.
+[env]
+UV_PYTHON_PREFERENCE = "only-system"
+UV_PYTHON_DOWNLOADS = "never"

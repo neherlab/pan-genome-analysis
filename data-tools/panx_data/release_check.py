@@ -10,6 +10,7 @@ import gzip
 import io
 import json
 import logging
+import sys
 import tarfile
 from collections.abc import Iterator, Mapping
 from concurrent.futures import ProcessPoolExecutor, as_completed
@@ -94,6 +95,8 @@ def check_dataset(
     release: str, job: Job | OlderJob, folder: Path, entry: Mapping[str, Any], modified: Mapping[str, str | None]
 ) -> list[Finding]:
     """Compare one dataset of a release with its pipeline output."""
+    # The tree conversions recurse once per tree level, deeper than Python's default limit
+    sys.setrecursionlimit(100_000)
     dataset_folder = folder / job.dataset
     document = _read_json(dataset_folder / "dataset.json")
     clusters = _read_json(dataset_folder / "clusters.json")["clusters"]
@@ -152,10 +155,14 @@ def check_dataset(
         missing = sorted(values - set(column["numbers"]))
         if missing:
             report(Kind.NO_NUMBER, f"{column['key']}: {json.dumps(missing, ensure_ascii=False)}")
+    # Files that no cluster of the table names are no input of the release
+    ids = {cluster["id"] for cluster in clusters}
     for cluster_id, count in sorted(removed.items()):
-        report(Kind.REMOVED_TIPS, f"{cluster_id}: {count} gene-tree tips without strain")
+        if cluster_id in ids:
+            report(Kind.REMOVED_TIPS, f"{cluster_id}: {count} gene-tree tips without strain")
     for name in sorted(dropped):
-        report(Kind.REMOVED_TREE, f"{name}: no tip of a strain, left out of the pack")
+        if name.removesuffix("_tree.json").removesuffix(".nwk") in ids:
+            report(Kind.REMOVED_TREE, f"{name}: no tip of a strain, left out of the pack")
     return found
 
 

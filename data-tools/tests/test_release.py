@@ -175,3 +175,17 @@ def _tarball(path: Path, files: dict[str, bytes]) -> Path:
             info.mtime = 1_657_000_000
             tar.addfile(info, io.BytesIO(data))
     return path
+
+
+@pytest.mark.skipif(shutil.which("pigz") is None, reason="needs the pigz program")
+def test_release_dataset_leaves_out_a_gene_tree_without_strain_tips(tmp_path: Path) -> None:
+    files = {**FILES, "Testus/geneCluster/RNA_r1_tree.json": b'{"name": "Z|2", "accession": "Z", "branch_length": 0.0}'}
+    job = Job("Testus", Upload.AUGUST_2022, _tarball(tmp_path / "Testus.tar.gz", files), None, None, tmp_path / "x")
+
+    result = build_dataset_release(job, tmp_path / "a", {}, ENTRY, None)
+
+    first, last = _json(tmp_path / "a" / "clusters.json")["clusters"][1]["range"]
+    member = (tmp_path / "a" / "gene_clusters.tar.gz").read_bytes()[first : last + 1]
+    with tarfile.open(fileobj=io.BytesIO(member), mode="r:gz") as tar:
+        assert "Testus/geneCluster/RNA_r1_tree.json" not in tar.getnames()
+    assert result.removed_tips == {"RNA_r1": 1}

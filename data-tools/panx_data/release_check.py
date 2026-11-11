@@ -18,7 +18,7 @@ from enum import Enum
 from pathlib import Path
 from typing import Any
 
-from panx_data.convert import UNKNOWN, cluster_entry
+from panx_data.convert import UNKNOWN, cluster_entry, gene_tree_newick
 from panx_data.layout import BUCKET, find_source
 from panx_data.listings import load_listings
 from panx_data.reader import Job, OlderJob, Origin, job_files, overlay_modified, plan
@@ -36,6 +36,7 @@ class Kind(Enum):
     METADATA_DIFFERENCE = ("metadata-difference", True)
     NO_NUMBER = ("no-number", False)
     REMOVED_TIPS = ("removed-tips", False)
+    REMOVED_TREE = ("removed-tree", False)
 
     @property
     def label(self) -> str:
@@ -106,6 +107,7 @@ def check_dataset(
     cluster_files: set[str] = set()
     metainfo: bytes | None = None
     removed: dict[str, int] = {}
+    dropped: set[str] = set()
     for file in job_files(job, modified):
         if file.rel == f"{GENE_CLUSTER}.json":
             rows = json.loads(file.content())
@@ -115,9 +117,15 @@ def check_dataset(
             name = file.rel.removeprefix(f"{GENE_CLUSTER}/")
             cluster_files.add(name)
             if name.endswith("_tree.json"):
-                outside = _tips_outside(json.loads(file.content()), strains)
+                outside, tips = _tips_outside(json.loads(file.content()), strains)
                 if outside:
                     removed[name.removesuffix("_tree.json")] = outside
+                if outside == tips:
+                    dropped.add(name)
+            elif name.endswith(".nwk"):
+                text, outside = gene_tree_newick(file.content().decode(), strains.__contains__)
+                if text is None:
+                    dropped.add(name)
 
     for key, count in (("strains", len(document["strains"])), ("clusters", len(clusters))):
         if entry[key] != count:
@@ -129,7 +137,7 @@ def check_dataset(
     ]
     found += [
         Finding(release, job.dataset, Kind.PACK, detail)
-        for detail in _pack_differences(job.dataset, dataset_folder / PACK, clusters, cluster_files)
+        for detail in _pack_differences(job.dataset, dataset_folder / PACK, clusters, cluster_files - dropped)
     ]
     if metainfo is not None:
         metadata = (dataset_folder / "metadata.tsv").read_bytes()
@@ -146,6 +154,8 @@ def check_dataset(
             report(Kind.NO_NUMBER, f"{column['key']}: {json.dumps(missing, ensure_ascii=False)}")
     for cluster_id, count in sorted(removed.items()):
         report(Kind.REMOVED_TIPS, f"{cluster_id}: {count} gene-tree tips without strain")
+    for name in sorted(dropped):
+        report(Kind.REMOVED_TREE, f"{name}: no tip of a strain, left out of the pack")
     return found
 
 
@@ -211,7 +221,8 @@ def _pack_differences(dataset: str, pack: Path, clusters: list[dict[str, Any]], 
                 yield f"{cluster_id}: member holds {names}, the pipeline output gives {expected}"
 
 
-def _tips_outside(tree: Mapping[str, Any], strains: frozenset[str]) -> int:
+def _tips_outside(tree: Mapping[str, Any], strains: frozenset[str]) -> tuple[int, int]:
+    """Return the number of tips whose accession names no strain, and the number of tips."""
     accessions: list[str] = []
     stack = [tree]
     while stack:
@@ -220,7 +231,7 @@ def _tips_outside(tree: Mapping[str, Any], strains: frozenset[str]) -> int:
             stack.extend(node["children"])
         else:
             accessions.append(node["accession"])
-    return sum(accession not in strains for accession in accessions)
+    return sum(accession not in strains for accession in accessions), len(accessions)
 
 
 def _read_json(path: Path) -> Any:

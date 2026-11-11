@@ -346,7 +346,10 @@ def _write_archives(
 
 def _cluster_entries(context: _ClusterContext, cluster_id: str) -> tuple[dict[str, tuple[bytes, int]], list[str], int]:
     """Return the entries of a cluster's member by name, in member order, with their mtimes; the record identifiers of
-    its full nucleotide alignment; and the number of removed gene-tree tips."""
+    its full nucleotide alignment; and the number of removed gene-tree tips.
+
+    A gene tree whose tips all name no strain is left out: the pipeline output of some older clusters holds the
+    tree of another cluster."""
 
     def file(name: str) -> DatasetFile | None:
         return context.files.get(f"{GENE_CLUSTER}/{name}")
@@ -372,12 +375,13 @@ def _cluster_entries(context: _ClusterContext, cluster_id: str) -> tuple[dict[st
                 full_ids = ids
             if name.endswith("_reduced.fa"):
                 _check_reduced(context.dataset, name, ids, entries[name.replace("_reduced.fa", ".fa")][0])
-        elif name.endswith("_tree.json"):
-            data, count = _gene_tree_json(context, name, data)
+        elif name.endswith((".nwk", "_tree.json")):
+            tree_data, count = (_gene_tree_newick if name.endswith(".nwk") else _gene_tree_json)(context, name, data)
             removed = max(removed, count)
-        elif name.endswith(".nwk"):
-            data, count = _gene_tree_newick(context, name, data)
-            removed = max(removed, count)
+            if tree_data is None:
+                LOG.warning("%s: '%s' has no tip of a strain and is left out", context.dataset, name)
+                continue
+            data = tree_data
         else:
             patterns = json.loads(data)["patterns"]
             if len(patterns) != context.patterns_length:
@@ -407,19 +411,19 @@ def _check_reduced(dataset: str, name: str, ids: list[str], full: bytes) -> None
         raise ValueError(f"{dataset}: '{name}' holds other records than its full alignment")
 
 
-def _gene_tree_json(context: _ClusterContext, name: str, data: bytes) -> tuple[bytes, int]:
+def _gene_tree_json(context: _ClusterContext, name: str, data: bytes) -> tuple[bytes | None, int]:
     original = json.loads(data)
     tree, removed = gene_tree_json(original, context.strains.__contains__)
     if tree is None:
-        raise ValueError(f"{context.dataset}: '{name}' has no tip of a strain")
+        return None, removed
     return (data if tree == original else json.dumps(tree).encode()), removed
 
 
-def _gene_tree_newick(context: _ClusterContext, name: str, data: bytes) -> tuple[bytes, int]:
+def _gene_tree_newick(context: _ClusterContext, name: str, data: bytes) -> tuple[bytes | None, int]:
     _check_line_ends(context.dataset, name, data)
     text, removed = gene_tree_newick(data.decode(), context.strains.__contains__)
     if text is None:
-        raise ValueError(f"{context.dataset}: '{name}' has no tip of a strain")
+        return None, removed
     return (text.encode() if removed else data), removed
 
 

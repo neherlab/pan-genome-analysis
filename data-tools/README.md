@@ -194,7 +194,7 @@ A `differs` row means that S3 holds other bytes for a key. Copy that key into `s
 
 ### 6. Build and check a release
 
-A recipe `releases/<release id>.toml` names the release id (its UTC creation time, such as `20261112T080000Z`), its title, the SHA-256 of `src/MD5SUMS`, and its datasets in display order. `release-build` writes the release folder into the data root `out/data.pangenome.org/` and lists it in its `releases.json`; `release-check` compares every release of the data root with the inputs and prints its findings. No AWS requests. The release of all 270 datasets holds about 2,200 objects and 13.5 GB:
+A recipe `releases/<release id>.toml` names the release id (its UTC creation time, such as `20261112T080000Z`), its title, the SHA-256 of `src/MD5SUMS`, and its datasets in display order. `release-build` writes the release folder into the data root `out/data.pangenome.org/` and lists it in its `releases.json`; `release-check` compares every release of the data root with the inputs and prints its findings. No AWS requests. The release of all 270 datasets of 2026-11-11 holds 2,162 objects and 11.38 GB:
 
 ```bash
 dev/docker/run just release-build releases/<release id>.toml "${snapshot}" --jobs 8
@@ -221,12 +221,12 @@ publish() { dev/docker/run just release-publish "$1" "${snapshot}/out/data.pange
 publish upload --dry-run
 ```
 
-1. `upload`: every object of the release folder with the headers of its manifest entry, then `manifest.json`. Each write sends the SHA-256 of the manifest, so S3 rejects other bytes, and is conditional on a missing key, so no object is replaced. A key that exists with the manifest's SHA-256 counts as done, so an interrupted upload resumes; a key with other bytes stops the upload, because a path of a release is written once. About 2,200 PUT requests, $0.012, plus one HEAD request per existing key; the release stores 13.5 GB, $0.33 per month
+1. `upload`: every object of the release folder with the headers of its manifest entry, then `manifest.json`. Each write sends the SHA-256 of the manifest, so S3 rejects other bytes, and is conditional on a missing key, so no object is replaced. A key that exists with the manifest's SHA-256 counts as done, so an interrupted upload resumes; a key with other bytes stops the upload, because a path of a release is written once. 2,162 PUT requests for the release of all 270 datasets, $0.012, plus one HEAD request per existing key; the release stores 11.38 GB, $0.28 per month
 2. check: `just verify-data` of step 7 on the uploaded data root, then on the data host with `PANX_DATA=https://data.pangenome.org` and `--release <release id>`, about 2,700 HEAD and GET requests, below $0.01
 3. `list`: add the release to `releases.json` of the data host and keep the default release; the release then opens with `?release=<release id>`. 1 HEAD, 1 GET, and 1 PUT request, below $0.0001
 4. `promote`: make the release the default. Every visitor gets it within 10 minutes, because browsers and the CDN keep `releases.json` for at most 5 minutes each. 1 HEAD, 1 GET, and 1 PUT request, below $0.0001
 
-On a data host without `releases.json`, `list` and `promote` create it with the release as its only entry and default. Every later write of `releases.json` is conditional on the ETag that the step read, so a second publish at the same time fails instead of dropping a release. A rollback is a `promote` of an earlier release. `unlist` takes a release that is not the default out of `releases.json`, the first step of its removal; keep its folder for at least 30 days after that, so open pages keep working ($0.33 for the 30 days).
+On a data host without `releases.json`, `list` and `promote` create it with the release as its only entry and default. Every later write of `releases.json` is conditional on the ETag that the step read, so a second publish at the same time fails instead of dropping a release. A rollback is a `promote` of an earlier release. `unlist` takes a release that is not the default out of `releases.json`, the first step of its removal; keep its folder for at least 30 days after that, so open pages keep working ($0.28 for the 30 days).
 
 `release-publish` refuses a release whose `manifest.json` records uncommitted changes of the tool, or another Python or zlib than `.config/mise.toml` pins, and a release folder whose files do not have the sizes of the manifest.
 

@@ -35,6 +35,7 @@ class Kind(Enum):
     COUNT = ("count", True)
     PACK = ("pack", True)
     METADATA_DIFFERENCE = ("metadata-difference", True)
+    LEFT_OUT_COLUMN = ("left-out-column", False)
     NO_NUMBER = ("no-number", False)
     REMOVED_TIPS = ("removed-tips", False)
     REMOVED_TREE = ("removed-tree", False)
@@ -145,8 +146,8 @@ def check_dataset(
     if metainfo is not None:
         metadata = (dataset_folder / "metadata.tsv").read_bytes()
         found += [
-            Finding(release, job.dataset, Kind.METADATA_DIFFERENCE, detail)
-            for detail in metadata_differences(metainfo, gzip.decompress(metadata))
+            Finding(release, job.dataset, kind, detail)
+            for kind, detail in metadata_differences(metainfo, gzip.decompress(metadata))
         ]
     for column in document["metadata"]:
         if column["type"] != "continuous":
@@ -166,20 +167,23 @@ def check_dataset(
     return found
 
 
-def metadata_differences(metainfo: bytes, metadata: bytes) -> Iterator[str]:
+def metadata_differences(metainfo: bytes, metadata: bytes) -> Iterator[tuple[Kind, str]]:
     """Compare the metadata table that S3 rewrote with `metadata.tsv`, by accession and column name; `unknown` in
-    the S3 table equals an empty field."""
+    the S3 table equals an empty field.
+
+    A column of the S3 table that `metadata.tsv` lacks is listed without failing: `metadata.tsv` has the columns of
+    `meta_display_order`, which the old metadata table showed, and leaves out the other keys of the strains."""
     theirs, ours = _table(metainfo), _table(metadata)
     their_columns = next(iter(theirs.values()), {}).keys() if theirs else []
     our_columns = next(iter(ours.values()), {}).keys() if ours else []
     for column in their_columns:
         if column not in our_columns:
-            yield f"column '{column}' of the S3 metainfo.tsv is missing"
+            yield Kind.LEFT_OUT_COLUMN, f"column '{column}' of the S3 metainfo.tsv is not in meta_display_order"
     for column in our_columns:
         if column not in their_columns:
-            yield f"column '{column}' is not in the S3 metainfo.tsv"
+            yield Kind.METADATA_DIFFERENCE, f"column '{column}' is not in the S3 metainfo.tsv"
     for accession in sorted(set(theirs) ^ set(ours)):
-        yield f"accession '{accession}' is in one table only"
+        yield Kind.METADATA_DIFFERENCE, f"accession '{accession}' is in one table only"
     for accession in sorted(set(theirs) & set(ours)):
         for column in their_columns:
             if column not in our_columns:
@@ -187,7 +191,10 @@ def metadata_differences(metainfo: bytes, metadata: bytes) -> Iterator[str]:
             their_value = theirs[accession][column]
             their_value = "" if their_value == UNKNOWN else their_value
             if their_value != ours[accession][column]:
-                yield f"{accession} '{column}': S3 '{their_value}', release '{ours[accession][column]}'"
+                yield (
+                    Kind.METADATA_DIFFERENCE,
+                    f"{accession} '{column}': S3 '{their_value}', release '{ours[accession][column]}'",
+                )
 
 
 def _table(data: bytes) -> dict[str, dict[str, str]]:

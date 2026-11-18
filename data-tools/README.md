@@ -3,7 +3,7 @@
 The viewer at `pangenome.org` reads its species data from a data host. Two layouts exist:
 
 - **The old layout**: the S3 bucket `pangenome.org-data-master`, one folder per dataset, every file stored plain and as a `.gz` copy, 23.6 million objects for the 264 datasets of the 2022 pipeline run (PanXX, a Nextflow rewrite of this pipeline)
-- **Data format 1**: one immutable release folder per data version, 8 objects per dataset and about 2,200 objects per release, served at `data.pangenome.org`. `docs/data-format.md` of the app repository `neherlab/pan-genome-visualization` defines the format
+- **Data format**: one immutable release folder per data version, 8 objects per dataset and about 2,200 objects per release, served at `data.pangenome.org`. `docs/data-format.md` of the app repository `neherlab/pan-genome-visualization` defines the format
 
 `panx-data` builds both from the same inputs: the pipeline output of the 2022 run and the 2018 archive of six older datasets, both archived on sciCORE, the cluster of the University of Basel, plus a few objects of the old bucket. A download of the whole bucket is not needed (it would cost about $26: 40.8 million requests and 101.5 GB of transfer).
 
@@ -54,7 +54,7 @@ All commands work on a snapshot folder. `src/` holds the inputs, each at the pat
     |-- deviations.tsv                                 every difference from the listings, with its class
     |-- build-summary.tsv                              files, bytes, and time per dataset
     |-- BUILD_INFO.json                                tool commit, tool versions, counts, time
-    |-- data.pangenome.org/                            data root of format 1, written by `release-build`:
+    |-- data.pangenome.org/                            data root, written by `release-build`:
     |   |-- releases.json                              the releases of the data root and the default release
     |   `-- <release id>/                              index.json, manifest.json, and one folder per dataset
     `-- release-check.txt                              the findings of `release-check`

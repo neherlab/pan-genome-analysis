@@ -1,5 +1,5 @@
-"""Pure conversions of the pipeline output of one dataset to the files of format 1 (`docs/data-format.md` of the app
-repository `neherlab/pan-genome-visualization`).
+"""Pure conversions of the pipeline output of one dataset to the files of the data format (`docs/data-format.md` of
+the app repository `neherlab/pan-genome-visualization`).
 
 The inputs are the parsed files of the old layout: `coreGenomeTree.json`, `strainMetainfo.json`, the metadata
 configuration of `metaConfiguration.js`, and the rows of `geneCluster.json`, and the texts of the cluster files.

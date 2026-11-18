@@ -1,4 +1,4 @@
-"""Byte encodings of format 1: gzip members with a fixed header, ustar entries, and compact JSON.
+"""Byte encodings of the data format: gzip members with a fixed header, ustar entries, and compact JSON.
 
 The build writes the gzip header and trailer itself, because Python's `gzip.compress` writes another OS byte in other
 Python versions. Deflate bytes depend on the zlib build, so the build runs only with the zlib of `ZLIB_VERSION`, the

@@ -1,6 +1,6 @@
-"""Publish a release of data format 1 to the data host, an S3 bucket folder, with the AWS CLI.
+"""Publish a release of the data format to the data host, an S3 bucket folder, with the AWS CLI.
 
-The steps follow "Releases and format versions" of `docs/data-format.md` of the app repository:
+The steps follow "Publication of a release" of `docs/data-format.md` of the app repository:
 
 - `upload` writes every object of the release folder with the headers of its manifest entry, then `manifest.json`.
   Each write is conditional on a missing key, so no object is replaced; a key that exists counts as done when its
@@ -31,7 +31,7 @@ from pathlib import Path
 from typing import Any
 
 from panx_data.archive import ZLIB_VERSION, gzip_member, json_bytes
-from panx_data.release import FORMAT, RELEASE_ID, RELEASES, object_headers
+from panx_data.release import RELEASE_ID, RELEASES, object_headers
 
 LOG = logging.getLogger(__name__)
 MANIFEST = "manifest.json"
@@ -168,7 +168,7 @@ def updated_releases(current: dict[str, Any] | None, step: str, entry: dict[str,
     if current is None:
         if step == "unlist":
             raise ValueError(f"the data host has no {RELEASES}, so no release is listed")
-        return {"format": FORMAT, "default": entry["id"], "releases": [entry]}
+        return {"default": entry["id"], "releases": [entry]}
     listed = any(other["id"] == entry["id"] for other in current["releases"])
     if step == "unlist":
         if entry["id"] == current["default"]:

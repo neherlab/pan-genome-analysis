@@ -1,4 +1,4 @@
-"""Build a release of data format 1 from a snapshot, by a recipe.
+"""Build a release of the data format from a snapshot, by a recipe.
 
 The format is defined in `docs/data-format.md` of the app repository `neherlab/pan-genome-visualization`. A release
 is one folder of the data root, named by its id; `releases.json` of the data root lists it. The same recipe, snapshot,
@@ -44,7 +44,6 @@ from panx_data.listings import load_listings
 from panx_data.reader import DatasetFile, Job, OlderJob, job_files, overlay_modified, plan
 
 LOG = logging.getLogger(__name__)
-FORMAT = 1
 REPOSITORY = "https://github.com/neherlab/pan-genome-analysis"
 DATA_ROOT = Path("out") / "data.pangenome.org"
 RELEASES = "releases.json"
@@ -66,7 +65,6 @@ class Recipe:
 
     id: str
     title: str
-    format: int
     snapshot: str
     datasets: tuple[str, ...]
     sha256: str
@@ -111,17 +109,13 @@ def load_recipe(path: Path) -> Recipe:
     recipe = tomllib.loads(data.decode())
     if not RELEASE_ID.fullmatch(recipe["id"]) or path.stem != recipe["id"]:
         raise ValueError(f"'{path}': the id '{recipe['id']}' must be the file name and of the form YYYYMMDDThhmmssZ")
-    if recipe["format"] != FORMAT:
-        raise ValueError(f"'{path}': format {recipe['format']}, but this tool builds format {FORMAT}")
     datasets = tuple(recipe["datasets"])
     if len(set(datasets)) != len(datasets):
         raise ValueError(f"'{path}': a dataset is listed twice")
     for dataset in datasets:
         if not DATASET_ID.fullmatch(dataset) or dataset in PAGE_NAMES:
             raise ValueError(f"'{path}': '{dataset}' is no valid dataset id")
-    return Recipe(
-        recipe["id"], recipe["title"], recipe["format"], recipe["snapshot"], datasets, hashlib.sha256(data).hexdigest()
-    )
+    return Recipe(recipe["id"], recipe["title"], recipe["snapshot"], datasets, hashlib.sha256(data).hexdigest())
 
 
 def snapshot_checksum(snapshot: Path) -> str:
@@ -171,7 +165,6 @@ def release_build(
     results = _build_datasets(source, catalog, selected, staging, jobs)
     objects = [obj for name in selected for obj in results[name].objects]
     index = {
-        "format": FORMAT,
         "release": recipe.id,
         "categories": [
             {"id": category.id, "label": category.label}
@@ -182,7 +175,6 @@ def release_build(
     }
     objects.append(_write_object(staging, "index.json", json_bytes(index)))
     manifest = {
-        "format": FORMAT,
         "release": recipe.id,
         "build": {
             "repository": REPOSITORY,
@@ -243,7 +235,6 @@ def build_dataset_release(
     folder.mkdir(parents=True)
     clusters, loci, removed = _write_archives(folder, context, rows, [column["key"] for column in columns])
     document = {
-        "format": FORMAT,
         "id": dataset,
         "strain_tree": tree,
         "metadata": metadata,
@@ -253,8 +244,8 @@ def build_dataset_release(
     }
     objects = [
         _write_object(folder, "dataset.json", json_bytes(document), dataset),
-        _write_object(folder, "clusters.json", json_bytes({"format": FORMAT, "clusters": clusters}), dataset),
-        _write_object(folder, "loci.json", json_bytes({"format": FORMAT, "loci": loci}), dataset),
+        _write_object(folder, "clusters.json", json_bytes({"clusters": clusters}), dataset),
+        _write_object(folder, "loci.json", json_bytes({"loci": loci}), dataset),
         _write_object(folder, "strain_tree.nwk", newick, dataset),
         _write_object(folder, "metadata.tsv", metadata_tsv(metadata, strains), dataset),
         *(_stored_file(folder, name, dataset) for name in (PACK, CORE_ALIGNMENTS, ALL_ALIGNMENTS)),
@@ -279,7 +270,7 @@ def object_headers(path: str) -> tuple[str, str | None, str, str | None]:
         return "text/tab-separated-values; charset=utf-8", "gzip", IMMUTABLE, f'attachment; filename="{dataset}_{name}"'
     if name.endswith(".tar.gz"):
         return "application/gzip", None, IMMUTABLE, f'attachment; filename="{dataset}_{name}"'
-    raise ValueError(f"'{path}' is no path of data format {FORMAT}")
+    raise ValueError(f"'{path}' is no path of the data format")
 
 
 def cluster_entry_names(cluster_id: str, kind: str, has_tree: bool, has_newick: bool) -> list[str]:
@@ -553,8 +544,8 @@ def _list_release(data_root: Path, recipe: Recipe) -> None:
         default, entries = current["default"], [entry for entry in current["releases"] if entry["id"] != recipe.id]
     else:
         default, entries = recipe.id, []
-    entries.append({"id": recipe.id, "format": recipe.format, "title": recipe.title})
+    entries.append({"id": recipe.id, "title": recipe.title})
     entries.sort(key=lambda entry: entry["id"], reverse=True)
     temporary = path.with_name(f".{RELEASES}.tmp")
-    temporary.write_bytes(gzip_member(json_bytes({"format": FORMAT, "default": default, "releases": entries})))
+    temporary.write_bytes(gzip_member(json_bytes({"default": default, "releases": entries})))
     os.replace(temporary, path)

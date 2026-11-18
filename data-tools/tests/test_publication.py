@@ -49,12 +49,12 @@ SIZES = {"Testus/clusters.json": 10, "Testus/gene_clusters.tar.gz": 20}
 
 
 def release(**build: object) -> Release:
-    manifest = {"format": 1, "release": ID, "build": {**BUILD, **build}, "objects": OBJECTS}
-    return Release(ID, {"id": ID, "format": 1, "title": "panX data"}, manifest, "d" * 64, 30)
+    manifest = {"release": ID, "build": {**BUILD, **build}, "objects": OBJECTS}
+    return Release(ID, {"id": ID, "title": "panX data"}, manifest, "d" * 64, 30)
 
 
 def entry(release_id: str) -> dict[str, object]:
-    return {"id": release_id, "format": 1, "title": "panX data"}
+    return {"id": release_id, "title": "panX data"}
 
 
 def test_upload_sends_every_object_with_its_manifest_headers_and_the_manifest_last():
@@ -124,43 +124,40 @@ def test_an_existing_key_counts_as_done_only_with_the_manifest_checksum():
 
 @pytest.mark.parametrize("step", ["list", "promote"])
 def test_the_first_release_creates_releases_json_as_its_only_entry_and_default(step):
-    assert updated_releases(None, step, entry(ID)) == {"format": 1, "default": ID, "releases": [entry(ID)]}
+    assert updated_releases(None, step, entry(ID)) == {"default": ID, "releases": [entry(ID)]}
 
 
 def test_list_adds_the_release_newest_first_and_keeps_the_default():
-    current = {"format": 1, "default": OLDER, "releases": [entry(OLDER)]}
+    current = {"default": OLDER, "releases": [entry(OLDER)]}
     assert updated_releases(current, "list", entry(ID)) == {
-        "format": 1,
         "default": OLDER,
         "releases": [entry(ID), entry(OLDER)],
     }
 
 
 def test_list_of_a_listed_release_writes_nothing():
-    current = {"format": 1, "default": ID, "releases": [entry(ID)]}
+    current = {"default": ID, "releases": [entry(ID)]}
     assert updated_releases(current, "list", entry(ID)) is None
 
 
 def test_promote_then_promote_back_is_a_rollback():
-    listed = {"format": 1, "default": OLDER, "releases": [entry(ID), entry(OLDER)]}
+    listed = {"default": OLDER, "releases": [entry(ID), entry(OLDER)]}
     promoted = updated_releases(listed, "promote", entry(ID))
     assert promoted == {**listed, "default": ID}
     assert updated_releases(promoted, "promote", entry(OLDER)) == listed
 
 
 def test_promote_of_an_unlisted_release_lists_it():
-    current = {"format": 1, "default": OLDER, "releases": [entry(OLDER)]}
+    current = {"default": OLDER, "releases": [entry(OLDER)]}
     assert updated_releases(current, "promote", entry(ID)) == {
-        "format": 1,
         "default": ID,
         "releases": [entry(ID), entry(OLDER)],
     }
 
 
 def test_unlist_removes_a_release_that_is_not_the_default():
-    current = {"format": 1, "default": OLDER, "releases": [entry(ID), entry(OLDER)]}
+    current = {"default": OLDER, "releases": [entry(ID), entry(OLDER)]}
     assert updated_releases(current, "unlist", entry(ID)) == {
-        "format": 1,
         "default": OLDER,
         "releases": [entry(OLDER)],
     }
@@ -169,7 +166,7 @@ def test_unlist_removes_a_release_that_is_not_the_default():
 
 def test_unlist_refuses_the_default_and_a_data_host_without_releases_json():
     with pytest.raises(ValueError, match="default"):
-        updated_releases({"format": 1, "default": ID, "releases": [entry(ID)]}, "unlist", entry(ID))
+        updated_releases({"default": ID, "releases": [entry(ID)]}, "unlist", entry(ID))
     with pytest.raises(ValueError, match="releases.json"):
         updated_releases(None, "unlist", entry(ID))
 

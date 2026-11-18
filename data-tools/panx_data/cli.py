@@ -1,5 +1,5 @@
 """Command line: `rebuild` and `verify` work on a snapshot folder with `src/`; `fetch-s3` copies S3 objects into it;
-`release-build` and `release-check` write and check a release of data format 1; `release-publish` publishes it."""
+`release-build` and `release-check` write and check a release of the data format; `release-publish` publishes it."""
 
 import argparse
 import json

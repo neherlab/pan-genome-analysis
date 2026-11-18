@@ -106,7 +106,7 @@ def test_release_dataset_writes_the_files_of_format_1_with_the_same_bytes_twice(
         ("p1_refined", "protein", 0.0),
         ("RNA_r1", "rna", None),
     ]
-    assert _json(folder / "loci.json") == {"format": 1, "loci": [["A|1", "B|1"], ["A|2"]]}
+    assert _json(folder / "loci.json") == {"format": 1, "loci": ["A|1 B|1", "A|2"]}
     pack = (folder / "gene_clusters.tar.gz").read_bytes()
     first, last = clusters[1]["range"]
     assert clusters[0]["range"] == [0, first - 1]

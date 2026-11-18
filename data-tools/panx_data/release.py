@@ -302,11 +302,12 @@ class _ClusterContext:
 
 def _write_archives(
     folder: Path, context: _ClusterContext, rows: list[dict[str, Any]], extra_keys: list[str]
-) -> tuple[list[dict[str, Any]], list[list[str]], dict[str, int]]:
+) -> tuple[list[dict[str, Any]], list[str], dict[str, int]]:
     """Write the pack and the two alignment archives in the order of the cluster table; return the clusters, the
-    loci, and the removed gene-tree tips per cluster."""
+    loci (the record identifiers of each cluster, joined by single spaces), and the removed gene-tree tips per
+    cluster."""
     clusters: list[dict[str, Any]] = []
-    loci: list[list[str]] = []
+    loci: list[str] = []
     removed_tips: dict[str, int] = {}
     seen: set[str] = set()
     with (
@@ -326,7 +327,7 @@ def _write_archives(
             pack.write(_member(context.dataset, entries))
             cluster = cluster_entry(row, kind, extra_keys)
             clusters.append(_with_range(cluster, start, pack.tell() - 1))
-            loci.append(ids)
+            loci.append(" ".join(ids))
             if removed:
                 removed_tips[cluster_id] = removed
             if kind == "protein":
